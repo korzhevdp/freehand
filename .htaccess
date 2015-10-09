@@ -1,0 +1,4 @@
+RewriteEngine on
+RewriteCond $1 !^(index\.php|css|js|ckeditor|bootstrap|jquery|tiles|images|phpinfo.php|gisicons|captcha|uploads|user_guide|userimages|robots\.txt)
+RewriteRule ^(.*)$ index.php/$1 [L]
+AddDefaultCharset utf-8
