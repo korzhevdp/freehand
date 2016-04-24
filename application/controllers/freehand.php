@@ -74,24 +74,31 @@ class Freehand extends CI_Controller {
 		$name .= (isset($data->name->last_name))  ? " ".$data->name->last_name		: "";
 		$fname = (isset($data->name->full_name))  ? (isset($data->name->full_name)) : "Временный поверенный";
 		$name  = (!strlen($name))				  ? $fname							: $name;
-		$photo = ((isset($data->photo))			  ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : "");
-		$uid1  = md5(strrev($data->identity));
-		$suid  = md5($name);
-		$uidx  = substr(strrev($this->session->userdata('uid1')), 0, 10);
+		$sessionData = array(
+			'name'  => $name,
+			'photo' => ((isset($data->photo)) ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : ""),
+			'uid1'  => md5(strrev($data->identity)),
+			'suid'  => md5($name),
+			'iudx'  => substr(strrev($this->session->userdata('uid1')), 0, 10)
+		);
+		$this->setSessionData($sessionData);
+		foreach ($passwd as $user) {
+			$data = explode(",", $user);
+			if ($data[0] == $sessionData['uid1']) {
+				$this->session->set_userdata('supx', $data[1]);
+				$found++;
+			}
+		}
+		return $found;
+	}
+
+	private function setSessionData($data) {
 		$this->session->set_userdata('supx' , 0);
 		$this->session->set_userdata('photo', $photo);
 		$this->session->set_userdata('uid1' , $uid1);
 		$this->session->set_userdata('uidx' , $uidx);
 		$this->session->set_userdata('suid' , $suid);
 		$this->session->set_userdata('name' , $name);
-		foreach ($passwd as $user) {
-			$data = explode(",", $user);
-			if ($data[0] == $this->session->userdata('uid1')) {
-				$this->session->set_userdata('supx', $data[1]);
-				$found++;
-			}
-		}
-		return $found;
 	}
 
 	public function logindata() {
@@ -287,7 +294,8 @@ class Freehand extends CI_Controller {
 		if ($map['indb']) {
 			if (!$map['author'] || $map['author'] == $this->session->userdata("uidx")) {
 				$this->updateMapDataWOverride($map);
-			} else {
+			} 
+			if ($map['author']) {
 				$this->updateMapData($map);
 			}
 		}
