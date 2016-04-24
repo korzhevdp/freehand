@@ -1,0 +1,233 @@
+#palette, #manager {
+	height:14px;
+	font-size:12px;
+	margin:0px;
+	padding: 0px;
+	line-height:12px;
+}
+#mainselector, #results{
+	padding:0px;
+	margin:0px;
+	font-size:10px;
+}
+
+#navigator img{
+	height: 16px;
+	width:  16px;
+	border: none;
+}
+
+div.label-info{
+	margin:5px 5px;
+	width:150px;
+}
+
+div.input-prepend span.add-on{
+	width:50px;
+	margin:0px;
+}
+
+input.circlecoord{
+	width:120px;
+}
+
+#SContainer{
+	/*display:none;*/
+	padding: 0px;
+	height: 350px;
+	width: 245px;
+	z-index: 100;
+
+	position:absolute;
+	top: 120px;
+	left: 95px;
+	border: 2px solid black;
+	background-color:#EEEEEE;
+	-moz-box-shadow: 0 0 10px rgba(0,0,0,0.7);		/* Для Firefox */
+	-webkit-box-shadow: 0 0 10px rgba(0,0,0,0.7);	/* Для Safari и Chrome */
+	box-shadow: 0 0 10px rgba(0,0,0,0.7);			/* Параметры тени */
+}
+#transferM{
+	width:680px;
+	padding:10px;
+}
+#transferCode{
+	font-size:11px;
+	height:460px;
+	word-wrap: break-word;
+	word-break: break-all;
+}
+.carousel_annot{
+	height: 40px;
+	margin-top: -60px;
+	background-color: #222222;
+	opacity: .6;
+	color: #FFFFFF;
+}
+.carousel_annot h4{
+	margin-left:20px;
+}
+.map_name{
+	/*display:none;*/
+	vertical-align:middle;
+	width:400px;
+	position:absolute;
+	top:55px;
+	left:360px;
+	color:#D6D6D6;
+	background-color: #222222;
+	padding:3px;
+	height:30px;
+	border:2px solid #FFFFFF;
+	z-index:99;
+}
+#navigator.tab-content{
+	padding: 0px;
+	height: 260px;
+	overflow: auto;
+	width: 243px;
+	z-index: 101;
+}
+.navbar{
+	margin-left:3px;
+	margin-right:3px;
+	margin-top:3px;
+	margin-bottom:3px;
+}
+#YMHead{
+	font-size:10pt;
+	vertical-align:middle;
+	height:25px;
+	padding:0px;
+	margin:0px;
+	width: 243px;
+	color: #FFFFCC;
+	background-color:#3366CC;
+	cursor: move;
+}
+#YMHead i{
+	cursor: pointer;
+	vertical-align:-40%;
+}
+address{
+	margin-bottom:6px;
+}
+
+.gis_menu_item a, .menu_item a{
+	color: #000000;
+	text-decoration:none;
+	cursor: pointer;
+}
+.gis_menu_item_sub .menu_item{
+	background-color: #DDDDDD;
+	border: 1px solid #CCCCCC;
+	text-indent: 5px;
+	color:#330099;
+}
+.gis_menu_item_sub{
+	display: none;
+}
+.photo_comment{
+	font-size: 8pt;
+	font-family: Tahoma;
+	width:128px;
+	text-align:center;
+}
+
+#gis_body{
+	display: block;
+}
+
+.mg-btn-list{
+	height:55px;
+	overflow:hidden;
+	width:200px;
+	margin-left:5px;
+	line-height:10px;
+	text-align:left;
+}
+.mg-btn-list img{
+	height:16px;
+	width:16px;
+	margin:3px;
+	float:right;
+}
+.mg-btn-list button:first-child{
+	margin-left:5px;
+}
+
+/*первая колонка с поиском*/
+
+.foundlist{
+	margin-left:2px;
+	font-size:8pt;
+	width:99%;
+	line-height:4px;
+	vertical-align:top;
+}
+.foundlist li{
+	background-color: #FFFFFF;
+	cursor:pointer;
+	height: 50px;
+	overflow: hidden;
+	border: 1px solid #666666;
+	margin:3px;
+	padding:2px;
+	line-height: 12px;
+}
+#YMapsID{
+	height:500px;
+	width:99%;
+	border: 1px solid #D6D6D6;/* none; /*без бордера или (при закомментированном бордере) без чего-то другого не показывает карту... видимо, проблема с блочными элементами*/
+}
+.frame-switcher{
+	cursor: pointer;
+}
+
+.location_photo{
+	float: left;
+	width: 130px;
+	margin-top:10px;
+	text-align:center;
+}
+.location_photo > img{
+	display:block;
+	border:3px solid #F5EDAF;
+}
+
+.ymaps_balloon_iframed{
+	color: #000000;
+	padding-bottom:15px;
+	font-size: 9pt;
+	font-family: Tahoma;
+	line-height:14px;
+}
+
+.ymaps_balloon{
+	color: #000000;
+	width: 350px;
+	height: 10px;
+	padding-bottom:15px;
+	font-size: 9pt;
+	font-family: Tahoma;
+	line-height:14px;
+}
+.ymaps_balloon input, .ymaps_balloon select{
+	font-size: 9pt;
+	line-height:14px;
+	height:14px;
+	padding:1px;
+}
+.ymaps_balloonX{
+	width:450px;
+	height:340px;
+	font-size:9pt;
+}
+.editx_label{
+	margin-left:0px;
+	font-weight:bolder
+}
+.editXTA{
+	width:440px;
+	height:250px;
+}

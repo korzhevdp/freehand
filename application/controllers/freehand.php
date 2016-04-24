@@ -1,30 +1,29 @@
 <?php
 class Freehand extends CI_Controller {
-	function __construct(){
+	function __construct() {
 		parent::__construct();
-		$this->load->model('usefulmodel');
-		if(!$this->session->userdata('common_user')){
+		if (!$this->session->userdata('common_user')) {
 			$this->session->set_userdata('common_user', md5(rand(0,9999).'zy'.$this->input->ip_address()));
 		}
-		if(!$this->session->userdata('objects')){
+		if (!$this->session->userdata('objects')) {
 			$this->session->set_userdata('objects', array());
 		}
-		if(!$this->session->userdata('lang')){
+		if (!$this->session->userdata('lang')) {
 			$this->session->set_userdata('lang', 'en');
 		}
-		if(!$this->session->userdata('map')){
+		if (!$this->session->userdata('map')) {
 			$this->map_init();
 		}
-		if(!$this->session->userdata('gcounter')){
+		if (!$this->session->userdata('gcounter')) {
 			$this->session->set_userdata('gcounter', 1);
 		}
 	}
 
-	public function index($hash = ""){
+	public function index($hash = "") {
 		$this->map($hash);
 	}
 
-	function map($hash = ""){
+	function map($hash = "") {
 		$data = $this->session->userdata('map');
 		$act = array(
 			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',
@@ -34,10 +33,10 @@ class Freehand extends CI_Controller {
 			'title'			=> $this->config->item('site_title_start')." Интерактивная карта 0.3b",
 			'gcounter'		=> $this->session->userdata('gcounter'),
 			'userid'		=> $this->session->userdata('common_user'),
-			'menu'			=> $this->load->view('cache/menus/menu_'.$this->session->userdata('lang'), array(), TRUE),
-			'navigator'		=> $this->load->view('freehand/navigator', array(), TRUE),
-			'header'		=> $this->load->view('frontend/page_header', array(), TRUE),
-			'footer'		=> $this->load->view('frontend/page_footer', array(), TRUE),
+			'menu'			=> $this->load->view('cache/menus/menu_'.$this->session->userdata('lang'), array(), true),
+			'navigator'		=> $this->load->view('freehand/navigator', array(), true),
+			'header'		=> '',//$this->load->view('frontend/page_header', array(), true),
+			'footer'		=> '',//$this->load->view('frontend/page_footer', array(), true),
 			'map_header'	=> 'Свободная карта',
 			'maphash'		=> str_replace(' ','',substr($hash, 0, 16)),
 			'notepad'		=> '',
@@ -47,26 +46,26 @@ class Freehand extends CI_Controller {
 
 	}
 
-	private function set_existing_user($data){
+	private function set_existing_user($data) {
 		$found = 0;
 		$this->session->set_userdata('uid1', md5(strrev($data->identity)));
 		$this->session->set_userdata('suid', md5($name));
 		$this->session->set_userdata('name', $name);
-		foreach($passwd as $user){
+		foreach ($passwd as $user) {
 			$data = explode(",", $user);
-			if($data[0] == $this->session->userdata('uid1')){
+			if ($data[0] == $this->session->userdata('uid1')) {
 				$found++;
 			}
-			if($this->session->userdata('uidx') == $data[3]){
+			if ($this->session->userdata('uidx') == $data[3]) {
 				$this->session->set_userdata('supx', $data[1]);
 			}
 		}
 		return $found;
 	}
 
-	private function set_new_session($data){
+	private function set_new_session($data) {
 		$found = 0;
-		$file  = "/var/www/html/luft/shadow";
+		$file  = "shadow";
 		$passwd = file($file);
 		$name  = "";
 		$name .= (isset($data->name->first_name)) ? $data->name->first_name : "";
@@ -79,9 +78,9 @@ class Freehand extends CI_Controller {
 		$this->session->set_userdata('uidx', substr(strrev($this->session->userdata('uid1')), 0, 10));
 		$this->session->set_userdata('suid', md5($name));
 		$this->session->set_userdata('name', $name);
-		foreach($passwd as $user){
+		foreach ($passwd as $user) {
 			$data = explode(",", $user);
-			if($data[0] == $this->session->userdata('uid1')){
+			if ($data[0] == $this->session->userdata('uid1')) {
 				$this->session->set_userdata('supx', $data[1]);
 				$found++;
 			}
@@ -89,21 +88,22 @@ class Freehand extends CI_Controller {
 		return $found;
 	}
 
-	public function logindata(){
-		if(!$this->input->post('token')){
+	public function logindata() {
+		if (!$this->input->post('token')) {
 			$this->load->helper('url');
 			redirect("freehand");
 		}
-		$link = "http://loginza.ru/api/authinfo?token=".$this->input->post('token')."&id=70969&sig=".md5($this->input->post('token').'b8c8b99c759d5ad3edc5882559ba359c');
+		$link = "http://loginza.ru/api/authinfo?token=".$this->input->post('token')."&id=75203&sig=".md5($this->input->post('token').'1834adfb2b5f49092e0121ca841ec113');
+		$file = "shadow";
 		$data = json_decode(file_get_contents($link));
-		if(isset($data->identity)){
+		if (isset($data->identity)) {
 			$found = 0;
-			if(!$this->session->userdata('uid1')){
+			if (!$this->session->userdata('uid1')) {
 				$found += $this->set_new_session($data);
-			}else{
+			} else {
 				$found += $this->set_existing_user($data);
 			}
-			if(!$found){
+			if (!$found) {
 				$string = array($this->session->userdata('uid1'), $this->session->userdata('supx'), $this->session->userdata('name'), $this->session->userdata('uidx'));
 				$open   = fopen($file, "a");
 				fputs($open, implode($string, ",")."\n");
@@ -111,22 +111,22 @@ class Freehand extends CI_Controller {
 			}
 			$this->load->helper('url');
 			redirect("freehand");
-		}else{
-			print 'Логин не удался. Вернитесь по ссылке и попробуйте ещё раз<br><br><a href="http://maps.korzhevdp.com/freehand">Вернуться на http://maps.korzhevdp.com/freehand</a>';
+		} else {
+			print 'Логин не удался. Вернитесь по ссылке и попробуйте ещё раз<br><br><a href="http://freehand.korzhevdp.com">Вернуться на http://freehand.korzhevdp.com</a>';
 			//header("Location: http://luft.korzhevdp.com")
 		}
 	}
 
-	public function getuserdata(){
-		if($this->session->userdata('uid1')){
+	public function getuserdata() {
+		if ($this->session->userdata('uid1')) {
 			$title = ($this->session->userdata('supx')) ? "Ваши загруженные фотографии публикуются сразу" : "Ваши загруженные фотографии просмотрит модератор";
 			print "['".$this->session->userdata('name')."', '".$this->session->userdata('photo')."', '".$title."']";
-		}else{
+		} else {
 			print "['Гость', '', 'После авторизации Вы можете загружать фото']";
 		}
 	}
 
-	public function getmaps(){
+	public function getmaps() {
 		$result = $this->db->query("SELECT 
 		`usermaps`.hash_a,
 		`usermaps`.hash_e,
@@ -136,17 +136,17 @@ class Freehand extends CI_Controller {
 		`usermaps`
 		WHERE `usermaps`.`author` = ?
 		ORDER BY usermaps.id DESC", array($this->session->userdata('uidx')));
-		if($result->num_rows()){
+		if ($result->num_rows()) {
 			$output = array();
-			foreach($result->result() as $row){
+			foreach ($result->result() as $row) {
 				$public = ($row->public) ? ' checked="checked"' : "";
 				$string = '<tr>
 					<td><input type="text" class="userMapName" ref="'.$row->hash_a.'" name="'.$row->hash_a.'[]" value="'.$row->name.'"></td>
 					<td>
-						<img src="http://api.korzhevdp.com/images/map.png" width="16" height="16" border="0" alt="">
-						<a  href="http://maps.korzhevdp.com/freehand/map/'.$row->hash_a.'" title="Нередактируемая карта">'.$row->hash_a.'</a><br>
-						<img src="http://api.korzhevdp.com/images/map_edit.png" width="16" height="16" border="0" alt="">
-						<a  href="http://maps.korzhevdp.com/freehand/map/'.$row->hash_e.'" style="color:red" title="Редактируемая карта">'.$row->hash_e.'</a></td>
+						<img src="'.$this->config->item("api").'/images/map.png" width="16" height="16" border="0" alt="">
+						<a  href="'.$this->config->item("base_url").'freehand/map/'.$row->hash_a.'" title="Нередактируемая карта">'.$row->hash_a.'</a><br>
+						<img src="'.$this->config->item("api").'/images/map_edit.png" width="16" height="16" border="0" alt="">
+						<a  href="'.$this->config->item("base_url").'freehand/map/'.$row->hash_e.'" style="color:red" title="Редактируемая карта">'.$row->hash_e.'</a></td>
 					<td>
 						<center><input type="checkbox" class="userMapPublic" ref="'.$row->hash_a.'" name="'.$row->hash_a.'[]"'.$public.'></center>
 					</td>
@@ -157,24 +157,24 @@ class Freehand extends CI_Controller {
 				array_push($output, $string);
 			}
 			print implode($output, "\n");
-		}else{
-			print "<tr><td colspan=3>Созданных вами карт не найдено</td></tr>";
+		} else {
+			print "<tr><td colspan=4>Созданных вами карт не найдено</td></tr>";
 		}
 	}
 
-	public function savemaps(){
+	public function savemaps() {
 		//$this->output->enable_profiler(TRUE);
 		$data = $this->input->post();
 		//print_r($data);
-		foreach($data as $hash_a => $val){
+		foreach ($data as $hash_a => $val) {
 			$name   = (isset($val[0])) ? $val[0] : "";
 			$public = (isset($val[1])) ? 1 : 0;
-			if($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hash_a) && $hash_a != 0 ){
+			if ($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hash_a) && $hash_a != 0 ) {
 				$result = $this->db->query("UPDATE
 				usermaps
 				SET
-				usermaps.name   = IF(usermaps.author = ?, ?, usermaps.name),
-				usermaps.public = IF(usermaps.author = ?, ?, usermaps.public)
+				usermaps.name   = if (usermaps.author = ?, ?, usermaps.name),
+				usermaps.public = if (usermaps.author = ?, ?, usermaps.public)
 				WHERE
 				(usermaps.`hash_a` = ?)", array(
 					$this->session->userdata('uidx'),
@@ -190,7 +190,7 @@ class Freehand extends CI_Controller {
 		redirect("freehand");
 	}
 
-	public function savemapname(){
+	public function savemapname() {
 		//$this->output->enable_profiler(TRUE);
 		//return false;
 		if ($this->input->post('uhash')) {
@@ -208,7 +208,7 @@ class Freehand extends CI_Controller {
 		print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
 	}
 
-	public function logout(){
+	public function logout() {
 		$this->session->unset_userdata('uid1');
 		$this->session->unset_userdata('uidx');
 		$this->session->unset_userdata('supx');
@@ -218,16 +218,16 @@ class Freehand extends CI_Controller {
 	}
 
 	###### AJAX-СЕКЦИЯ
-	function save(){
+	function save() {
 		$counter = $this->session->userdata('gcounter');
 		$this->session->set_userdata('gcounter', ++$counter);
 		$data = $this->session->userdata('objects');
 		//$attr = str_replace("-","#",$attr);
 		$geometry = $this->input->post('geometry');
-		if($this->input->post('type') == 1){
+		if ($this->input->post('type') == 1) {
 			$geometry = implode($geometry, ",");
 		}
-		if($this->input->post('type') == 4){
+		if ($this->input->post('type') == 4) {
 			$geometry = implode($geometry[0],",").",".$geometry[1];
 		}
 		$data[$this->input->post('id')] = array(
@@ -247,10 +247,10 @@ class Freehand extends CI_Controller {
 		//print sizeof($this->session->userdata("objects"));
 	}
 	
-	function map_init(){
+	function map_init() {
 		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
 		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
-		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()){
+		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
 			$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
 			$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
 		}
@@ -268,7 +268,7 @@ class Freehand extends CI_Controller {
 		//print_r($this->session->userdata('map'));
 	}
 
-	function savemap(){
+	function savemap() {
 		$data = $this->session->userdata('map');
 		$data['maptype'] = $this->input->post('maptype');
 		$data['center']  = $this->input->post('center');
@@ -280,16 +280,16 @@ class Freehand extends CI_Controller {
 		//print_r($this->session->userdata("map"));
 	}
 
-	function session_reset(){
+	function session_reset() {
 		$this->map_init();
 		$this->session->set_userdata('objects',array());
 		$data = $this->session->userdata("map");
 		print "usermap = []; mp = { ehash:'".$data['eid']."', uhash: '".$data['id']."', indb: 0 }";
 	}
 
-	function savedb($list = ""){
+	function savedb($list = "") {
 		$map = $this->session->userdata('map');
-		if($map['id'] == 'void'){
+		if ($map['id'] == 'void') {
 			return false;
 		}
 		//$map_center = explode(",", $map['center']);
@@ -299,8 +299,8 @@ class Freehand extends CI_Controller {
 		$hasha      = $map['id'];
 		$hashe      = $map['eid'];
 
-		if(!$map['indb']){
-			if($this->db->query("INSERT INTO usermaps (
+		if (!$map['indb']) {
+			if ($this->db->query("INSERT INTO usermaps (
 				usermaps.center_lat,
 				usermaps.center_lon,
 				usermaps.maptype,
@@ -308,7 +308,7 @@ class Freehand extends CI_Controller {
 				usermaps.hash_a,
 				usermaps.hash_e,
 				usermaps.author
-			) VALUES (?, ?, ?, ?, ?, ?, ?)", array(
+			) VALUES ( ?, ?, ?, ?, ?, ?, ? )", array(
 				$map_lat,
 				$map_lon,
 				$map['maptype'],
@@ -316,11 +316,11 @@ class Freehand extends CI_Controller {
 				$map['id'],
 				$map['eid'],
 				$this->session->userdata('uidx')
-			))){
+			))) {
 				$map['indb'] = 1;
 			}
-		}else{
-			if(!$map['author'] || $map['author'] == $this->session->userdata("uidx")){
+		} else {
+			if (!$map['author'] || $map['author'] == $this->session->userdata("uidx")) {
 				$this->db->query("UPDATE usermaps 
 				SET
 					usermaps.center_lat = ?,
@@ -338,7 +338,7 @@ class Freehand extends CI_Controller {
 					$map['id'],
 					$map['id']
 				));
-			}else{
+			} else {
 				$this->db->query("UPDATE usermaps 
 				SET
 					usermaps.center_lat = ?,
@@ -377,7 +377,7 @@ class Freehand extends CI_Controller {
 			)";
 			array_push($insert_query_list, $string);
 		}
-		if(sizeof($insert_query_list)){
+		if (sizeof($insert_query_list)) {
 			$this->db->query("INSERT INTO userobjects (
 				userobjects.coord,
 				userobjects.attributes,
@@ -398,7 +398,7 @@ class Freehand extends CI_Controller {
 
 	}
 
-	function getumap($hash = "NmIzZjczYWRlOTg5"){
+	function getumap($hash = "NmIzZjczYWRlOTg5") {
 		$result = $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -417,9 +417,9 @@ class Freehand extends CI_Controller {
 		`usermaps`.hash_a = ? OR
 		`usermaps`.hash_e = ?", array($hash, $hash));
 		$output = array();
-		if($result->num_rows()){
+		if ($result->num_rows()) {
 			$newobjects = array();
-			foreach ($result->result() as $row){
+			foreach ($result->result() as $row) {
 				$newobjects[$row->hash] = array(
 					"geometry" => $row->coord,
 					"type"     => $row->type,
@@ -434,13 +434,13 @@ class Freehand extends CI_Controller {
 			}
 			$this->session->set_userdata('objects', array());
 			$this->session->set_userdata('objects', $newobjects);
-		}else{
+		} else {
 			$output = array("error: 'Содержимого для карты с таким идентификатором не найдено.'");
 		}
 		return $output;
 	}
 
-	private function get_map_data($hash){
+	private function get_map_data($hash) {
 		$result = $this->db->query("SELECT 
 		`usermaps`.center_lon as `maplon`,
 		`usermaps`.center_lat as `maplat`,
@@ -454,16 +454,16 @@ class Freehand extends CI_Controller {
 		WHERE
 		`usermaps`.`hash_a` = ?
 		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
-		if($result->num_rows()){
+		if ($result->num_rows()) {
 			$objects = $result->row_array();
 			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
 			return $objects;
-		}else{
+		} else {
 			return false;
 		}
 	}
 
-	private function get_map_objects_list($hash){
+	private function get_map_objects_list($hash) {
 		return $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -476,7 +476,7 @@ class Freehand extends CI_Controller {
 		userobjects
 		WHERE
 		`userobjects`.`map_id` = ?
-		ORDER BY userobjects.timestamp", array($objects['hash_a']));
+		ORDER BY userobjects.timestamp", array($hash));
 	}
 	
 	private function write_incremented_map_counter() {
@@ -510,8 +510,8 @@ class Freehand extends CI_Controller {
 		}
 		$output = array();
 		$result = $this->get_map_objects_list($objects['hash_a']);
-		if($result->num_rows()){
-			foreach ($result->result_array() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
 				$constant = "{address: '".$row['address']."', description: '".$row['description']."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attributes']."'));ms.add(object);";
 				array_push($output, $this->return_script_string_by_type($row, $row['type']).$constant);
@@ -527,8 +527,8 @@ class Freehand extends CI_Controller {
 		$objects = $this->get_map_data($hash);
 		$output  = array();
 		$result  = $this->get_map_objects_list($objects['hash_a']);
-		if($result->num_rows()){
-			foreach ($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
 				$row  = preg_replace("/'/", '"', $row);
 				$prop = '{address: \''.$addr.'\', description: \''.$desc.'\', name: \''.$name.'\', hasHint: 1, hintContent: \''.$name.' '.$desc.'\', link: \''.$link.'\' }';
 				$opts = 'ymaps.option.presetStorage.get(\''.$attr.'\')';
@@ -541,13 +541,13 @@ class Freehand extends CI_Controller {
 		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
 	}
 	
-	function loadframe($hash = "NWY2MjVlMzAwOWMz"){
+	function loadframe($hash = "NWY2MjVlMzAwOWMz") {
 		$this->write_incremented_map_counter();
 		$this->load->helper("file");
 		print read_file('freehandcache/'.$hash);
 	}
 
-	function loadmap(){
+	function loadmap() {
 		$hash = $this->input->post('name');
 		$mapparam = "";
 		$result = $this->db->query("SELECT 
@@ -563,15 +563,15 @@ class Freehand extends CI_Controller {
 		WHERE
 		`usermaps`.`hash_a` = ? OR
 		`usermaps`.`hash_e` = ?", array( $hash, $hash ));
-		if($result->num_rows()){
+		if ($result->num_rows()) {
 			$newobjects = array();
 			$row = $result->row();
-			if($row->hash_e == $hash){
+			if ($row->hash_e == $hash) {
 				$mapid = $row->hash_a;
 				$ehash = $row->hash_e;
 				$uhash = $row->hash_a;
 			}
-			if($row->hash_a == $hash){
+			if ($row->hash_a == $hash) {
 				$mapid = "void";
 				$ehash = $row->hash_a;
 				$uhash = $row->hash_a;
@@ -588,15 +588,14 @@ class Freehand extends CI_Controller {
 			$this->session->set_userdata('map', $data);
 			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
 			print $mapparam."usermap = { ".implode($this->getumap($uhash), ",\n")."\n}";
-		}
-		else{
+		} else {
 			//$this->session->set_userdata('map',array('id' => 'new'));
 			//$this->session->set_userdata('map', $data);
-			print "alert('Карты с таким идентификатором не найдено.')";
+			print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
 		}
 	}
 
-	function obj_delete(){
+	function obj_delete() {
 		$node = $this->input->post("ttl");
 		$objects = $this->session->userdata('objects');
 		//print $objects[$node]['desc']."\n";
@@ -606,9 +605,9 @@ class Freehand extends CI_Controller {
 		//print sizeof($this->session->userdata("objects"));
 	}
 
-	function get_session(){
+	function get_session() {
 		$data = $this->session->userdata('map');
-		if($data['id'] == 'void'){
+		if ($data['id'] == 'void') {
 			$this->map_init();
 			//$data = $this->session->userdata('map');
 			print "usermap = []";
@@ -616,7 +615,7 @@ class Freehand extends CI_Controller {
 		}
 		$objects = $this->session->userdata('objects');
 		$output = array();
-		foreach($objects as $hash => $val){
+		foreach ($objects as $hash => $val) {
 			$string = $hash." : { d: '".$val['desc']."', n: '".$val['name']."', a: '".$val['attr']."', p: ".$val['type'].", c: '".$val['geometry']."', b: '".$val['address']."', l: '".$val['link']."' }";
 			array_push($output, $string);
 		}
@@ -627,7 +626,7 @@ class Freehand extends CI_Controller {
 
 	private function return_transfer_line($line, $src, $format) {
 		$coords = explode(",", $src['coord']);
-		if (sizeof($coords) < 3){
+		if (sizeof($coords) < 3) {
 			$coords = array(0, 0, 0, 0);
 		}
 		$adds  = array(
@@ -657,7 +656,7 @@ class Freehand extends CI_Controller {
 		return $lines[$format][$src['type']];
 	}
 
-	public function transfer(){
+	public function transfer() {
 		$format  = ($this->input->post("format")) ? $this->input->post("format") : "plainobject";
 		$objects = $this->get_map_data($this->input->post("hash"));
 		if (!$objects) {
@@ -666,12 +665,12 @@ class Freehand extends CI_Controller {
 		}
 		$output = array();
 		$result = $this->get_map_objects_list($objects['hash_a']);
-		if($result->num_rows()){
-			foreach ($result->result_array() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
 				array_push($output, $this->return_transfer_line(sizeof($output), $row, $format));
 			}
-		}else{
+		} else {
 			print "No Objects Found";
 		}
 		$objects['mapobjects'] = implode($output, ",\n<br>");

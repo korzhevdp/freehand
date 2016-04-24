@@ -14,31 +14,31 @@
 <body>
 
 <!-- навигацыя -->
+	<meta name='loginza-verification' content='cbea36ce75daec14840f8731f7d25afe' />
+	<meta name="google-translate-customization" content="ada9cac7e9873c92-acda39305efb042f-g6b5fbe17d469b999-d"></meta>
 	<div class="navbar">
 		<div class="navbar-inner">
 			<a class="brand" href="http://www.korzhevdp.com">KORZHEVDP.COM</a>
 			<ul class="nav">
-				<li><a href="http://www.korzhevdp.com">Дом</a></li>
-				<li class="active"><a href="http://www.korzhevdp.com/projects.html">Проекты</a></li>
-				<li><a href="http://works.korzhevdp.com">Работы</a></li>
-				<li><a href="http://flood.korzhevdp.com">Проза</a></li>
-				<li><a href="http://rock.korzhevdp.com">Музыка</a></li>
+				<li <?=($_SERVER["REQUEST_URI"] == "/") ? 'class="active"' : "";?>><a class="btn-link" href="http://www.korzhevdp.com">Начало</a></li>
+				<li <?=($_SERVER["REQUEST_URI"] == "http://luft.korzhevdp.com/index.php") ? 'class="active"' : "";?>><a class="btn-link" href="http://luft.korzhevdp.com" title="Signum Temporis - Работы по исторической картографии">Исторические карты</a></li>
+				<li <?=($_SERVER["REQUEST_URI"] == "http://luft.korzhevdp.com/gallery") ? 'class="active"' : "";?>><a class="btn-link" href="http://luft.korzhevdp.com/gallery" title="Лишь небольшая часть">Галерея фотографий</a></li>
+				<li <?=($_SERVER["REQUEST_URI"] == "/workshop.php") ? 'class="active"' : "";?>><a class="btn-link" href="http://www.korzhevdp.com/workshop.php" title="Программки собственной разработки">Мастерская</a></li>
 			</ul>
 			<ul class="nav pull-right">
 				<li>
 					<ul class="nav">
-						<li class="dropdown" style="min-width:180px;">
+						<li class="dropdown" style="min-width:240px;">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span id="userP">Гость</span> <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="#" class="myMaps">Мои карты</a></li>
 								<li class="divider"></li>
-								<li class="logIn"><a href="https://loginza.ru/api/widget?token_url=http://maps.korzhevdp.com/freehand/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li>
-								<li class="logOut"><a href="http://maps.korzhevdp.com/freehand/logout">Выйти</a></li>
+								<li class="logIn"><a href="https://loginza.ru/api/widget?token_url=http://freehand.korzhevdp.com/freehand/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li>
+								<li class="logOut"><a href="http://freehand.korzhevdp.com/freehand/logout">Выйти</a></li>
 							</ul>
 						</li>
 					</ul>
 				</li>
-
 			</ul>
 		</div>
 	</div>
@@ -59,11 +59,11 @@
 			<div class="btn-group pull-right">
 				<a class="btn dropdown-toggle btn-small btn-success" style="margin-top:2px;" data-toggle="dropdown" href="#" title="Поделиться картой">Поделиться&nbsp;<span class="caret"></span></a>
 				<ul id="linkFactory" class="dropdown-menu">
-					<li id="ehashID"><a href="#" pr=1 title="Показывает ссылку на редактируемую карту">Ссылка на редактируемую карту</a></li>
-					<li><a href="#" pr=2 title="Показывает ссылку на нередактируемую карту">Ссылка на нередактируемую карту</a></li>
-					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">Скрипт для встраивания на сайт</a></li>
-					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME для встраивания на сайт</a></li>
-					<li><a href="#" pr=5 title="Формирует таблицу аннотаций для встраивания">Аннотационная карта (экспериментальная)</a></li>
+					<li id="ehashID"><a href="#" pr=1 title="Показывает ссылку на редактируемую карту">Редактируемая карта</a></li>
+					<li><a href="#" pr=2 title="Показывает ссылку на нередактируемую карту">Нередактируемая карта</a></li>
+					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">JS Скрипт</a></li>
+					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME</a></li>
+					<li><a href="#" pr=5 title="Формирует таблицу аннотаций для встраивания">Аннотационная карта</a></li>
 				</ul>
 			</div>
 		</div>
@@ -74,9 +74,7 @@
 		<?=$navigator?>
 	</div>
 
-
-
-<?=$this->load->view('freehand/freehand_modal_pic',array(),true);?>
+<?=$this->load->view('freehand/freehand_modal_pic', array(), true);?>
 
 <div class="modal hide" id="myMapsM" style="width:640px;">
 	<div class="modal-header">
@@ -121,9 +119,8 @@
 	<button type="button" class="btn btn-small btn-primary pull-right" id="linkClose" style="margin-top:2px;">Закрыть</button>
 </div>
 
-
-
 <div class="hide"><?=$links_heap;?></div>
+
 <div style="display:none;">
 	<input type="hidden" name="maphash"      id="maphash"      value="<?=$maphash;?>">
 	<input type="hidden" name="current_zoom" id="current_zoom" value="<?=$zoom;?>">
@@ -282,8 +279,10 @@
 </script>
 <!-- API 2.0 -->
 <script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;mode=debug&amp;lang=ru-RU" type="text/javascript"></script>
-<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/freehand.js"></script>
-<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/map_styles2.js"></script>
+<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/styles2.js"></script>
+<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/yandex_styles.js"></script>
+<script type="text/javascript" src="/jscript/freehand.js"></script>
+
 <!-- EOT API 2.0 -->
 <script src="//loginza.ru/js/widget.js" type="text/javascript"></script>
 <!-- <script type="text/javascript" src="<?=$this->config->item('api');?>/ckeditor/ckeditor.js"></script> -->
