@@ -63,21 +63,25 @@ class Freehand extends CI_Controller {
 		return $found;
 	}
 
-	private function set_new_session($data) {
+	private function setNewSession($data) {
 		$found = 0;
 		$file  = "shadow";
 		$passwd = file($file);
 		$name  = "";
-		$name .= (isset($data->name->first_name)) ? $data->name->first_name : "";
-		$name .= (isset($data->name->last_name))  ? " ".$data->name->last_name : "";
+		$name .= (isset($data->name->first_name)) ? $data->name->first_name			: "";
+		$name .= (isset($data->name->last_name))  ? " ".$data->name->last_name		: "";
 		$fname = (isset($data->name->full_name))  ? (isset($data->name->full_name)) : "Временный поверенный";
-		$this->session->set_userdata('photo', ((isset($data->photo)) ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : ""));
-		$name  = (!strlen($name)) ? $fname : $name;
-		$this->session->set_userdata('supx', 0);
-		$this->session->set_userdata('uid1', md5(strrev($data->identity)));
-		$this->session->set_userdata('uidx', substr(strrev($this->session->userdata('uid1')), 0, 10));
-		$this->session->set_userdata('suid', md5($name));
-		$this->session->set_userdata('name', $name);
+		$name  = (!strlen($name))				  ? $fname							: $name;
+		$photo = ((isset($data->photo))			  ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : "");
+		$uid1  = md5(strrev($data->identity));
+		$suid  = md5($name);
+		$uidx  = substr(strrev($this->session->userdata('uid1')), 0, 10);
+		$this->session->set_userdata('supx' , 0);
+		$this->session->set_userdata('photo', $photo);
+		$this->session->set_userdata('uid1' , $uid1);
+		$this->session->set_userdata('uidx' , $uidx);
+		$this->session->set_userdata('suid' , $suid);
+		$this->session->set_userdata('name' , $name);
 		foreach ($passwd as $user) {
 			$data = explode(",", $user);
 			if ($data[0] == $this->session->userdata('uid1')) {
@@ -99,8 +103,9 @@ class Freehand extends CI_Controller {
 		if (isset($data->identity)) {
 			$found = 0;
 			if (!$this->session->userdata('uid1')) {
-				$found += $this->set_new_session($data);
-			} else {
+				$found += $this->setNewSession($data);
+			} 
+			if ($this->session->userdata('uid1')) {
 				$found += $this->set_existing_user($data);
 			}
 			if (!$found) {
@@ -154,7 +159,7 @@ class Freehand extends CI_Controller {
 			$name   = (isset($val[0])) ? $val[0] : "";
 			$public = (isset($val[1])) ? 1 : 0;
 			if ($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hash_a) && $hash_a != 0 ) {
-				$result = $this->db->query("UPDATE
+				$this->db->query("UPDATE
 				usermaps
 				SET
 				usermaps.name   = if (usermaps.author = ?, ?, usermaps.name),
@@ -174,10 +179,8 @@ class Freehand extends CI_Controller {
 	}
 
 	public function savemapname() {
-		//$this->output->enable_profiler(TRUE);
-		//return false;
 		if ($this->input->post('uhash')) {
-			$result = $this->db->query("UPDATE
+			$this->db->query("UPDATE
 			`usermaps`
 			SET
 			`usermaps`.name = ?,
@@ -270,7 +273,7 @@ class Freehand extends CI_Controller {
 		print "usermap = []; mp = { ehash:'".$data['eid']."', uhash: '".$data['id']."', indb: 0 }";
 	}
 
-	public function savedb($list = "") {
+	public function savedb() {
 		$map = $this->session->userdata('map');
 		if ($map['id'] == 'void') {
 			return false;
@@ -278,10 +281,7 @@ class Freehand extends CI_Controller {
 		//$map_center = explode(",", $map['center']);
 		$map['lat'] = $map['center'][0];
 		$map['lon'] = $map['center'][1];
-		if (!$map['indb']) {
-			$this->insertNotInDBUserMap($map);
-		}
-
+		// сначала работает, если карта есть в базе
 		if ($map['indb']) {
 			if (!$map['author'] || $map['author'] == $this->session->userdata("uidx")) {
 				$this->updateMapDataWOverride($map);
@@ -289,6 +289,12 @@ class Freehand extends CI_Controller {
 				$this->updateMapData($map);
 			}
 		}
+		// затем если нет, поскольку выставляется соответствующий флаг
+		if (!$map['indb']) {
+			$map = $this->insertNotInDBUserMap($map);
+		}
+
+
 		$this->session->set_userdata('map', $map);
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
 		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
@@ -338,7 +344,7 @@ class Freehand extends CI_Controller {
 
 	private function packSessionData($map, $data) {
 		$output = array();
-		foreach ($data as $key=>$val) {
+		foreach ($data as $val) {
 			$superhash = $map['id']."_".substr(md5(date("U").rand(0, 9999).rand(0, 9999)), 0, 8);
 			$string = "(
 				'".$this->db->escape_str($val['geometry'])."',
@@ -358,8 +364,8 @@ class Freehand extends CI_Controller {
 		return $output;
 	}
 
-	private function insertUserMapObjects($insert_query_list) {
-		if (sizeof($insert_query_list)) {
+	private function insertUserMapObjects($objects) {
+		if (sizeof($objects)) {
 			$this->db->query("INSERT INTO userobjects (
 				userobjects.coord,
 				userobjects.attributes,
@@ -372,7 +378,7 @@ class Freehand extends CI_Controller {
 				userobjects.hash,
 				userobjects.ip,
 				userobjects.uagent
-			) VALUES ". implode($insert_query_list, ",\n"));
+			) VALUES ". implode($objects, ",\n"));
 		}
 	}
 
@@ -402,14 +408,14 @@ class Freehand extends CI_Controller {
 	private function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$objects = $this->getMapData($hash);
 		$output  = array();
-		$result  = $this->get_map_objects_list($objects['hash_a']);
+		$result  = $this->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
 				$row  = preg_replace("/'/", '"', $row);
-				$prop = '{address: \''.$addr.'\', description: \''.$desc.'\', name: \''.$name.'\', hasHint: 1, hintContent: \''.$name.' '.$desc.'\', link: \''.$link.'\' }';
-				$opts = 'ymaps.option.presetStorage.get(\''.$attr.'\')';
-				$constant = $prop.", ".$opts.' );\nms.add(object);';
-				array_push($output, $this->returnScriptLineByType($row, $row['type']).$constant);
+				$prop = "{address: '".$row->addr."', description: '".$row->desc."', name: '".$row->name."', hasHint: 1, hintContent: '".$row->name." ".$row->desc."', link: '".$row->link."' }";
+				$opts = 'ymaps.option.presetStorage.get(\''.$row->attr.'\')';
+				$constant = $prop.", ".$opts." );\nms.add(object);";
+				array_push($output, $this->returnScriptLineByType($row, $row->type).$constant);
 			}
 		}
 		$objects['mapobjects'] = implode($output, "\n");
@@ -435,12 +441,11 @@ class Freehand extends CI_Controller {
 			$objects = $result->row_array();
 			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
 			return $objects;
-		} else {
-			return false;
 		}
+		return false;
 	}
 
-	private function get_map_objects_list($hash) {
+	private function getMapObjectsList($hash) {
 		return $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -513,10 +518,9 @@ class Freehand extends CI_Controller {
 				array_push($output, preg_replace("/\n/", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
-		} else {
-			$output = array("error: 'Содержимого для карты с таким идентификатором не найдено.'");
+			return $output;
 		}
-		return $output;
+		return array("error: 'Содержимого для карты с таким идентификатором не найдено.'");
 	}
 
 	public function loadscript($hash = "YzkxNzVjYTI0MGZk") {
@@ -527,7 +531,7 @@ class Freehand extends CI_Controller {
 			return false;
 		}
 		$output = array();
-		$result = $this->get_map_objects_list($objects['hash_a']);
+		$result = $this->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
@@ -586,11 +590,9 @@ class Freehand extends CI_Controller {
 			$this->session->set_userdata('map', $data);
 			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
 			print $mapparam."usermap = { ".implode($this->getUserMap($uhash), ",\n")."\n}";
-		} else {
-			//$this->session->set_userdata('map',array('id' => 'new'));
-			//$this->session->set_userdata('map', $data);
-			print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
+			return true;
 		}
+		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
 	}
 
 	public function obj_delete() {
@@ -661,18 +663,18 @@ class Freehand extends CI_Controller {
 			print "Сопоставленная карта не обнаружена";
 			return false;
 		}
-		$output = array();
-		$result = $this->get_map_objects_list($objects['hash_a']);
+		$result = $this->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
+			$output = array();
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
 				array_push($output, $this->return_transfer_line(sizeof($output), $row, $format));
 			}
-		} else {
-			print "No Objects Found";
+			$objects['mapobjects'] = implode($output, ",\n<br>");
+			print $this->load->view('freehand/transfer', $objects, true);
+			return true;
 		}
-		$objects['mapobjects'] = implode($output, ",\n<br>");
-		print $this->load->view('freehand/transfer', $objects, true);
+		print "No Objects Found";
 	}
 }
 
