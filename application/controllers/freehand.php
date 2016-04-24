@@ -12,7 +12,7 @@ class Freehand extends CI_Controller {
 			$this->session->set_userdata('lang', 'en');
 		}
 		if (!$this->session->userdata('map')) {
-			$this->map_init();
+			$this->mapInit();
 		}
 		if (!$this->session->userdata('gcounter')) {
 			$this->session->set_userdata('gcounter', 1);
@@ -46,8 +46,10 @@ class Freehand extends CI_Controller {
 
 	}
 
-	private function set_existing_user($data) {
-		$found = 0;
+	private function setExistingUser($data) {
+		$found  = 0;
+		$file   = "shadow";
+		$passwd = file($file);
 		$this->session->set_userdata('uid1', md5(strrev($data->identity)));
 		$this->session->set_userdata('suid', md5($name));
 		$this->session->set_userdata('name', $name);
@@ -106,7 +108,7 @@ class Freehand extends CI_Controller {
 				$found += $this->setNewSession($data);
 			} 
 			if ($this->session->userdata('uid1')) {
-				$found += $this->set_existing_user($data);
+				$found += $this->setExistingUser($data);
 			}
 			if (!$found) {
 				$string = array($this->session->userdata('uid1'), $this->session->userdata('supx'), $this->session->userdata('name'), $this->session->userdata('uidx'));
@@ -155,10 +157,10 @@ class Freehand extends CI_Controller {
 
 	public function savemaps() {
 		$data = $this->input->post();
-		foreach ($data as $hash_a => $val) {
+		foreach ($data as $hashA => $val) {
 			$name   = (isset($val[0])) ? $val[0] : "";
 			$public = (isset($val[1])) ? 1 : 0;
-			if ($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hash_a) && $hash_a != 0 ) {
+			if ($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hashA) && $hashA != 0 ) {
 				$this->db->query("UPDATE
 				usermaps
 				SET
@@ -170,7 +172,7 @@ class Freehand extends CI_Controller {
 					$name,
 					$this->session->userdata('uidx'),
 					$public,
-					$hash_a
+					$hashA
 				));
 			}
 		}
@@ -233,7 +235,7 @@ class Freehand extends CI_Controller {
 		//print sizeof($this->session->userdata("objects"));
 	}
 	
-	function map_init() {
+	private function mapInit() {
 		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
 		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
 		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
@@ -267,7 +269,7 @@ class Freehand extends CI_Controller {
 	}
 
 	function session_reset() {
-		$this->map_init();
+		$this->mapInit();
 		$this->session->set_userdata('objects',array());
 		$data = $this->session->userdata("map");
 		print "usermap = []; mp = { ehash:'".$data['eid']."', uhash: '".$data['id']."', indb: 0 }";
@@ -608,7 +610,7 @@ class Freehand extends CI_Controller {
 	public function get_session() {
 		$data = $this->session->userdata('map');
 		if ($data['id'] == 'void') {
-			$this->map_init();
+			$this->mapInit();
 			//$data = $this->session->userdata('map');
 			print "usermap = []";
 			return false;
@@ -624,7 +626,7 @@ class Freehand extends CI_Controller {
 		//print_r($this->session->userdata("objects"));
 	}
 
-	private function return_transfer_line($line, $src, $format) {
+	private function getTransferLine($line, $src, $format) {
 		$coords = explode(",", $src['coord']);
 		if (sizeof($coords) < 3) {
 			$coords = array(0, 0, 0, 0);
@@ -668,7 +670,7 @@ class Freehand extends CI_Controller {
 			$output = array();
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
-				array_push($output, $this->return_transfer_line(sizeof($output), $row, $format));
+				array_push($output, $this->getTransferLine(sizeof($output), $row, $format));
 			}
 			$objects['mapobjects'] = implode($output, ",\n<br>");
 			print $this->load->view('freehand/transfer', $objects, true);
