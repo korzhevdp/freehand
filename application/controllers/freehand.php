@@ -66,25 +66,28 @@ class Freehand extends CI_Controller {
 	}
 
 	private function setNewSession($data) {
-		$found = 0;
-		$file  = "shadow";
-		$passwd = file($file);
 		$name  = "";
 		$name .= (isset($data->name->first_name)) ? $data->name->first_name			: "";
 		$name .= (isset($data->name->last_name))  ? " ".$data->name->last_name		: "";
 		$fname = (isset($data->name->full_name))  ? (isset($data->name->full_name)) : "Временный поверенный";
-		$name  = (!strlen($name))				  ? $fname							: $name;
 		$sessionData = array(
-			'name'  => $name,
+			'name'  => (!strlen($name)) ? $fname : $name,
 			'photo' => ((isset($data->photo)) ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : ""),
 			'uid1'  => md5(strrev($data->identity)),
-			'suid'  => md5($name),
+			'suid'  => md5($sessionData['name']),
 			'iudx'  => substr(strrev($this->session->userdata('uid1')), 0, 10)
 		);
 		$this->setSessionData($sessionData);
+		return $this->checkUserList($sessionData['uid1']);
+	}
+
+	private function checkUserList($uid) {
+		$found = 0;
+		$file  = "shadow";
+		$passwd = file($file);
 		foreach ($passwd as $user) {
 			$data = explode(",", $user);
-			if ($data[0] == $sessionData['uid1']) {
+			if ($data[0] == $uid) {
 				$this->session->set_userdata('supx', $data[1]);
 				$found++;
 			}
@@ -94,11 +97,11 @@ class Freehand extends CI_Controller {
 
 	private function setSessionData($data) {
 		$this->session->set_userdata('supx' , 0);
-		$this->session->set_userdata('photo', $photo);
-		$this->session->set_userdata('uid1' , $uid1);
-		$this->session->set_userdata('uidx' , $uidx);
-		$this->session->set_userdata('suid' , $suid);
-		$this->session->set_userdata('name' , $name);
+		$this->session->set_userdata('photo', $data['photo']);
+		$this->session->set_userdata('uid1' , $data['uid1']);
+		$this->session->set_userdata('uidx' , $data['uidx']);
+		$this->session->set_userdata('suid' , $data['suid']);
+		$this->session->set_userdata('name' , $data['name']);
 	}
 
 	public function logindata() {
