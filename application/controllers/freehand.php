@@ -268,7 +268,7 @@ class Freehand extends CI_Controller {
 		//print_r($this->session->userdata("map"));
 	}
 
-	function session_reset() {
+	function resetsession() {
 		$this->mapInit();
 		$this->session->set_userdata('objects',array());
 		$data = $this->session->userdata("map");
@@ -597,7 +597,7 @@ class Freehand extends CI_Controller {
 		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
 	}
 
-	public function obj_delete() {
+	public function deleteobject() {
 		$node = $this->input->post("ttl");
 		$objects = $this->session->userdata('objects');
 		//print $objects[$node]['desc']."\n";
@@ -607,7 +607,7 @@ class Freehand extends CI_Controller {
 		//print sizeof($this->session->userdata("objects"));
 	}
 
-	public function get_session() {
+	public function getsession() {
 		$data = $this->session->userdata('map');
 		if ($data['id'] == 'void') {
 			$this->mapInit();

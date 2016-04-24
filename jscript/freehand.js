@@ -291,7 +291,7 @@ function doDelete(src) {
 		}
 	});
 	$.ajax({
-		url: controller + "/obj_delete",
+		url: controller + "/deleteobject",
 		data: {
 			ttl: ttl
 		},
@@ -878,7 +878,7 @@ function display_locations() {
 		загрузка данных сессии
 		*/
 		$.ajax({
-			url: controller + "/get_session",
+			url: controller + "/getsession",
 			dataType: "script",
 			type: "POST",
 			success: function () {
@@ -1390,7 +1390,7 @@ $("#linkFactory a").click(function (e) {
 
 $("#sessDestroy").click(function () {
 	$.ajax({
-		url: controller + "/session_reset",
+		url: controller + "/resetsession",
 		dataType: "script",
 		type: "POST",
 		success: function () {
@@ -1405,7 +1405,7 @@ $("#sessDestroy").click(function () {
 
 $("#mapReset").click(function () {
 	$.ajax({
-		url: controller + "/session_reset",
+		url: controller + "/resetsession",
 		dataType: "html",
 		type: "POST",
 		success: function () {
