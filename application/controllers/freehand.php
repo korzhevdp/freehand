@@ -66,12 +66,10 @@ class Freehand extends CI_Controller {
 	}
 
 	private function setNewSession($data) {
-		$name  = "";
-		$name .= (isset($data->name->first_name)) ? $data->name->first_name			: "";
-		$name .= (isset($data->name->last_name))  ? " ".$data->name->last_name		: "";
-		$fname = (isset($data->name->full_name))  ? (isset($data->name->full_name)) : "Временный поверенный";
+		$name  = $data->name->first_name." ".$data->name->last_name;
+		$fname = $data->name->full_name;
 		$sessionData = array(
-			'name'  => (!strlen($name)) ? $fname : $name,
+			'name'  => (strlen($name)) ? $name : $fname,
 			'photo' => ((isset($data->photo)) ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : ""),
 			'uid1'  => md5(strrev($data->identity)),
 			'suid'  => md5($sessionData['name']),
