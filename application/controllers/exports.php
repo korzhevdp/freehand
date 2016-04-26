@@ -164,6 +164,83 @@ class Exports extends CI_Controller {
 		print "No Objects Found";
 	}
 
+	private function getTransferLine($line, $src, $format) { #!
+		$coords = explode(",", $src['coord']);
+		if (sizeof($coords) < 3) {
+			$coords = array(0, 0, 0, 0);
+		}
+		$adds  = array(
+			'plainobject' => array(
+				'props' => '{ b: "'.$src['address'].'", d: "'.$src['description'].'", n: "'.$src['name'].'", l: \''.$src['link'].'\' },',
+				'opts'  => '{ attr: "'.$src['attributes'].'" }'
+			),
+			'plainjs' => array(
+				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['address']."', d: '".$src['description']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
+				'opts'  => "&nbsp;&nbsp;&nbsp;&nbsp;ymaps.option.presetStorage.get('".$src['attributes']."')<br>"
+			)
+		);
+		$lines  = array(
+			'plainobject' => array(
+				1 => $line.': [{ type: "Point", coord: ['.$src['coord'].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				2 => $line.': [{ type: "LineString", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				3 => $line.': [{ type: "Polygon", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				4 => $line.': [{ type: "Circle", coord: ['.$coords[0].', '.$coords[1].', '.$coords[2].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]"
+			),
+			'plainjs' => array(
+				1 => $line.': new ymaps.Placemark(<br>&nbsp;&nbsp;&nbsp;&nbsp;{type: "Point", coordinates: ['.$src['coord'].']},'.$adds[$format]['props']. $adds[$format]['opts']." )",
+				2 => $line.': new ymaps.Polyline(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
+				3 => $line.': new ymaps.Polygon(<br>&nbsp;&nbsp;&nbsp;&nbsp; new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
+				4 => $line.': new ymaps.Circle(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'], '.$coords[2].'), '.$adds[$format]['props'].$adds[$format]['opts']." )"
+			)
+		);
+		return $lines[$format][$src['type']];
+	}
+
+	private function writeIncrementedMapCounter() {
+		$file = "./mpct.txt";
+		$sum = implode(file($file), '');
+		$open = fopen($file, "w");
+		fputs($open, ++$sum);
+		fclose($open);
+	}
+
+	private function getMapData($hash) {
+		$result = $this->db->query("SELECT 
+		`usermaps`.center_lon as `maplon`,
+		`usermaps`.center_lat as `maplat`,
+		`usermaps`.hash_a,
+		`usermaps`.hash_e,
+		`usermaps`.zoom as `mapzoom`,
+		`usermaps`.maptype,
+		`usermaps`.name
+		FROM
+		`usermaps`
+		WHERE
+		`usermaps`.`hash_a` = ?
+		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
+		if ($result->num_rows()) {
+			$objects = $result->row_array();
+			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
+			return $objects;
+		}
+		return false;
+	}
+
+	private function getMapObjectsList($hash) {
+		return $this->db->query("SELECT 
+		userobjects.name,
+		userobjects.description,
+		userobjects.coord,
+		userobjects.attributes,
+		userobjects.address,
+		userobjects.`type`,
+		userobjects.`link`
+		FROM
+		userobjects
+		WHERE
+		`userobjects`.`map_id` = ?
+		ORDER BY userobjects.timestamp", array($hash));
+	}
 
 }
 
