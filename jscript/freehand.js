@@ -774,6 +774,7 @@ function display_locations() {
 			contact     : '',
 			description : ''
 		};
+		
 
 		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
 			console.log("Рисование запрещено");
@@ -850,16 +851,16 @@ function display_locations() {
 			},
 			dataType : "script",
 			success  : function () {
+				if (usermap.error !== undefined) {
+					console.log(usermap.error);
+					return false;
+				}
 				a_objects.removeAll();
 				e_objects.removeAll();
 				if (usermap.error === undefined) {
 					place_freehand_objects(usermap);
 				}
-				if (usermap.error !== undefined) {
-					console.log(usermap.error);
-					map.setType("default#map");
-					return false;
-				}
+
 				if (mp !== undefined) {
 					$("#mapSave, #ehashID, #SContainer").css('display', ((mp.id === 'void') ? 'none' : 'block'));
 					map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.c);
@@ -1342,7 +1343,7 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 3) {
 		e.preventDefault();  //stop the browser
 		$.ajax({
-			url: controller + '/loadscript/' + mp.uhash,
+			url: '/exports/loadscript/' + mp.uhash,
 			dataType: "html",
 			type: "POST",
 			success: function () {
@@ -1356,11 +1357,11 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 4) {
 		e.preventDefault();  //stop the browser
 		$.ajax({
-			url: controller + "/createframe/" + mp.uhash,
+			url: "/exports/createframe/" + mp.uhash,
 			dataType: "text",
 			type: "POST",
 			success: function () {
-				$("#mapLink").val(base_url + controller + '/loadframe/' + mp.uhash);
+				$("#mapLink").val(base_url + '/exports/loadframe/' + mp.uhash);
 				$("#mapLinkContainer").removeClass("hide");
 			},
 			error: function (data, stat, err) {
@@ -1371,7 +1372,7 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 5) {
 		e.preventDefault();
 		$.ajax({
-			url: controller + "/transfer",
+			url: "/exports/transfer",
 			data: {
 				hash: mp.uhash
 			},
@@ -1405,13 +1406,18 @@ $("#sessDestroy").click(function () {
 
 $("#mapReset").click(function () {
 	$.ajax({
-		url: controller + "/resetsession",
-		dataType: "html",
-		type: "POST",
-		success: function () {
+		url      : controller + "/resetsession",
+		dataType : "script",
+		type     : "POST",
+		success  : function () {
 			a_objects.removeAll();
 			e_objects.removeAll();
 			$("#mapSave, #ehashID, #SContainer").css('display', "block");
+			// ({id:"void", maptype:"yandex#map", c:[40.56577018, 64.55124603], zoom:11, uhash:"MTAyZjI1OTAxNTg3", ehash:"MTAyZjI1OTAxNTg3", indb:1})
+			// usermap = []; mp = { ehash:'NGQ2YjQwZmFhYzgx', uhash: 'M2ViZWZiNDEyOTRl', indb: 0 }
+			map.setZoom(mp.zoom);
+			map.setType(mp.maptype);
+			$("#mapName").val(mp.ehash);
 		},
 		error: function (data, stat, err) {
 			console.log([ data, stat, err ]);

@@ -33,8 +33,8 @@
 							<ul class="dropdown-menu">
 								<li><a href="#" class="myMaps">Мои карты</a></li>
 								<li class="divider"></li>
-								<li class="logIn"><a href="https://loginza.ru/api/widget?token_url=http://freehand.korzhevdp.com/freehand/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li>
-								<li class="logOut"><a href="http://freehand.korzhevdp.com/freehand/logout">Выйти</a></li>
+								<li class="logIn"><a href="https://loginza.ru/api/widget?token_url=<?=$this->config->item('base_url');?>login/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li>
+								<li class="logOut"><a href="<?=$this->config->item('base_url');?>login/logout">Выйти</a></li>
 							</ul>
 						</li>
 					</ul>

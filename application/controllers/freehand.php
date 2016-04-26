@@ -23,7 +23,7 @@ class Freehand extends CI_Controller {
 		$this->map($hash);
 	}
 
-	function map($hash = "") {
+	public function map($hash = "") {
 		$data = $this->session->userdata('map');
 		$act = array(
 			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',
@@ -43,93 +43,6 @@ class Freehand extends CI_Controller {
 			'links_heap'	=> ''
 		);
 		$this->load->view('freehand/freehand_map', $act);
-
-	}
-
-	private function setExistingUser($data) {
-		$found  = 0;
-		$file   = "shadow";
-		$passwd = file($file);
-		$this->session->set_userdata('uid1', md5(strrev($data->identity)));
-		$this->session->set_userdata('suid', md5($name));
-		$this->session->set_userdata('name', $name);
-		foreach ($passwd as $user) {
-			$data = explode(",", $user);
-			if ($data[0] == $this->session->userdata('uid1')) {
-				$found++;
-			}
-			if ($this->session->userdata('uidx') == $data[3]) {
-				$this->session->set_userdata('supx', $data[1]);
-			}
-		}
-		return $found;
-	}
-
-	private function setNewSession($data) {
-		$name  = $data->name->first_name." ".$data->name->last_name;
-		$fname = $data->name->full_name;
-		$sessionData = array(
-			'name'  => (strlen($name)) ? $name : $fname,
-			'photo' => ((isset($data->photo)) ? '<img src="'.$data->photo.'" style="width:16px;height:16px;border:none" alt="">' : ""),
-			'uid1'  => md5(strrev($data->identity)),
-			'suid'  => md5($sessionData['name']),
-			'iudx'  => substr(strrev($this->session->userdata('uid1')), 0, 10)
-		);
-		$this->setSessionData($sessionData);
-		return $this->checkUserList($sessionData['uid1']);
-	}
-
-	private function checkUserList($uid) {
-		$found = 0;
-		$file  = "shadow";
-		$passwd = file($file);
-		foreach ($passwd as $user) {
-			$data = explode(",", $user);
-			if ($data[0] == $uid) {
-				$this->session->set_userdata('supx', $data[1]);
-				$found++;
-			}
-		}
-		return $found;
-	}
-
-	private function setSessionData($data) {
-		$this->session->set_userdata('supx' , 0);
-		$this->session->set_userdata('photo', $data['photo']);
-		$this->session->set_userdata('uid1' , $data['uid1']);
-		$this->session->set_userdata('uidx' , $data['uidx']);
-		$this->session->set_userdata('suid' , $data['suid']);
-		$this->session->set_userdata('name' , $data['name']);
-	}
-
-	public function logindata() {
-		if (!$this->input->post('token')) {
-			$this->load->helper('url');
-			redirect("freehand");
-		}
-		$link = "http://loginza.ru/api/authinfo?token=".$this->input->post('token')."&id=75203&sig=".md5($this->input->post('token').'1834adfb2b5f49092e0121ca841ec113');
-		$file = "shadow";
-		$data = json_decode(file_get_contents($link));
-		if (isset($data->identity)) {
-			$found = 0;
-			if (!$this->session->userdata('uid1')) {
-				$found += $this->setNewSession($data);
-			} 
-			if ($this->session->userdata('uid1')) {
-				$found += $this->setExistingUser($data);
-			}
-			if (!$found) {
-				$string = array($this->session->userdata('uid1'), $this->session->userdata('supx'), $this->session->userdata('name'), $this->session->userdata('uidx'));
-				$open   = fopen($file, "a");
-				fputs($open, implode($string, ",")."\n");
-				fclose($open);
-			}
-			$this->load->helper('url');
-			redirect("freehand");
-			return true;
-		}
-		print 'Логин не удался. Вернитесь по ссылке и попробуйте ещё раз<br><br><a href="http://freehand.korzhevdp.com">Вернуться на http://freehand.korzhevdp.com</a>';
-		//header("Location: http://luft.korzhevdp.com")
 	}
 
 	public function getuserdata() {
@@ -204,27 +117,17 @@ class Freehand extends CI_Controller {
 		print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
 	}
 
-	public function logout() {
-		$this->session->unset_userdata('uid1');
-		$this->session->unset_userdata('uidx');
-		$this->session->unset_userdata('supx');
-		$this->session->unset_userdata('photo');
-		$this->load->helper("url");
-		redirect("freehand");
-	}
-
 	###### AJAX-СЕКЦИЯ
 	function save() {
 		$counter = $this->session->userdata('gcounter');
 		$this->session->set_userdata('gcounter', ++$counter);
 		$data = $this->session->userdata('objects');
-		//$attr = str_replace("-","#",$attr);
 		$geometry = $this->input->post('geometry');
 		if ($this->input->post('type') == 1) {
 			$geometry = implode($geometry, ",");
 		}
 		if ($this->input->post('type') == 4) {
-			$geometry = implode($geometry[0],",").",".$geometry[1];
+			$geometry = implode($geometry[0], ",").",".$geometry[1];
 		}
 		$data[$this->input->post('id')] = array(
 			"geometry"	=> $geometry,
@@ -236,11 +139,6 @@ class Freehand extends CI_Controller {
 			"name"		=> $this->input->post('name')
 		);
 		$this->session->set_userdata("objects", $data);
-		// тесты обработки
-		//print implode(array($id,$type,$geometry,$attr,$desc,$address,$name),"\n");
-		//print "Создан объект ".$id." применён класс ".$attr." в координатах: ".implode(explode(",", $geometry),"<br>"); 
-		//print_r($this->session->userdata("objects"));
-		//print sizeof($this->session->userdata("objects"));
 	}
 	
 	private function mapInit() {
@@ -261,26 +159,21 @@ class Freehand extends CI_Controller {
 		);
 		$this->session->set_userdata('map', $data);
 		$this->session->set_userdata('objects', array());
-		//print_r($this->session->userdata('map'));
 	}
 
-	function savemap() {
+	public function savemap() {
 		$data = $this->session->userdata('map');
 		$data['maptype'] = $this->input->post('maptype');
 		$data['center']  = $this->input->post('center');
 		$data['zoom']    = $this->input->post('zoom');
 		$this->session->set_userdata("map", $data);
-
-		//print "Создан объект ".$id." применён класс ".$attr." в координатах: ".implode(explode(",",$geometry),"<br>"); 
-		//print "Данные карты: заполнено ".sizeof($data)." полей";
-		//print_r($this->session->userdata("map"));
 	}
 
-	function resetsession() {
+	public function resetsession() {
 		$this->mapInit();
 		$this->session->set_userdata('objects',array());
 		$data = $this->session->userdata("map");
-		print "usermap = []; mp = { ehash:'".$data['eid']."', uhash: '".$data['id']."', indb: 0 }";
+		print 'usermap = []; mp = { id: "'.$data['eid'].'", maptype:"yandex#map", c: ['.$this->config->item('map_center').'], zoom: '.$this->config->item('map_zoom').', ehash:"'.$data['eid'].'", uhash: "'.$data['id'].'", indb: 0 }';
 	}
 
 	public function savedb() {
@@ -304,8 +197,6 @@ class Freehand extends CI_Controller {
 		if (!$map['indb']) {
 			$map = $this->insertNotInDBUserMap($map);
 		}
-
-
 		$this->session->set_userdata('map', $map);
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
 		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
@@ -416,24 +307,6 @@ class Freehand extends CI_Controller {
 		return $map;
 	}
 
-	private function createframe($hash = "YzkxNzVjYTI0MGZk") {
-		$objects = $this->getMapData($hash);
-		$output  = array();
-		$result  = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$row  = preg_replace("/'/", '"', $row);
-				$prop = "{address: '".$row->addr."', description: '".$row->desc."', name: '".$row->name."', hasHint: 1, hintContent: '".$row->name." ".$row->desc."', link: '".$row->link."' }";
-				$opts = 'ymaps.option.presetStorage.get(\''.$row->attr.'\')';
-				$constant = $prop.", ".$opts." );\nms.add(object);";
-				array_push($output, $this->returnScriptLineByType($row, $row->type).$constant);
-			}
-		}
-		$objects['mapobjects'] = implode($output, "\n");
-		$this->load->helper("file");
-		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
-	}
-
 	private function getMapData($hash) {
 		$result = $this->db->query("SELECT 
 		`usermaps`.center_lon as `maplon`,
@@ -494,7 +367,7 @@ class Freehand extends CI_Controller {
 		return $types[$type];
 	}
 
-	public function getUserMap($hash = "NmIzZjczYWRlOTg5") {
+	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
 		$result = $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -534,93 +407,17 @@ class Freehand extends CI_Controller {
 		return array("error: 'Содержимого для карты с таким идентификатором не найдено.'");
 	}
 
-	public function loadscript($hash = "YzkxNzVjYTI0MGZk") {
-		$objects = $this->getMapData($hash);
-		if (!$objects) {
-			print 'Карта не была обработана и не может быть выдана в виде HTML<br><br>
-			Вернитесь в <a href="/freehand">РЕДАКТОР КАРТ</a>, выберите в меню <strong>Карта</strong> -> <strong>Обработать</strong> и попробуйте ещё раз';
-			return false;
-		}
-		$output = array();
-		$result = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result_array() as $row) {
-				$row = preg_replace("/'/", '"', $row);
-				$constant = "{address: '".$row['address']."', description: '".$row['description']."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attributes']."'));ms.add(object);";
-				array_push($output, $this->returnScriptLineByType($row, $row['type']).$constant);
-			}
-		}
-		$this->writeIncrementedMapCounter();
-		$objects['mapobjects'] = implode($output, "\n");
-		$this->load->helper('download');
-		force_download("Minigis.NET - ".$objects['hash_a'].".html", $this->load->view('freehand/script', $objects, true)); 
-	}
-
-	public function loadframe($hash = "NWY2MjVlMzAwOWMz") {
-		$this->writeIncrementedMapCounter();
-		$this->load->helper("file");
-		print read_file('freehandcache/'.$hash);
-	}
-
-	public function loadmap() {
-		$hash = $this->input->post('name');
-		$result = $this->db->query("SELECT 
-		CONCAT_WS(',', `usermaps`.center_lon, `usermaps`.center_lat) AS center,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.zoom,
-		`usermaps`.maptype,
-		`usermaps`.name,
-		`usermaps`.author
-		FROM
-		`usermaps`
-		WHERE
-		`usermaps`.`hash_a` = ? 
-		OR `usermaps`.`hash_e` = ?", array( $hash, $hash ));
-		if ($result->num_rows()) {
-			$row = $result->row();
-			if ($row->hash_e == $hash) {
-				$mapid = $row->hash_a;
-				$ehash = $row->hash_e;
-				$uhash = $row->hash_a;
-			}
-			if ($row->hash_a == $hash) {
-				$mapid = "void";
-				$ehash = $row->hash_a;
-				$uhash = $row->hash_a;
-			}
-			$data = array(
-				"id"		=> $mapid,
-				"eid"		=> $ehash,
-				"maptype"	=> $row->maptype,
-				"center"	=> $row->center,
-				"zoom"		=> $row->zoom,
-				"indb"		=> 1,
-				"author"	=> $row->author
-			);
-			$this->session->set_userdata('map', $data);
-			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
-			print $mapparam."usermap = { ".implode($this->getUserMap($uhash), ",\n")."\n}";
-			return true;
-		}
-		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
-	}
-
 	public function deleteobject() {
 		$node = $this->input->post("ttl");
 		$objects = $this->session->userdata('objects');
-		//print $objects[$node]['desc']."\n";
 		unset($objects[$node]);
 		$this->session->set_userdata('objects', $objects);
-		//print_r($this->session->userdata("objects"));
-		//print sizeof($this->session->userdata("objects"));
 	}
 
 	public function getsession() {
 		$data = $this->session->userdata('map');
 		if ($data['id'] == 'void') {
 			$this->mapInit();
-			//$data = $this->session->userdata('map');
 			print "usermap = []";
 			return false;
 		}
@@ -632,30 +429,29 @@ class Freehand extends CI_Controller {
 		}
 		$center = $data['center'];
 		print  "mp = { id: '".$data['id']."', maptype: '".$data['maptype']."', c0: ".$center[0].", c1: ".$center[1].", zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
-		//print_r($this->session->userdata("objects"));
 	}
 
-	private function getTransferLine($line, $src, $format) {
+	private function getTransferLine($line, $src, $format) { #!
 		$coords = explode(",", $src['coord']);
 		if (sizeof($coords) < 3) {
 			$coords = array(0, 0, 0, 0);
 		}
 		$adds  = array(
-			'plainjs' => array(
-				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['address']."', d: '".$src['description']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
-				'opts'  => "&nbsp;&nbsp;&nbsp;&nbsp;ymaps.option.presetStorage.get('".$src['attributes']."')<br>"
-			),
 			'plainobject' => array(
 				'props' => '{ b: "'.$src['address'].'", d: "'.$src['description'].'", n: "'.$src['name'].'", l: \''.$src['link'].'\' },',
 				'opts'  => '{ attr: "'.$src['attributes'].'" }'
+			),
+			'plainjs' => array(
+				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['address']."', d: '".$src['description']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
+				'opts'  => "&nbsp;&nbsp;&nbsp;&nbsp;ymaps.option.presetStorage.get('".$src['attributes']."')<br>"
 			)
 		);
 		$lines  = array(
 			'plainobject' => array(
-				1 => $line.': [{ type: "Point", coord: ['.$src['coord'].'] },'.$adds[$format]['props'].$adds[$format]['opts']."]",
-				2 => $line.': [{ type: "LineString", coord: "'.$src['coord'].'" },'.$adds[$format]['props'].$adds[$format]['opts']."]",
-				3 => $line.': [{ type: "Polygon", coord: "'.$src['coord'].'" },'.$adds[$format]['props'].$adds[$format]['opts']."]",
-				4 => $line.': [{ type: "Circle", coord: ['.$coords[0].', '.$coords[1].', '.$coords[2].'] },'.$adds[$format]['props'].$adds[$format]['opts']."]"
+				1 => $line.': [{ type: "Point", coord: ['.$src['coord'].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				2 => $line.': [{ type: "LineString", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				3 => $line.': [{ type: "Polygon", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
+				4 => $line.': [{ type: "Circle", coord: ['.$coords[0].', '.$coords[1].', '.$coords[2].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]"
 			),
 			'plainjs' => array(
 				1 => $line.': new ymaps.Placemark(<br>&nbsp;&nbsp;&nbsp;&nbsp;{type: "Point", coordinates: ['.$src['coord'].']},'.$adds[$format]['props']. $adds[$format]['opts']." )",
@@ -667,26 +463,6 @@ class Freehand extends CI_Controller {
 		return $lines[$format][$src['type']];
 	}
 
-	public function transfer() {
-		$format  = ($this->input->post("format")) ? $this->input->post("format") : "plainobject";
-		$objects = $this->getMapData($this->input->post("hash"));
-		if (!$objects) {
-			print "Сопоставленная карта не обнаружена";
-			return false;
-		}
-		$result = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			$output = array();
-			foreach ($result->result_array() as $row) {
-				$row = preg_replace("/'/", '"', $row);
-				array_push($output, $this->getTransferLine(sizeof($output), $row, $format));
-			}
-			$objects['mapobjects'] = implode($output, ",\n<br>");
-			print $this->load->view('freehand/transfer', $objects, true);
-			return true;
-		}
-		print "No Objects Found";
-	}
 }
 
 /* End of file freehand.php */
