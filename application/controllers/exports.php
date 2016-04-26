@@ -242,6 +242,20 @@ class Exports extends CI_Controller {
 		ORDER BY userobjects.timestamp", array($hash));
 	}
 
+	private function returnScriptLineByType($row, $type) {
+		$coords = explode(",", $row['coord']);
+		if (sizeof($coords) !== 3) {
+			$coords = array(0, 0, 0);
+		}
+		$types = array(
+			1 => 'object = new ymaps.Placemark({type: "Point", coordinates: ['.$row['coord'].']}, ',
+			2 => 'object = new ymaps.Polyline(new ymaps.geometry.LineString.fromEncodedCoordinates("'.$row['coord'].'"), ',
+			3 => 'object = new ymaps.Polygon(new ymaps.geometry.Polygon.fromEncodedCoordinates("'.$row['coord'].'"), ',
+			4 => 'object = new ymaps.Circle(new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'],'.$coords[2].'), '
+		);
+		return $types[$type];
+	}
+
 }
 
 /* End of file exports.php */
