@@ -2,113 +2,6 @@
 class Exports extends CI_Controller {
 	function __construct() {
 		parent::__construct();
-		if (!$this->session->userdata('common_user')) {
-			$this->session->set_userdata('common_user', md5(rand(0,9999).'zy'.$this->input->ip_address()));
-		}
-		if (!$this->session->userdata('objects')) {
-			$this->session->set_userdata('objects', array());
-		}
-		if (!$this->session->userdata('lang')) {
-			$this->session->set_userdata('lang', 'en');
-		}
-		if (!$this->session->userdata('map')) {
-			$this->mapInit();
-		}
-		if (!$this->session->userdata('gcounter')) {
-			$this->session->set_userdata('gcounter', 1);
-		}
-	}
-
-
-
-	public function loadscript($hash = "YzkxNzVjYTI0MGZk") {
-		$objects = $this->getMapData($hash);
-		if (!$objects) {
-			print 'Карта не была обработана и не может быть выдана в виде HTML<br><br>
-			Вернитесь в <a href="/freehand">РЕДАКТОР КАРТ</a>, выберите в меню <strong>Карта</strong> -> <strong>Обработать</strong> и попробуйте ещё раз';
-			return false;
-		}
-		$output = array();
-		$result = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result_array() as $row) {
-				$row = preg_replace("/'/", '"', $row);
-				$constant = "{address: '".$row['address']."', description: '".$row['description']."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attributes']."'));ms.add(object);";
-				array_push($output, $this->returnScriptLineByType($row, $row['type']).$constant);
-			}
-		}
-		$this->writeIncrementedMapCounter();
-		$objects['mapobjects'] = implode($output, "\n");
-		$this->load->helper('download');
-		force_download("Minigis.NET - ".$objects['hash_a'].".html", $this->load->view('freehand/script', $objects, true)); 
-	}
-
-	public function loadframe($hash = "NWY2MjVlMzAwOWMz") {
-		$this->writeIncrementedMapCounter();
-		$this->load->helper("file");
-		print read_file('freehandcache/'.$hash);
-	}
-
-	public function loadmap() {
-		$hash = $this->input->post('name');
-		$result = $this->db->query("SELECT 
-		CONCAT_WS(',', `usermaps`.center_lon, `usermaps`.center_lat) AS center,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.zoom,
-		`usermaps`.maptype,
-		`usermaps`.name,
-		`usermaps`.author
-		FROM
-		`usermaps`
-		WHERE
-		`usermaps`.`hash_a` = ? 
-		OR `usermaps`.`hash_e` = ?", array( $hash, $hash ));
-		if ($result->num_rows()) {
-			$row = $result->row();
-			if ($row->hash_e == $hash) {
-				$mapid = $row->hash_a;
-				$ehash = $row->hash_e;
-				$uhash = $row->hash_a;
-			}
-			if ($row->hash_a == $hash) {
-				$mapid = "void";
-				$ehash = $row->hash_a;
-				$uhash = $row->hash_a;
-			}
-			$data = array(
-				"id"		=> $mapid,
-				"eid"		=> $ehash,
-				"maptype"	=> $row->maptype,
-				"center"	=> $row->center,
-				"zoom"		=> $row->zoom,
-				"indb"		=> 1,
-				"author"	=> $row->author
-			);
-			$this->session->set_userdata('map', $data);
-			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
-			print $mapparam."usermap = { ".implode($this->getUserMap($uhash), ",\n")."\n}";
-			return true;
-		}
-		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
-	}
-
-	public function createframe($hash = "YzkxNzVjYTI0MGZk") { #!
-		$objects = $this->getMapData($hash);
-		$output  = array();
-		$result  = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$row  = preg_replace("/'/", '"', $row);
-				$prop = "{address: '".$row->addr."', description: '".$row->desc."', name: '".$row->name."', hasHint: 1, hintContent: '".$row->name." ".$row->desc."', link: '".$row->link."' }";
-				$opts = 'ymaps.option.presetStorage.get(\''.$row->attr.'\')';
-				$constant = $prop.", ".$opts." );\nms.add(object);";
-				array_push($output, $this->returnScriptLineByType($row, $row->type).$constant);
-			}
-		}
-		$objects['mapobjects'] = implode($output, "\n");
-		$this->load->helper("file");
-		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
 	}
 
 	private function getTransferLine($line, $src, $format) {
@@ -141,27 +34,6 @@ class Exports extends CI_Controller {
 			)
 		);
 		return $lines[$format][$src['type']];
-	}
-
-	public function transfer() {
-		$format  = ($this->input->post("format")) ? $this->input->post("format") : "plainobject";
-		$objects = $this->getMapData($this->input->post("hash"));
-		if (!$objects) {
-			print "Сопоставленная карта не обнаружена";
-			return false;
-		}
-		$result = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			$output = array();
-			foreach ($result->result_array() as $row) {
-				$row = preg_replace("/'/", '"', $row);
-				array_push($output, $this->getTransferLine(sizeof($output), $row, $format));
-			}
-			$objects['mapobjects'] = implode($output, ",\n<br>");
-			print $this->load->view('freehand/transfer', $objects, true);
-			return true;
-		}
-		print "No Objects Found";
 	}
 
 	private function getTransferLine($line, $src, $format) { #!
@@ -254,6 +126,73 @@ class Exports extends CI_Controller {
 			4 => 'object = new ymaps.Circle(new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'],'.$coords[2].'), '
 		);
 		return $types[$type];
+	}
+
+	public function loadscript($hash = "YzkxNzVjYTI0MGZk") {
+		$objects = $this->getMapData($hash);
+		if (!$objects) {
+			print 'Карта не была обработана и не может быть выдана в виде HTML<br><br>
+			Вернитесь в <a href="/freehand">РЕДАКТОР КАРТ</a>, выберите в меню <strong>Карта</strong> -> <strong>Обработать</strong> и попробуйте ещё раз';
+			return false;
+		}
+		$output = array();
+		$result = $this->getMapObjectsList($objects['hash_a']);
+		if ($result->num_rows()) {
+			foreach ($result->result_array() as $row) {
+				$row = preg_replace("/'/", '"', $row);
+				$constant = "{address: '".$row['address']."', description: '".$row['description']."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attributes']."'));ms.add(object);";
+				array_push($output, $this->returnScriptLineByType($row, $row['type']).$constant);
+			}
+		}
+		$this->writeIncrementedMapCounter();
+		$objects['mapobjects'] = implode($output, "\n");
+		$this->load->helper('download');
+		force_download("Minigis.NET - ".$objects['hash_a'].".html", $this->load->view('freehand/script', $objects, true)); 
+	}
+
+	public function loadframe($hash = "NWY2MjVlMzAwOWMz") {
+		$this->writeIncrementedMapCounter();
+		$this->load->helper("file");
+		print read_file('freehandcache/'.$hash);
+	}
+
+	public function createframe($hash = "YzkxNzVjYTI0MGZk") { #!
+		$objects = $this->getMapData($hash);
+		$output  = array();
+		$result  = $this->getMapObjectsList($objects['hash_a']);
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$row  = preg_replace("/'/", '"', $row);
+				$prop = "{address: '".$row->addr."', description: '".$row->desc."', name: '".$row->name."', hasHint: 1, hintContent: '".$row->name." ".$row->desc."', link: '".$row->link."' }";
+				$opts = 'ymaps.option.presetStorage.get(\''.$row->attr.'\')';
+				$constant = $prop.", ".$opts." );\nms.add(object);";
+				array_push($output, $this->returnScriptLineByType($row, $row->type).$constant);
+			}
+		}
+		$objects['mapobjects'] = implode($output, "\n");
+		$this->load->helper("file");
+		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
+	}
+
+	public function transfer() {
+		$format  = ($this->input->post("format")) ? $this->input->post("format") : "plainobject";
+		$objects = $this->getMapData($this->input->post("hash"));
+		if (!$objects) {
+			print "Сопоставленная карта не обнаружена";
+			return false;
+		}
+		$result = $this->getMapObjectsList($objects['hash_a']);
+		if ($result->num_rows()) {
+			$output = array();
+			foreach ($result->result_array() as $row) {
+				$row = preg_replace("/'/", '"', $row);
+				array_push($output, $this->getTransferLine(sizeof($output), $row, $format));
+			}
+			$objects['mapobjects'] = implode($output, ",\n<br>");
+			print $this->load->view('freehand/transfer', $objects, true);
+			return true;
+		}
+		print "No Objects Found";
 	}
 
 }

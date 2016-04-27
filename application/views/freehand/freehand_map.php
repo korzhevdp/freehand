@@ -225,7 +225,7 @@
 	$(".myMaps").click(function(e){
 		e.preventDefault();
 		$.ajax({
-			url: "/freehand/getmaps",
+			url: "/mapmanager/getmaps",
 			type: "GET",
 			dataType: "html",
 			success: function(data){
@@ -244,7 +244,7 @@
 		$(".userMapNameSaver").unbind().click(function(){
 			ref = $(this).attr("ref");
 			$.ajax({
-				url: "/freehand/savemapname",
+				url: "/mapmanager/savemapname",
 				type: "POST",
 				data : {
 					uhash : ref,

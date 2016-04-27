@@ -2,21 +2,6 @@
 class Login extends CI_Controller {
 	function __construct() {
 		parent::__construct();
-		if (!$this->session->userdata('common_user')) {
-			$this->session->set_userdata('common_user', md5(rand(0,9999).'zy'.$this->input->ip_address()));
-		}
-		if (!$this->session->userdata('objects')) {
-			$this->session->set_userdata('objects', array());
-		}
-		if (!$this->session->userdata('lang')) {
-			$this->session->set_userdata('lang', 'en');
-		}
-		if (!$this->session->userdata('map')) {
-			$this->mapInit();
-		}
-		if (!$this->session->userdata('gcounter')) {
-			$this->session->set_userdata('gcounter', 1);
-		}
 	}
 
 	private function setExistingUser($data) {
@@ -78,7 +63,7 @@ class Login extends CI_Controller {
 	public function logindata() {
 		if (!$this->input->post('token')) {
 			$this->load->helper('url');
-			redirect("freehand");
+			redirect("map");
 		}
 		$link = "http://loginza.ru/api/authinfo?token=".$this->input->post('token')."&id=75203&sig=".md5($this->input->post('token').'1834adfb2b5f49092e0121ca841ec113');
 		$file = "shadow";
@@ -103,7 +88,7 @@ class Login extends CI_Controller {
 				fclose($open);
 			}
 			$this->load->helper('url');
-			redirect("freehand");
+			redirect("map");
 			return true;
 		}
 		print 'Логин не удался. Вернитесь по ссылке и попробуйте ещё раз<br><br><a href="'.base_url().'">Вернуться на '.base_url().'</a>';
@@ -115,7 +100,7 @@ class Login extends CI_Controller {
 		$this->session->unset_userdata('supx');
 		$this->session->unset_userdata('photo');
 		$this->load->helper("url");
-		redirect("freehand");
+		redirect("map");
 	}
 
 	public function index() {
