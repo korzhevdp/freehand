@@ -32,7 +32,7 @@ class Mapmanager extends CI_Controller {
 			print implode($output, "\n");
 			return true;
 		}
-		print "<tr><td colspan=4>Созданных вами карт не найдено</td></tr>";
+		print "<tr><td colspan=4>РЎРѕР·РґР°РЅРЅС‹С… РІР°РјРё РєР°СЂС‚ РЅРµ РЅР°Р№РґРµРЅРѕ</td></tr>";
 	}
 
 	public function savemaps() {

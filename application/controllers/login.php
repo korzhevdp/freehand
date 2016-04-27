@@ -91,7 +91,7 @@ class Login extends CI_Controller {
 			redirect("map");
 			return true;
 		}
-		print 'Логин не удался. Вернитесь по ссылке и попробуйте ещё раз<br><br><a href="'.base_url().'">Вернуться на '.base_url().'</a>';
+		print 'Р›РѕРіРёРЅ РЅРµ СѓРґР°Р»СЃСЏ. Р’РµСЂРЅРёС‚РµСЃСЊ РїРѕ СЃСЃС‹Р»РєРµ Рё РїРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р·<br><br><a href="'.base_url().'">Р’РµСЂРЅСѓС‚СЊСЃСЏ РЅР° '.base_url().'</a>';
 	}
 
 	public function logout() {

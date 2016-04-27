@@ -2,6 +2,7 @@
 class Exports extends CI_Controller {
 	function __construct() {
 		parent::__construct();
+		$this->load->model('mapmodel');
 	}
 
 	private function getTransferLine($line, $src, $format) {
@@ -44,67 +45,15 @@ class Exports extends CI_Controller {
 		fclose($open);
 	}
 
-	private function getMapData($hash) {
-		$result = $this->db->query("SELECT 
-		`usermaps`.center_lon as `maplon`,
-		`usermaps`.center_lat as `maplat`,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.zoom as `mapzoom`,
-		`usermaps`.maptype,
-		`usermaps`.name
-		FROM
-		`usermaps`
-		WHERE
-		`usermaps`.`hash_a` = ?
-		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
-		if ($result->num_rows()) {
-			$objects = $result->row_array();
-			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
-			return $objects;
-		}
-		return false;
-	}
-
-	private function getMapObjectsList($hash) {
-		return $this->db->query("SELECT 
-		userobjects.name,
-		userobjects.description,
-		userobjects.coord,
-		userobjects.attributes,
-		userobjects.address,
-		userobjects.`type`,
-		userobjects.`link`
-		FROM
-		userobjects
-		WHERE
-		`userobjects`.`map_id` = ?
-		ORDER BY userobjects.timestamp", array($hash));
-	}
-
-	private function returnScriptLineByType($row, $type) {
-		$coords = explode(",", $row['coord']);
-		if (sizeof($coords) !== 3) {
-			$coords = array(0, 0, 0);
-		}
-		$types = array(
-			1 => 'object = new ymaps.Placemark({type: "Point", coordinates: ['.$row['coord'].']}, ',
-			2 => 'object = new ymaps.Polyline(new ymaps.geometry.LineString.fromEncodedCoordinates("'.$row['coord'].'"), ',
-			3 => 'object = new ymaps.Polygon(new ymaps.geometry.Polygon.fromEncodedCoordinates("'.$row['coord'].'"), ',
-			4 => 'object = new ymaps.Circle(new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'],'.$coords[2].'), '
-		);
-		return $types[$type];
-	}
-
 	public function loadscript($hash = "YzkxNzVjYTI0MGZk") {
-		$objects = $this->getMapData($hash);
+		$objects = $this->mapmodel->getMapData($hash);
 		if (!$objects) {
-			print 'Карта не была обработана и не может быть выдана в виде HTML<br><br>
-			Вернитесь в <a href="/freehand">РЕДАКТОР КАРТ</a>, выберите в меню <strong>Карта</strong> -> <strong>Обработать</strong> и попробуйте ещё раз';
+			print 'РљР°СЂС‚Р° РЅРµ Р±С‹Р»Р° РѕР±СЂР°Р±РѕС‚Р°РЅР° Рё РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІС‹РґР°РЅР° РІ РІРёРґРµ HTML<br><br>
+			Р’РµСЂРЅРёС‚РµСЃСЊ РІ <a href="/freehand">Р Р•Р”РђРљРўРћР  РљРђР Рў</a>, РІС‹Р±РµСЂРёС‚Рµ РІ РјРµРЅСЋ <strong>РљР°СЂС‚Р°</strong> -> <strong>РћР±СЂР°Р±РѕС‚Р°С‚СЊ</strong> Рё РїРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р·';
 			return false;
 		}
 		$output = array();
-		$result = $this->getMapObjectsList($objects['hash_a']);
+		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
@@ -124,32 +73,14 @@ class Exports extends CI_Controller {
 		print read_file('freehandcache/'.$hash);
 	}
 
-	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
-		$objects = $this->getMapData($hash);
-		$output  = array();
-		$result  = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$row  = preg_replace("/'/", '"', $row);
-				$prop = "{address: '".$row->addr."', description: '".$row->desc."', name: '".$row->name."', hasHint: 1, hintContent: '".$row->name." ".$row->desc."', link: '".$row->link."' }";
-				$opts = 'ymaps.option.presetStorage.get(\''.$row->attr.'\')';
-				$constant = $prop.", ".$opts." );\nms.add(object);";
-				array_push($output, $this->returnScriptLineByType($row, $row->type).$constant);
-			}
-		}
-		$objects['mapobjects'] = implode($output, "\n");
-		$this->load->helper("file");
-		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
-	}
-
 	public function transfer() {
 		$format  = ($this->input->post("format")) ? $this->input->post("format") : "plainobject";
-		$objects = $this->getMapData($this->input->post("hash"));
+		$objects = $this->mapmodel->getMapData($this->input->post("hash"));
 		if (!$objects) {
-			print "Сопоставленная карта не обнаружена";
+			print "РЎРѕРїРѕСЃС‚Р°РІР»РµРЅРЅР°СЏ РєР°СЂС‚Р° РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅР°";
 			return false;
 		}
-		$result = $this->getMapObjectsList($objects['hash_a']);
+		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
 			$output = array();
 			foreach ($result->result_array() as $row) {

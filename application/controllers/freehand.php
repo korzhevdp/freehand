@@ -2,6 +2,7 @@
 class Freehand extends CI_Controller {
 	function __construct() {
 		parent::__construct();
+		$this->load->model('mapmodel');
 		if (!$this->session->userdata('map')) {
 			$this->mapInit();
 		}
@@ -259,7 +260,7 @@ class Freehand extends CI_Controller {
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
 		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects);
-		$this->createframe($map['id']);
+		$this->mapmodel->createframe($map['id']);
 		$output = $this->getUserMap($map['id']);
 		print "usermap = { ".implode($output,",\n")." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";
 	}
@@ -312,6 +313,7 @@ class Freehand extends CI_Controller {
 		$center = $data['center'];
 		print  "mp = { id: '".$data['id']."', maptype: '".$data['maptype']."', c0: ".$center[0].", c1: ".$center[1].", zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
 	}
+
 
 }
 
