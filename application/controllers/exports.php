@@ -36,38 +36,6 @@ class Exports extends CI_Controller {
 		return $lines[$format][$src['type']];
 	}
 
-	private function getTransferLine($line, $src, $format) { #!
-		$coords = explode(",", $src['coord']);
-		if (sizeof($coords) < 3) {
-			$coords = array(0, 0, 0, 0);
-		}
-		$adds  = array(
-			'plainobject' => array(
-				'props' => '{ b: "'.$src['address'].'", d: "'.$src['description'].'", n: "'.$src['name'].'", l: \''.$src['link'].'\' },',
-				'opts'  => '{ attr: "'.$src['attributes'].'" }'
-			),
-			'plainjs' => array(
-				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['address']."', d: '".$src['description']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
-				'opts'  => "&nbsp;&nbsp;&nbsp;&nbsp;ymaps.option.presetStorage.get('".$src['attributes']."')<br>"
-			)
-		);
-		$lines  = array(
-			'plainobject' => array(
-				1 => $line.': [{ type: "Point", coord: ['.$src['coord'].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				2 => $line.': [{ type: "LineString", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				3 => $line.': [{ type: "Polygon", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				4 => $line.': [{ type: "Circle", coord: ['.$coords[0].', '.$coords[1].', '.$coords[2].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]"
-			),
-			'plainjs' => array(
-				1 => $line.': new ymaps.Placemark(<br>&nbsp;&nbsp;&nbsp;&nbsp;{type: "Point", coordinates: ['.$src['coord'].']},'.$adds[$format]['props']. $adds[$format]['opts']." )",
-				2 => $line.': new ymaps.Polyline(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
-				3 => $line.': new ymaps.Polygon(<br>&nbsp;&nbsp;&nbsp;&nbsp; new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
-				4 => $line.': new ymaps.Circle(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'], '.$coords[2].'), '.$adds[$format]['props'].$adds[$format]['opts']." )"
-			)
-		);
-		return $lines[$format][$src['type']];
-	}
-
 	private function writeIncrementedMapCounter() {
 		$file = "./mpct.txt";
 		$sum = implode(file($file), '');
@@ -156,7 +124,7 @@ class Exports extends CI_Controller {
 		print read_file('freehandcache/'.$hash);
 	}
 
-	public function createframe($hash = "YzkxNzVjYTI0MGZk") { #!
+	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$objects = $this->getMapData($hash);
 		$output  = array();
 		$result  = $this->getMapObjectsList($objects['hash_a']);
