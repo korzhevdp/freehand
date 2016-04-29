@@ -14,6 +14,7 @@ class Mapmanager extends CI_Controller {
 	}
 
 	public function getmaps() {
+		$author = ($this->session->userdata('uidx')) ? $this->session->userdata('uidx') : "m12121m";
 		$result = $this->db->query("SELECT 
 		`usermaps`.hash_a,
 		`usermaps`.hash_e,
@@ -22,7 +23,8 @@ class Mapmanager extends CI_Controller {
 		FROM
 		`usermaps`
 		WHERE `usermaps`.`author` = ?
-		ORDER BY usermaps.id DESC", array($this->session->userdata('uidx')));
+		OR `usermaps`.`public`
+		ORDER BY usermaps.id DESC", array($author));
 		if ($result->num_rows()) {
 			$output = array();
 			foreach ($result->result_array() as $row) {
@@ -74,6 +76,21 @@ class Mapmanager extends CI_Controller {
 			));
 		}
 		print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
+	}
+
+	public function listuserimages () {
+		$output    = array();
+		$login     = $this->session->userdata("name");
+		$directory = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
+		$data      = scandir($directory);
+		foreach($data as $val){
+			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
+				$name   = $val;
+				$string = '<option value="' . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . $val.'">'.$val.'</option>';
+				array_push($output, $string);
+			}
+		}
+		print '<select name="">'.implode($output, "\n").'</select>';
 	}
 }
 

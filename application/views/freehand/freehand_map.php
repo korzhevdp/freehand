@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>KORZHEVDP.COM - Minigis.NET: <?=$title;?></title>
+<title>Minigis.NET: <?=$title;?></title>
 <meta name="keywords" content="<?=$keywords;?>" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/jquery.js"></script>
@@ -9,22 +9,15 @@
 <script type="text/javascript" src="<?=$this->config->item('api');?>/bootstrap/js/bootstrap.min.js"></script>
 <link href="<?=$this->config->item('api');?>/bootstrap/css/bootstrap.css" rel="stylesheet" />
 <link href="<?=$this->config->item('api');?>/jqueryui/css/jqueryui.css" rel="stylesheet" />
-<link href="<?=$this->config->item('api');?>/css/freehand.css" rel="stylesheet" media="screen" type="text/css" />
+<link href="/css/freehand.css" rel="stylesheet" media="screen" type="text/css" />
 </head>
 <body>
 
 <!-- навигацыя -->
-	<meta name='loginza-verification' content='cbea36ce75daec14840f8731f7d25afe' />
-	<meta name="google-translate-customization" content="ada9cac7e9873c92-acda39305efb042f-g6b5fbe17d469b999-d"></meta>
+	<!-- <meta name='loginza-verification' content='26e443d51603b20876a5332acd31f007' /> -->
 	<div class="navbar">
 		<div class="navbar-inner">
-			<a class="brand" href="http://www.korzhevdp.com">KORZHEVDP.COM</a>
-			<ul class="nav">
-				<li <?=($_SERVER["REQUEST_URI"] == "/") ? 'class="active"' : "";?>><a class="btn-link" href="http://www.korzhevdp.com">Начало</a></li>
-				<li <?=($_SERVER["REQUEST_URI"] == "http://luft.korzhevdp.com/index.php") ? 'class="active"' : "";?>><a class="btn-link" href="http://luft.korzhevdp.com" title="Signum Temporis - Работы по исторической картографии">Исторические карты</a></li>
-				<li <?=($_SERVER["REQUEST_URI"] == "http://luft.korzhevdp.com/gallery") ? 'class="active"' : "";?>><a class="btn-link" href="http://luft.korzhevdp.com/gallery" title="Лишь небольшая часть">Галерея фотографий</a></li>
-				<li <?=($_SERVER["REQUEST_URI"] == "/workshop.php") ? 'class="active"' : "";?>><a class="btn-link" href="http://www.korzhevdp.com/workshop.php" title="Программки собственной разработки">Мастерская</a></li>
-			</ul>
+			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("base_url");?></a>
 			<ul class="nav pull-right">
 				<li>
 					<ul class="nav">
@@ -33,8 +26,9 @@
 							<ul class="dropdown-menu">
 								<li><a href="#" class="myMaps">Мои карты</a></li>
 								<li class="divider"></li>
-								<li class="logIn"><a href="https://loginza.ru/api/widget?token_url=<?=$this->config->item('base_url');?>login/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li>
-								<li class="logOut"><a href="<?=$this->config->item('base_url');?>login/logout">Выйти</a></li>
+								<li class="logIn" id="logIn"><a href="#">Войти как пользователь</a></li>
+								<!-- <li class="logIn"><a href="https://loginza.ru/api/widget?token_url=<?=$this->config->item('base_url');?>login/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li> -->
+								<li class="logOut" id="logOut"><a href="<?=$this->config->item('base_url');?>login/logout">Выйти</a></li>
 							</ul>
 						</li>
 					</ul>
@@ -64,6 +58,7 @@
 					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">JS Скрипт</a></li>
 					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME</a></li>
 					<li><a href="#" pr=5 title="Формирует таблицу аннотаций для встраивания">Аннотационная карта</a></li>
+					<li><a href="#" pr=6 title="Импортирует типизированные объекты">Импорт</a></li>
 				</ul>
 			</div>
 		</div>
@@ -112,7 +107,39 @@
 	</div>
 </div>
 
-<!-- <div class="well span6" style="height:400px;position:absolute; top:200px; right:5px;overflow:auto">Консоль<pre><div id="consoleContent"></div></pre></div> -->
+<div class="modal hide" id="loginM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Войти как пользователь</h3>
+	</div>
+	<div class="modal-body">
+	<div class="alert alert-info" id="logAlert">Введите имя пользователя и пароль. Если при проверке реквизитов пользователь не будет найден, вам будет предложено зарегистрироваться</div>
+	Пользователь: <input type="text" id="login"><br>
+	<div class="alert alert-info hide" id="regWelcome">Пользователь не найден. Вы можете зарегистрироваться, введя новые имя пользователя и пароль.<button type="button" class="btn btn-info btn-block" id="doNotReg">Спасибо, но я попробую ввести пароль ещё раз</button></div>
+	Пароль:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="password" id="password"><br>
+	<span class="hide" id="password2span">Пароль ещё раз: <input type="password" id="password2"></span>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-primary hide" id="tryRegIn">Зарегистрироваться</button>
+		<button type="button" class="btn btn-primary" id="tryLogIn">Войти</button>
+		<button type="button" class="btn" data-dismiss="modal">Закрыть</button>
+	</div>
+</div>
+
+<div class="modal hide" id="importM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Импорт объектов</h3>
+	</div>
+	<div class="modal-body" id="transferCode2">
+		<textarea name="importCode" id="importCode" rows="12" cols="80" style="width:518px; height:450px;"></textarea>
+	</div>
+	<div class="modal-footer">
+		<input type="checkbox" id="cRev"> Реверс координат
+		<button type="button" class="btn" data-dismiss="modal">Закрыть</button>
+		<button type="button" class="btn btn-primary" id="importBtn">Импорт</button>
+	</div>
+</div>
 
 <div class="well hide container-fluid" id="mapLinkContainer" style="height:28px;padding:5px;position:absolute;top:45%; left:30%; width:580px;">
 	<input type="text" name="mapLink" id="mapLink" value="" style="width:480px;" class="pull-left">
@@ -135,6 +162,69 @@
 	<!--
 
 	$(".modal").modal("hide");
+
+	$(".logIn").click(function () {
+		$("#loginM").modal("show");
+	});
+
+	$("#doNotReg").click(function(){
+		$("#password2span, #regWelcome, #tryRegIn, #logAlert").addClass("hide");
+		$("#tryLogIn").removeClass("hide");
+	});
+
+	$("#tryLogIn").click(function(){
+		$.ajax({
+			url          : "/locallogin/checkuser",
+			type         : "POST",
+			data         : {
+				login    : $("#login").val(),
+				password : $("#password").val(),
+			},
+			dataType     : 'script',
+			success: function () {
+				if (parseInt(logresult.status, 10) === 0) {
+					$("#password2span, #regWelcome, #tryRegIn").removeClass("hide");
+					$("#tryLogIn, #logAlert").addClass("hide");
+				}
+				if (parseInt(logresult.status, 10) === 1) {
+					$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');
+					$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
+					$("#tryLogIn, #logAlert, #logIn").addClass("hide");
+					$("#loginM").modal("hide");
+				}
+			},
+			error: function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	});
+
+
+	
+	$("#tryRegIn").click(function(){
+		$.ajax({
+			url           : "/locallogin/adduser",
+			type          : "POST",
+			data          : {
+				login     : $("#login").val(),
+				password  : $("#password").val(),
+				password2 : $("#password2").val()
+			},
+			dataType      : 'script',
+			success: function () {
+				if (regresult.status === 1) { 
+					$("#userP").html(regresult.login);
+					$("#loginM").modal("hide");
+				}
+				if (regresult.status === 0) { 
+					console.log(regresult.error);
+				}
+			},
+			error: function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	});
 
 	$(function() {
 		$("#SContainer").draggable({containment: "#YMapsID", scroll: false, handle: "#YMHead" });
@@ -268,7 +358,9 @@
 		$("#mapForm").submit();
 	});
 
+
 	$('#modal_pics').modal({ show: 0 });
+
 	$('#modal_pics').on('show', function () {
 		carousel_init();
 	});
@@ -285,7 +377,7 @@
 
 <!-- EOT API 2.0 -->
 <script src="//loginza.ru/js/widget.js" type="text/javascript"></script>
-<!-- <script type="text/javascript" src="<?=$this->config->item('api');?>/ckeditor/ckeditor.js"></script> -->
+<!-- latest version available at WWW.KORZHEVDP.COM -->
 <?=$footer;?>
 </body>
 </html>

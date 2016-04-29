@@ -99,6 +99,7 @@ class Login extends CI_Controller {
 		$this->session->unset_userdata('uidx');
 		$this->session->unset_userdata('supx');
 		$this->session->unset_userdata('photo');
+		$this->session->unset_userdata('objects');
 		$this->load->helper("url");
 		redirect("map");
 	}

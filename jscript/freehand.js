@@ -107,7 +107,7 @@ function list_circle_styles() {
 function genListItem(ttl, name, address, pic) {
 	return '<div class="btn-group">' +
 		'<button class="btn btn-mini mg-btn-list" ttl=' + ttl + '>' +
-		'<img src="' + api_url + '/images/' + pic + '" alt="">' + 'Название: ' + name + '<br>' +
+		'<img src="' + api_url + '/images/' + pic + '" alt="">Название: ' + name + '<br>' +
 		'Адрес: ' + address +
 		'</button>' +
 		'<button class="btn dropdown-toggle" data-toggle="dropdown" style="height:55px;">' +

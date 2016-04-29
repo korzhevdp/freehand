@@ -287,6 +287,29 @@ class Freehand extends CI_Controller {
 		);
 		$this->session->set_userdata("objects", $data);
 	}
+
+	public function synctosession() {
+		//$this->output->enable_profiler(TRUE);
+		$output = array();
+		$data = $this->input->post();
+		foreach ( $data as $key=>$val ) {
+			$output[$key] = array(
+				"geometry"	=>  $val['c'],
+				"type"		=>  $val['p'],
+				"attr"		=>  $val['a'],
+				"desc"		=> (strlen($val['d'])) ? $val['d'] : $val['n'],
+				"link"		=>  $val['l'],
+				"address"	=>  $val['b'],
+				"name"		=> (strlen($val['n'])) ? $val['n'] : $val['d']
+			);
+		}
+		$counter = $this->session->userdata('gcounter');
+		$this->session->set_userdata('gcounter', $counter + sizeof($output));
+		$session = $this->session->userdata('objects');
+		$session = array_merge($session, $output);
+		$this->session->set_userdata("objects", $session);
+		print_r($session);
+	}
 	
 	public function getuserdata() {
 		if ($this->session->userdata('uid1')) {
@@ -313,8 +336,6 @@ class Freehand extends CI_Controller {
 		$center = $data['center'];
 		print  "mp = { id: '".$data['id']."', maptype: '".$data['maptype']."', c0: ".$center[0].", c1: ".$center[1].", zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
 	}
-
-
 }
 
 /* End of file freehand.php */

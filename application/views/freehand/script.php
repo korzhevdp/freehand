@@ -37,6 +37,12 @@
 				zoom: <?=$mapzoom;?>,
 				type: '<?=$maptype;?>',
 				behaviors: ["scrollZoom", "drag", "dblClickZoom"]
+			},
+			{
+				maxZoom              : 19,
+				projection           : ymaps.projection.sphericalMercator,
+				suppressMapOpenBlock : true,
+				yandexMapAutoSwitch  : false
 			});
 			map.controls.add('mapTools');
 			for (a in userstyles){

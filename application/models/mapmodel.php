@@ -23,7 +23,7 @@ class Mapmodel extends CI_Model {
 		write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w');
 	}
 
-	private function returnScriptLineByType($row, $type) {
+	public function returnScriptLineByType($row, $type) {
 		$coords = explode(",", $row['coord']);
 		if (sizeof($coords) !== 3) {
 			$coords = array(0, 0, 0);

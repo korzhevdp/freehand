@@ -9,6 +9,6 @@
 		<center><input type="checkbox" class="userMapPublic" ref="<?=$hash_a;?>" name="<?=$hash_a;?>[]"<?=$public;?>></center>
 	</td>
 	<td>
-		<button class="userMapNameSaver btn" ref="<?=$hash_a;?>"><i class="icon-tag"></i></button>
+		<button class="userMapNameSaver btn" ref="<?=$hash_a;?>"><i class="icon-hdd"></i></button>
 	</td>
 </tr>
