@@ -17,7 +17,7 @@
 	<!-- <meta name='loginza-verification' content='26e443d51603b20876a5332acd31f007' /> -->
 	<div class="navbar">
 		<div class="navbar-inner">
-			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("base_url");?></a>
+			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
 			<ul class="nav pull-right">
 				<li>
 					<ul class="nav">
@@ -99,7 +99,7 @@
 <div class="modal hide" id="transferM">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Текст кода обмена</h3>
+		<h4>Текст кода обмена</h4>
 	</div>
 	<div class="modal-body" id="transferCode"></div>
 	<div class="modal-footer">
@@ -110,7 +110,7 @@
 <div class="modal hide" id="loginM">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Войти как пользователь</h3>
+		<h4>Войти как пользователь</h4>
 	</div>
 	<div class="modal-body">
 	<div class="alert alert-info" id="logAlert">Введите имя пользователя и пароль. Если при проверке реквизитов пользователь не будет найден, вам будет предложено зарегистрироваться</div>
@@ -129,7 +129,7 @@
 <div class="modal hide" id="importM">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Импорт объектов</h3>
+		<h4>Импорт объектов</h4>
 	</div>
 	<div class="modal-body" id="transferCode2">
 		<textarea name="importCode" id="importCode" rows="12" cols="80" style="width:518px; height:450px;"></textarea>
@@ -138,6 +138,19 @@
 		<input type="checkbox" id="cRev"> Реверс координат
 		<button type="button" class="btn" data-dismiss="modal">Закрыть</button>
 		<button type="button" class="btn btn-primary" id="importBtn">Импорт</button>
+	</div>
+</div>
+
+<div class="modal hide" id="imageM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Выбрать фотографии</h4>
+	</div>
+	<div class="modal-body">
+		<ul id="imageList"></ul>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-primary" id="submitSelection">Готово</button>
 	</div>
 </div>
 
@@ -157,226 +170,15 @@
 	<input type="hidden" name="gCounter"     id="gCounter"     value="<?=$gcounter;?>">
 	<input type="hidden" name="location_id"  id="location_id"  value="">
 </div>
-
-<script type="text/javascript">
-	<!--
-
-	$(".modal").modal("hide");
-
-	$(".logIn").click(function () {
-		$("#loginM").modal("show");
-	});
-
-	$("#doNotReg").click(function(){
-		$("#password2span, #regWelcome, #tryRegIn, #logAlert").addClass("hide");
-		$("#tryLogIn").removeClass("hide");
-	});
-
-	$("#tryLogIn").click(function(){
-		$.ajax({
-			url          : "/locallogin/checkuser",
-			type         : "POST",
-			data         : {
-				login    : $("#login").val(),
-				password : $("#password").val(),
-			},
-			dataType     : 'script',
-			success: function () {
-				if (parseInt(logresult.status, 10) === 0) {
-					$("#password2span, #regWelcome, #tryRegIn").removeClass("hide");
-					$("#tryLogIn, #logAlert").addClass("hide");
-				}
-				if (parseInt(logresult.status, 10) === 1) {
-					$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');
-					$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
-					$("#tryLogIn, #logAlert, #logIn").addClass("hide");
-					$("#loginM").modal("hide");
-				}
-			},
-			error: function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	});
-
-
-	
-	$("#tryRegIn").click(function(){
-		$.ajax({
-			url           : "/locallogin/adduser",
-			type          : "POST",
-			data          : {
-				login     : $("#login").val(),
-				password  : $("#password").val(),
-				password2 : $("#password2").val()
-			},
-			dataType      : 'script',
-			success: function () {
-				if (regresult.status === 1) { 
-					$("#userP").html(regresult.login);
-					$("#loginM").modal("hide");
-				}
-				if (regresult.status === 0) { 
-					console.log(regresult.error);
-				}
-			},
-			error: function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	});
-
-	$(function() {
-		$("#SContainer").draggable({containment: "#YMapsID", scroll: false, handle: "#YMHead" });
-	});
-	
-	$(function() {
-		$(".modal").draggable({ containment: "body", scroll: false, handle: ".modal-header" });
-	});
-
-	$(function(){
-		$('.mapName, #SContainer').delay(20000).animate({ opacity: 0.4 }, 2000, 'swing', function(){});
-	});
-
-	$('#SContainer').mouseleave(function(){
-		$(this).delay(30000).animate({opacity: 0.4}, 2000, 'swing', function(){});
-	});
-
-	$('#SContainer').mouseenter(function(){
-		$(this).dequeue().stop().animate({opacity: 1}, 200);
-	});
-
-	$('.map_name').mouseleave(function(){
-		$(this).delay(20000).animate({opacity: 0.2}, 2000, 'swing', function(){});
-	});
-
-	$('.map_name').mouseenter(function(){
-		$(this).dequeue().stop().animate({opacity: 1}, 100);
-	});
-
-	function get_user(){
-		$.ajax({
-			type: "POST",
-			url: "/freehand/getuserdata",
-			dataType: 'script',
-			success: function(data){
-				data = eval(data);
-				$("#userP").attr('title', data[2]);
-				$("#userP").html(data[0] + '&nbsp;&nbsp;' + data[1]);
-				if(data[0] == "Гость"){
-					$(".logIn").removeClass("hide");
-					$(".logOut").addClass("hide");
-				}else{
-					$(".logOut").removeClass("hide");
-					$(".logIn").addClass("hide");
-				}
-			},
-			error: function(data,stat,err){
-				alert([data,stat,err].join("\n"));
-			}
-		});
-	}
-
-	get_user();
-
-	$('#YMHead').dblclick(function() {
-		if($('#navigator').css('display') == 'block'){
-			$('#navigator, #navheader').css('display', 'none');
-			$('#SContainer').css('height', 27);
-		}else{
-			$('#navigator, #navheader').css('display', 'block');
-			$('#SContainer').css('height', 340);
-		}
-	});
-
-	$('#navup').unbind().click(function() {
-		$('#navigator, #navheader').css('display', 'none');
-		$(this).css('display', 'none');
-		$('#navdown').css('display', 'block');
-		$('#SContainer').css('height', 27);
-	});
-
-	$('#navdown').unbind().click(function() {
-		$('#navigator, #navheader').css('display', 'block');
-		$(this).css('display', 'none');
-		$('#navup').css('display', 'block');
-		$('#SContainer').css('height', 340);
-	});
-	
-	$("#pointfilter").keyup(function(){
-		if($("#pointfilter").val().length){
-			$(".mg-btn-list").each(function(){
-				var test = $(this).html().toString().toLowerCase().indexOf($("#pointfilter").val().toString().toLowerCase()) + 1;
-				(test) ? $(this).parent().css('display','block') : $(this).parent().css('display','none');
-			});
-		}
-	});
-	
-	$(".myMaps").click(function(e){
-		e.preventDefault();
-		$.ajax({
-			url: "/mapmanager/getmaps",
-			type: "GET",
-			dataType: "html",
-			success: function(data){
-				$("#myMapList").empty().append(data);
-				$("#myMapsM").modal("show");
-				renamerListen();
-			},
-			error: function(data,stat,err){
-				//$("#consoleContent").html([data,stat,err].join("<br>"));
-				alert([data,stat,err].join("\n"));
-			}
-		});
-	});
-
-	function renamerListen(){
-		$(".userMapNameSaver").unbind().click(function(){
-			ref = $(this).attr("ref");
-			$.ajax({
-				url: "/mapmanager/savemapname",
-				type: "POST",
-				data : {
-					uhash : ref,
-					name  : $(".userMapName[ref=" + ref + "]").val(),
-					pub   : ($(".userMapPublic[ref=" + ref + "]").prop("checked")) ? 1 : 0
-				},
-				dataType: "html",
-				success: function(data){
-					$(this).addClass("btn-success");
-					console.log(data);
-				},
-				error: function(data,stat,err){
-					//$("#consoleContent").html([data,stat,err].join("<br>"));
-					alert([data,stat,err].join("\n"));
-				}
-			});
-		});
-	}
-
-	$("#saveMaps").click(function(){
-		$("#mapForm").submit();
-	});
-
-
-	$('#modal_pics').modal({ show: 0 });
-
-	$('#modal_pics').on('show', function () {
-		carousel_init();
-	});
-
-	$("#YMapsID").height($(window).height() - 52 + 'px');
-	$("#YMapsID").width($(window).width() - 4 + 'px');
-//-->
-</script>
 <!-- API 2.0 -->
 <script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;mode=debug&amp;lang=ru-RU" type="text/javascript"></script>
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/styles2.js"></script>
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/yandex_styles.js"></script>
-<script type="text/javascript" src="/jscript/freehand.js"></script>
-
+<script type="text/javascript" src="/scripts/freehand"></script>
+<script type="text/javascript" src="/scripts/login"></script>
+<script type="text/javascript" src="/scripts/uijs"></script>
 <!-- EOT API 2.0 -->
-<script src="//loginza.ru/js/widget.js" type="text/javascript"></script>
+<!-- <script src="//loginza.ru/js/widget.js" type="text/javascript"></script> -->
 <!-- latest version available at WWW.KORZHEVDP.COM -->
 <?=$footer;?>
 </body>

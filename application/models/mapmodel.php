@@ -7,6 +7,10 @@ class Mapmodel extends CI_Model {
 
 	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$objects = $this->getMapData($hash);
+		if (!$objects) {
+			print "createFrame = { status: 0, error: 'Карта ещё не была обработана' };";
+			return false;
+		}
 		$output  = array();
 		$result  = $this->getMapObjectsList($objects['hash_a']);
 		if ($result->num_rows()) {
@@ -73,6 +77,21 @@ class Mapmodel extends CI_Model {
 			return $objects;
 		}
 		return false;
+	}
+
+	public function listuserimages () {
+		$output    = array();
+		$login     = $this->session->userdata("name");
+		$directory = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
+		$data      = scandir($directory);
+		foreach($data as $val){
+			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
+				$name   = $val;
+				$string = '<option value="' . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . $val.'">'.$val.'</option>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "");
 	}
 
 }

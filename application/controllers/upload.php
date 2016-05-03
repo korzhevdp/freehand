@@ -8,77 +8,84 @@ class Upload extends CI_Controller {
 			print "Прислано 0 файлов. Это ошибка";
 			return false;
 		}
-		if (!$this->session->userdata('uid1')) {
-			print "Войдите на сайт, пожалуйста";
+		$login   = $this->session->userdata('uidx');
+		if ( strlen((string) $login ) !== 36 ) {
+			print "uploadresult = { status: 0 , error: 'Войдите на сайт, пожалуйста' };";
 			return false;
 		}
-		$login = $this->session->userdata("name");
-		$baseDir = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
-		if(!file_exists($baseDir)){
+		
+		$baseDir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' ;
+		if (!file_exists($baseDir)) {
 			mkdir($baseDir, 0775, true);
-			mkdir($baseDir . DIRECTORY_SEPARATOR . "32"  . DIRECTORY_SEPARATOR, 0775, true);
-			mkdir($baseDir . DIRECTORY_SEPARATOR . "600" . DIRECTORY_SEPARATOR, 0775, true);
 		}
-		foreach ($_FILES as $data){
+		if (!file_exists($baseDir . DIRECTORY_SEPARATOR . $login)) {
+			mkdir($baseDir . DIRECTORY_SEPARATOR . $login, 0775, true);
+		}
+		foreach ($_FILES as $data) {
 			//если загрузили что-то не то
-			if(!in_array($data['type'], array('image/jpeg', 'image/png', 'image/gif'))){
-				print_r($data['tmp_name']);
+			if (!in_array($data['type'], array('image/jpeg', 'image/png', 'image/gif'))) {
 				unlink($data['tmp_name']);
-				print "Неправильный тип файла";
-				exit;
-			}
-			$ftype    = explode("/", $data['type']);
-			$filename = explode(".", basename($data['name']));
-			$filename = implode(array_slice($filename, 0, -1), ".");
-			$file     = $baseDir . DIRECTORY_SEPARATOR . $filename;
-			if(file_exists($file.".".$ftype[1])){
-				print "<br>Файл ".$filename." уже существует. Выберите другое имя.";
 				continue;
 			}
-			move_uploaded_file($data['tmp_name'], $file.".".$ftype[1]);
-			$this->resize_image($file, $data,  "32",  32, 100);
-			$this->resize_image($file, $data, "600", 600, 100);
+			$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
+			$file     = $baseDir . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . implode($filename, "").".jpeg";
+			$this->recodeOriginalFile($data);
+			unlink($data['tmp_name']);
+			$this->resize_image($file, $data,  32, 100);
+			$this->resize_image($file, $data, 128, 100);
+			$this->resize_image($file, $data, 600, 100);
 		}
+		print "uploadprocess = { status: 1, error: 'Файлы загружены.}";
 	}
 
-	private function resize_image($file, $data, $to_dir, $target_max_dimenson = 600, $quality = 100){
-		$filename  = basename($file);
-		$login     = $this->session->userdata("name");
-		$uploaddir = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
-		$ftype     = explode("/", $data['type']);
-		//print $data['type'];
-		if ($data['type'] == "image/jpeg"){
-			$image = ImageCreateFromJpeg($file.".".$ftype[1]);
-			//print "This is JPEG";
+	private function recodeOriginalFile($data) {
+		$login    = $this->session->userdata('uidx');
+		$image    = $this->createimageByType($data, $data['tmp_name']);
+		$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
+		$filename = implode($filename, "");
+		imageJpeg ($image, $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . $filename.".jpeg", 100);
+	}
+
+	private function createimageByType ($data, $file) {
+		if ($data['type'] === "image/jpeg") {
+			$image = ImageCreateFromJpeg($file);
 		}
-		if ($data['type'] == "image/png"){
-			$image = ImageCreateFromPng($file.".".$ftype[1]);
-			//print "This is PNG";
+		if ($data['type'] === "image/png") {
+			$image = ImageCreateFromPng($file);
 		}
-		if ($data['type'] == "image/gif"){
-			$image = ImageCreateFromGif($file.".".$ftype[1]);
-			//print "This is GIF";
+		if ($data['type'] === "image/gif") {
+			$image = ImageCreateFromGif($file);
 		}
-		$size      = GetImageSize($file.".".$ftype[1]);
-		$old       = $image; // форк - не просто так.
-		if($size['1'] < $target_max_dimenson && $size['0'] < $target_max_dimenson) {
-			$new   = $image;
+		return $image;
+	}
+
+	private function resize_image($file, $data, $TMD = 600, $quality = 100){
+		$login     = $this->session->userdata('uidx');
+		$uploaddir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
+		$basename  = basename($file);
+		$srcFile   = $uploaddir . DIRECTORY_SEPARATOR . $basename;
+		if (!file_exists($uploaddir . DIRECTORY_SEPARATOR . $TMD)) {
+			mkdir($uploaddir . DIRECTORY_SEPARATOR . $TMD, 0775, true);
+		}
+		$data['type'] = "image/jpeg";
+		$image        = $this->createimageByType($data, $srcFile);
+		$size         = GetImageSize($srcFile);
+		if ($size['1'] < $TMD && $size['0'] < $TMD) {
+			$new      = $image;
 		} else {
 			if ($size['1'] < $size['0']) {
-				$h_new    = round($target_max_dimenson * $size['1'] / $size['0']);
-				$measures = $target_max_dimenson.",".$h_new;
-				$new      = ImageCreateTrueColor ($target_max_dimenson, $h_new);
-				ImageCopyResampled($new, $image, 0, 0, 0, 0, $target_max_dimenson, $h_new, $size['0'], $size['1']);
+				$h_new    = round($TMD * $size['1'] / $size['0']);
+				$new      = ImageCreateTrueColor ($TMD, $h_new);
+				ImageCopyResampled($new, $image, 0, 0, 0, 0, $TMD, $h_new, $size['0'], $size['1']);
 			}
 			if($size['1'] >= $size['0']){
-				$h_new    = round($target_max_dimenson * $size['0'] / $size['1']);
-				$measures = $h_new.",".$target_max_dimenson;
-				$new      = ImageCreateTrueColor ($h_new, $target_max_dimenson);
-				ImageCopyResampled($new, $image, 0, 0, 0, 0, $h_new, $target_max_dimenson, $size['0'], $size['1']);
+				$h_new    = round($TMD * $size['0'] / $size['1']);
+				$new      = ImageCreateTrueColor ($h_new, $TMD);
+				ImageCopyResampled($new, $image, 0, 0, 0, 0, $h_new, $TMD, $size['0'], $size['1']);
 			}
 		}
-		//print $uploaddir."/".$to_dir."/".$filename.".jpg<br>";
-		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $to_dir . DIRECTORY_SEPARATOR . $filename.".jpeg", $quality);
+		//print $uploaddir."/".TMD."/".$filename.".jpg<br>";
+		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $TMD . DIRECTORY_SEPARATOR . $basename, $quality);
 		//header("content-type: image/jpeg");// активировать для отладки
 		//imageJpeg ($new, "", 100);//активировать для отладки
 		imageDestroy($new);

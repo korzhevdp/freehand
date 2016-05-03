@@ -67,7 +67,10 @@ class Freehand extends CI_Controller {
 	}
 
 	private function packSessionData($map, $data) {
-		$output = array();
+		$output = array(
+			'locations' => array(),
+			'images'    => array()
+		);
 		foreach ($data as $val) {
 			$superhash = $map['id']."_".substr(md5(date("U").rand(0, 9999).rand(0, 9999)), 0, 8);
 			$string = "(
@@ -83,9 +86,30 @@ class Freehand extends CI_Controller {
 				INET_ATON('".$this->input->ip_address()."'),
 				'".$this->input->user_agent()."'
 			)";
-			array_push($output, $string);
+			array_push($output['locations'], $string);
+			$i = 1;
+			if(isset($val['images']) && is_array($val['images'])) {
+				foreach($val['images'] as $image) {
+					$string2 = "( '".$superhash."', '".$image."', ".$i.", '".$map['id']."', '".$this->session->userdata("uidx")."')";
+					$i++;
+					array_push($output['images'], $string2);
+				}
+			}
 		}
 		return $output;
+	}
+
+	private function insertUserMapImages ($images) {
+		if (sizeof($images)) {
+			$this->db->query("INSERT INTO
+			`userimages`(
+				`userimages`.superhash,
+				`userimages`.filename,
+				`userimages`.`order`,
+				`userimages`.`mapID`,
+				`userimages`.`owner`
+			) VALUES ". implode($images, ",\n"));
+		}
 	}
 
 	private function insertUserMapObjects($objects) {
@@ -130,6 +154,23 @@ class Freehand extends CI_Controller {
 	}
 
 	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
+		$images = array();
+		$result = $this->db->query("SELECT 
+		CONCAT_WS('/', `userimages`.owner, `userimages`.filename) AS filename,
+		`userimages`.superhash
+		FROM
+		`userimages`
+		WHERE `userimages`.`mapID` = ?
+		ORDER BY `userimages`.`order` ASC", array($hash));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				if (!isset($images[$row->superhash])) {
+					$images[$row->superhash] = array();
+				}
+				array_push($images[$row->superhash], $row->filename);
+			}
+		}
+
 		$result = $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -151,6 +192,7 @@ class Freehand extends CI_Controller {
 		if ($result->num_rows()) {
 			$newobjects = array();
 			foreach ($result->result() as $row) {
+				$locimages = (isset($images[$row->hash])) ? implode($images[$row->hash], "', '") : "" ;
 				$newobjects[$row->hash] = array(
 					"geometry" => $row->coord,
 					"type"     => $row->type,
@@ -158,9 +200,10 @@ class Freehand extends CI_Controller {
 					"link"     => $row->link,
 					"desc"     => $row->description,
 					"address"  => $row->address,
-					"name"     => $row->name
+					"name"     => $row->name,
+					"images"   => "['".$locimages."']"
 				);
-				$string = $row->hash.": { d: '".$row->description."', n: '".$row->name."', a: '".$row->attributes."', p: ".$row->type.", c: '".$row->coord."', b: '".$row->address."', l: '".$row->link."' }";
+				$string = $row->hash.": { d: '".$row->description."', n: '".$row->name."', a: '".$row->attributes."', p: ".$row->type.", c: '".$row->coord."', b: '".$row->address."', l: '".$row->link."', i: ['".$locimages."'] }";
 				array_push($output, preg_replace("/\n/", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
@@ -259,10 +302,11 @@ class Freehand extends CI_Controller {
 		$this->session->set_userdata('map', $map);
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
 		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
-		$this->insertUserMapObjects($objects);
+		$this->insertUserMapObjects($objects['locations']);
+		$this->insertUserMapImages($objects['images']);
 		$this->mapmodel->createframe($map['id']);
-		$output = $this->getUserMap($map['id']);
-		print "usermap = { ".implode($output,",\n")." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";
+		$output  = $this->getUserMap($map['id']);
+		print "usermap = { ".implode($output, ",\n")." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";
 	}
 
 	public function save() {
@@ -283,7 +327,8 @@ class Freehand extends CI_Controller {
 			"desc"		=> $this->input->post('desc'),
 			"link"		=> $this->input->post('link'),
 			"address"	=> $this->input->post('address'),
-			"name"		=> $this->input->post('name')
+			"name"		=> $this->input->post('name'),
+			"images"	=> $this->input->post('images')
 		);
 		$this->session->set_userdata("objects", $data);
 	}
@@ -312,12 +357,12 @@ class Freehand extends CI_Controller {
 	}
 	
 	public function getuserdata() {
-		if ($this->session->userdata('uid1')) {
+		if ($this->session->userdata('name')) {
 			$title = ($this->session->userdata('supx')) ? "Ваши загруженные фотографии публикуются сразу" : "Ваши загруженные фотографии просмотрит модератор";
-			print "['".$this->session->userdata('name')."', '".$this->session->userdata('photo')."', '".$title."']";
+			print "logindata = { name: '".$this->session->userdata('name')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
 			return true;
 		}
-		print "['Гость', '', 'После авторизации Вы можете загружать фото']";
+		print "logindata = { name: 'Гость', photo: '', title: 'После авторизации Вы можете загружать фото' }";
 	}
 	
 	public function getsession() {
@@ -330,7 +375,13 @@ class Freehand extends CI_Controller {
 		$objects = $this->session->userdata('objects');
 		$output = array();
 		foreach ($objects as $hash => $val) {
-			$string = $hash." : { d: '".$val['desc']."', n: '".$val['name']."', a: '".$val['attr']."', p: ".$val['type'].", c: '".$val['geometry']."', b: '".$val['address']."', l: '".$val['link']."' }";
+			$images = array();
+			if (isset($val['images']) && is_array($val['images'])) {
+				foreach ($val['images'] as $img) {
+					array_push($images, $this->session->userdata("uidx"). DIRECTORY_SEPARATOR . $img);
+				}
+			}
+			$string = $hash." : { d: '".$val['desc']."', n: '".$val['name']."', a: '".$val['attr']."', p: ".$val['type'].", c: '".$val['geometry']."', b: '".$val['address']."', l: '".$val['link']."', i: ['".implode($images, "', '")."'] }";
 			array_push($output, $string);
 		}
 		$center = $data['center'];

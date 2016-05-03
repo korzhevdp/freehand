@@ -78,19 +78,27 @@ class Mapmanager extends CI_Controller {
 		print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
 	}
 
-	public function listuserimages () {
+	public function listuserimages() {
 		$output    = array();
-		$login     = $this->session->userdata("name");
-		$directory = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
+		$login     = $this->session->userdata('uidx');
+		if (!$this->session->userdata("name") || !strlen($this->session->userdata("name")) || $this->session->userdata("name") === "Гость"){
+			print "";
+			return false;
+		}
+		$directory = implode(array($_SERVER['DOCUMENT_ROOT'], 'storage', $login), DIRECTORY_SEPARATOR);
+		if (!file_exists($directory)) {
+			print "Каталога пользователя ещё не существует";
+			return false;
+		}
 		$data      = scandir($directory);
 		foreach($data as $val){
 			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
 				$name   = $val;
-				$string = '<option value="' . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . $val.'">'.$val.'</option>';
+				$string = '<li file="'.$val.'"><img src="/'.implode(array('storage', $login, "128", $val), DIRECTORY_SEPARATOR).'"></li>';
 				array_push($output, $string);
 			}
 		}
-		print '<select name="">'.implode($output, "\n").'</select>';
+		print implode($output, "");
 	}
 }
 
