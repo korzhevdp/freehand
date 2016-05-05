@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Minigis.NET: <?=$title;?></title>
-<meta name="keywords" content="<?=$keywords;?>" />
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title id="headTitle"></title>
+  <meta name="keywords" content="<?=$keywords;?>" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/jquery.js"></script>
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jqueryui/js/jqueryui.js"></script>
 <script type="text/javascript" src="<?=$this->config->item('api');?>/bootstrap/js/bootstrap.min.js"></script>
@@ -28,7 +28,7 @@
 								<li class="divider"></li>
 								<li class="logIn" id="logIn"><a href="#">Войти как пользователь</a></li>
 								<!-- <li class="logIn"><a href="https://loginza.ru/api/widget?token_url=<?=$this->config->item('base_url');?>login/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li> -->
-								<li class="logOut" id="logOut"><a href="<?=$this->config->item('base_url');?>login/logout">Выйти</a></li>
+								<li class="logOut" id="logOut"><a href="<?=$this->config->item('base_url');?>locallogin/logout">Выйти</a></li>
 							</ul>
 						</li>
 					</ul>
@@ -45,7 +45,7 @@
 				<a class="btn dropdown-toggle btn-small btn-info" style="margin-top:2px;" data-toggle="dropdown" href="#">Карта&nbsp;<span class="caret"></span></a>
 				<ul class="dropdown-menu">
 					<li><a href="#" id="mapLoader" title="Показывает карту с указанным идентификатором">Загрузить</a></li>
-					<li><a href="#" id="mapSave" title="Запоминает внесённые изменения">Обработать</a></li>
+					<li><a href="#" id="mapSave" title="Запоминает внесённые изменения">Сохранить</a></li>
 					<li class="divider"></li>
 					<li><a href="#" id="mapReset" title="Очищает список объектов">Новая карта</a></li>
 				</ul>
@@ -172,8 +172,8 @@
 </div>
 <!-- API 2.0 -->
 <script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;mode=debug&amp;lang=ru-RU" type="text/javascript"></script>
-<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/styles2.js"></script>
-<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/yandex_styles.js"></script>
+<script type="text/javascript" src="/jscript/styles2.js"></script>
+<script type="text/javascript" src="/jscript/yandex_styles.js"></script>
 <script type="text/javascript" src="/scripts/freehand"></script>
 <script type="text/javascript" src="/scripts/login"></script>
 <script type="text/javascript" src="/scripts/uijs"></script>

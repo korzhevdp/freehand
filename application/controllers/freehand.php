@@ -203,7 +203,7 @@ class Freehand extends CI_Controller {
 					"name"     => $row->name,
 					"images"   => "['".$locimages."']"
 				);
-				$string = $row->hash.": { d: '".$row->description."', n: '".$row->name."', a: '".$row->attributes."', p: ".$row->type.", c: '".$row->coord."', b: '".$row->address."', l: '".$row->link."', i: ['".$locimages."'] }";
+				$string = $row->hash.": { d: '".trim($row->description)."', n: '".trim($row->name)."', a: '".trim($row->attributes)."', p: ".trim($row->type).", c: '".trim($row->coord)."', b: '".trim($row->address)."', l: '".trim($row->link)."', i: ['".$locimages."'] }";
 				array_push($output, preg_replace("/\n/", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
@@ -262,7 +262,7 @@ class Freehand extends CI_Controller {
 		}
 		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
 	}
-	
+
 	public function savemap() {
 		$data = $this->session->userdata('map');
 		$data['maptype'] = $this->input->post('maptype');
@@ -357,14 +357,14 @@ class Freehand extends CI_Controller {
 	}
 	
 	public function getuserdata() {
-		if ($this->session->userdata('name')) {
+		if ($this->session->userdata('uidx')) {
 			$title = ($this->session->userdata('supx')) ? "Ваши загруженные фотографии публикуются сразу" : "Ваши загруженные фотографии просмотрит модератор";
 			print "logindata = { name: '".$this->session->userdata('name')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
 			return true;
 		}
 		print "logindata = { name: 'Гость', photo: '', title: 'После авторизации Вы можете загружать фото' }";
 	}
-	
+
 	public function getsession() {
 		$data = $this->session->userdata('map');
 		if ($data['id'] == 'void') {

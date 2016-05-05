@@ -45,7 +45,7 @@ class Locallogin extends CI_Controller {
 			return false;
 		}
 
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		users_admins.id
 		FROM
 		users_admins
@@ -90,11 +90,22 @@ class Locallogin extends CI_Controller {
 				mkdir($baseDir . DIRECTORY_SEPARATOR . "32"  . DIRECTORY_SEPARATOR, 0775, true);
 				mkdir($baseDir . DIRECTORY_SEPARATOR . "600" . DIRECTORY_SEPARATOR, 0775, true);
 			}
-			print "regresult = { status: 1, error: '', login: '".$login."', center: [".$row->map_center."], zoom: ".$row->map_zoom.", mapType: ".$row->map_type." }";
+			print "regresult = { status: 1, error: '', login: '".$login."', center: [".$this->config->item("map_center")."], zoom: ".$this->config->item("map_zoom").", mapType: ".$this->config->item("map_type")." }";
 			return true;
 		}
 		print "regresult = { status: 0, error: 'Ошибка при обработке данных' }";
 		return false;
+	}
+
+	public function logout() {
+		$this->session->unset_userdata('name');
+		$this->session->unset_userdata('uid1');
+		$this->session->unset_userdata('uidx');
+		$this->session->unset_userdata('supx');
+		$this->session->unset_userdata('photo');
+		$this->session->unset_userdata('objects');
+		$this->load->helper("url");
+		redirect("map");
 	}
 }
 

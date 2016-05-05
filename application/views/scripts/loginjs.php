@@ -27,7 +27,6 @@ $("#tryLogIn").click(function(){
 				$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
 				$("#tryLogIn, #logAlert, #logIn").addClass("hide");
 				$("#loginM").modal("hide");
-				getsessionImages();
 			}
 		},
 		error: function (data, stat, err) {
@@ -47,13 +46,19 @@ $("#tryRegIn").click(function(){
 		},
 		dataType      : 'script',
 		success: function () {
-			if (regresult.status === 1) {
+			if (regresult.status == "1") {
 				$("#userP").html(regresult.login);
 				$("#loginM").modal("hide");
+				$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
+				$("#tryLogIn, #logAlert, #logIn").addClass("hide");
+				$("#loginM").modal("hide");
+				return true;
 			}
-			if (regresult.status === 0) {
+			if (regresult.status == "0") {
 				console.log(regresult.error);
+				return false;
 			}
+			//resetSession();
 		},
 		error: function (data, stat, err) {
 			console.log([ data, stat, err ]);

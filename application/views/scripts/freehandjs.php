@@ -10,7 +10,7 @@ var userstyles,
 	a_objects,
 	e_objects,
 	counter          = 0,
-	api_url          = '<?=$this->config->item("api_url");?>',
+	api_url          = '<?=$this->config->item("api");?>',
 	base_url         = '<?=$this->config->item("base_url");?>',
 	mainController   = 'freehand',
 	expController    = 'exports',
@@ -282,17 +282,17 @@ function perimeter_calc(src) {
 function doDelete(src) {
 	var ttl = $(src).attr('ttl');
 	e_objects.each(function (item) {
-		if (item.properties.get("ttl") === ttl) { // !!!!!!!!!!!!!!!!! === OR == ?
+		if (item.properties.get("ttl") == ttl) { // !!!!!!!!!!!!!!!!! === OR == ?
 			e_objects.remove(item);
 		}
 	});
 	a_objects.each(function (item) {
-		if (item.properties.get("ttl") === ttl) {
+		if (item.properties.get("ttl") == ttl) {
 			a_objects.remove(item);
 		}
 	});
 	$.ajax({
-		url: controller + "/deleteobject",
+		url: "/" + mainController + "/deleteobject",
 		data: {
 			ttl: ttl
 		},
@@ -459,12 +459,11 @@ function action_listeners_add() {
 			processData : false,
 			type        : 'POST',
 			success     : function(data){
-				if (parseInt(uploadresult.status, 10) === 1) {
+				if (uploadresult.status == "1") {
 					$("#uploadForm").addClass("hide");
 					$("#mainForm").removeClass("hide");
-					getsessionImages();
 				}
-				if (parseInt(uploadresult.status, 10) === 0) {
+				if (uploadresult.status == "0") {
 					$("#uploadError").html(uploadresult.error);
 					$("#uploadError").removeClass("hide");
 				}
@@ -495,13 +494,17 @@ function showImageSelector() {
 		type        : 'GET',
 		dataType    : 'html',
 		success     : function(data){
+			var a;
 			$("#imageList").empty().append(data);
+			for ( a in imageList ) {
+				$('#imageList li[file="' + imageList[a].split("/")[1] + '"]').addClass("active");
+			}
 			$("#imageList li").click(function(){
 				if ($(this).hasClass("active")) {
 					$(this).removeClass("active");
 					//return false;
 				} else {
-				//if (!$(this).hasClass("active")) {
+					//if (!$(this).hasClass("active")) {
 					$(this).addClass("active");
 					//return false;
 				}
@@ -582,16 +585,15 @@ function traceNode(src) {
 }
 
 function doEdit(src) {
-	//alert($(src).attr('ttl'));
 	var ttl = $(src).attr('ttl');
 	$("#location_id").val(ttl); // здесь строка
 	map.balloon.close();
 		a_objects.each(function (item) {
-			//alert(parseInt(item.properties.get("ttl"), 10) + " --- " + ttl)
 			if (item.properties.get("ttl") === ttl) {
 				var type = item.geometry.getType(); // получаем YM тип геометрии объекта
 				e_objects.add(item); // переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
+				imageList = usermap[ttl].i;
 				//console.log(item.properties.getAll().toSource());
 				//item.options.set({ zIndex: 1, zIndexActive: 1, zIndexDrag: 1, zIndexHover: 1, draggable: ((item.options.get('draggable') === 0) ? 1 : 0) });
 			if (e_objects.getLength() > 1) { // нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
@@ -674,8 +676,42 @@ function setMapCoordinates() {
 	map.setCenter([parseFloat($("#vp_lon").val()), parseFloat($("#vp_lat").val())], parseInt($("#current_zoom").val(), 10));
 }
 
+function getImageBySize(image, size) {
+	var output = [],
+		a,
+		pathComponents;
+	if (!image.length) {
+		if (size === 32) {
+			return ['<img src="' + api_url + '/images/nophoto.gif">'];
+		}
+		if (size === 128) {
+			return ['<img src="' + api_url + '/images/nophoto.jpg">'];
+		}
+	}
+	for ( a in image ) {
+		if (image.hasOwnProperty(a)) {
+			if (image[a].length) {
+				pathComponents = image[a].split("/");
+				output.push('<img src="' + base_url + [ "storage", pathComponents[0], size, pathComponents[1]].join("/") + '">');
+			}
+			if (!image[a].length){
+				if (size === 32) {
+					output.push('<img src="' + api_url + '/images/nophoto.gif">');
+				}
+				if (size === 128) {
+					output.push('<img src="' + api_url + '/images/nophoto.jpg">');
+				}
+			}
+			
+		}
+	}
+	return output;
+}
+
 function place_freehand_objects(source) {
 	var src,
+		img128,
+		img32,
 		object,
 		geometry,
 		options,
@@ -694,12 +730,13 @@ function place_freehand_objects(source) {
 				description : src.d,
 				address     : src.b,
 				hintContent : src.n + ' ' + src.d,
-				img         : src.i[0],
+				img         : getImageBySize(src.i, 32)[0],
+				img128      : getImageBySize(src.i, 128)[0],
 				frame       : frm,
 				link        : src.l,
 				name        : src.n,
 				ttl         : b,
-				images      : src.i.join(" ")
+				images      : getImageBySize(src.i, 32).join(" ")
 			};
 			if (mframes[frm] === undefined) {
 				mframes[frm] = new ymaps.GeoObjectArray();
@@ -763,26 +800,26 @@ function display_locations() {
 		tileServerID   = parseInt(Math.random() * (4 - 1) + 1, 10).toString(),
 		tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "d", "4": "e", "5": "f" },
 		genericBalloon = ymaps.templateLayoutFactory.createClass(
-		'<div class="ymaps_balloon row-fluid">' +
-		'<div class="gallery span2" id="l_photo" data-toggle="modal" picref=$[properties.ttl|0] href="#modal_pics">' +
-		'<img src="' + api_url + '/images/$[properties.img|nophoto.gif]" style="margin:3px;" ALT="мини" id="sm_src_pic">' +
+		'<div class="ymaps_balloon">' +
+		'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
+		'$[properties.img128|<img src="' + api_url + '/images/nophoto.jpg">]' +
 		'</div>' +
-		'<span style="margin-right:10px;font-weight:bold;">Название:</span> $[properties.name|без имени]<br>' +
-		'<span style="margin-right:30px;font-weight:bold;">Адрес:</span> $[properties.address|нет]<br>' +
-		'<span style="margin-right:10px;font-weight:bold;">Описание:</span> $[properties.description|без описания]<br>' +
-		'<div><a href="$[properties.link|#]" style="margin:3px;margin-top:16px;" class="btn btn-mini btn-block" target="_blank">Подробности здесь</a></div>' +
+		'<div class="propertyContainer"><div class="property">Название:</div>&nbsp;$[properties.name|без имени]</div>' +
+		'<div class="propertyContainer"><div class="property">Адрес:</div>&nbsp;$[properties.address|нет]</div>' +
+		'<div class="propertyContainer"><div class="property">Описание:</div>&nbsp;$[properties.description|без описания]</div>' +
+		'<div class="link"><a href="$[properties.link|#]" class="btn btn-block" target="_blank">Подробности здесь</a></div>' +
 		'<div class="pull-right" style="margin-top:20px;">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:10px;">Редактировать </button>' +
-		'<button type="button" class="btn btn-mini btn-info balloonClose" style="margin-right:10px;">Закрыть</button>' +
+		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:8px;">Редактировать </button>' +
+		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
 		'</div></div>'
 		),
 		iframeBalloon = ymaps.templateLayoutFactory.createClass(
 		'<div class="ymaps_balloon_iframed">' +
 		'<iframe src="$[properties.link|]" width="400" height="400" style="border:none;margin:0;padding:0;"></iframe>' +
-		'<div><a href="$[properties.link|#]" style="margin:3px;margin-top:16px;" class="btn btn-mini btn-block" target="_blank">Подробности здесь</a></div>' +
+		'<div class="link"><a href="$[properties.link|#]" class="btn btn-mini btn-block" target="_blank">Подробности здесь</a></div>' +
 		'<div class="pull-right" style="margin-top:20px;">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:10px;">Редактировать </button>' +
-		'<button type="button" class="btn btn-mini btn-info balloonClose" style="margin-right:10px;">Закрыть</button>' +
+		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]">Редактировать </button>' +
+		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
 		'</div></div>'
 		),
 
@@ -797,18 +834,17 @@ function display_locations() {
 		'</label>' +
 		'<label for="a2232G">Фото:' +
 		'<span id="locationImages">' +
-		'<img src="' + base_url + 'storage/korzhevdp/32/b737E.jpeg"><img src="' + base_url + '/storage/korzhevdp/32/b737E.jpeg"><img src="' + base_url + '/storage/korzhevdp/32/b737E.jpeg">' +
+		'$[properties.images|]' +
 		'<div class="btn-group" style="float:right;margin-top: 4px;">' +
 		'<button class="btn" type="button" id="imgSelector" title="Выбрать изображения"><i class="icon-picture"></i></button>' +
 		'<button class="btn" type="button" id="imgUploader" title="Загрузить изображения"><i class="icon-upload"></i></button>' +
 		'</div>' +
 		'</span>' +
 		'</label>' +
-
 		'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.description|нет]</textarea></label>' +
 		'<div class="pull-right">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-finish" ttl="$[properties.ttl|0]" style="margin-right:10px;">Готово</button>' +
-		'<button type="button" class="btn btn-mini btn-danger sw-del" ttl="$[properties.ttl|0]" style="margin-right:10px;">Удалить</button>' +
+		'<button type="button" class="btn btn-mini btn-primary sw-finish" ttl="$[properties.ttl|0]">Готово</button>' +
+		'<button type="button" class="btn btn-mini btn-danger sw-del" ttl="$[properties.ttl|0]">Удалить</button>' +
 		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
 		'</div>' +
 		'</div>' +
@@ -850,7 +886,7 @@ function display_locations() {
 
 	function draw_object(click) {
 		var geometry,
-			properties,
+			properties = {},
 			object,
 			decAddr,
 			names = [],
@@ -865,20 +901,8 @@ function display_locations() {
 			},
 			pr_type = geoType2IntId[$("#current_obj_type").val()],
 			realStyle = normalize_style($(selectors[pr_type]).val(), pr_type),
-			options;
 			options = ymaps.option.presetStorage.get(realStyle);
-			properties = {
-				attr        : realStyle,
-				frame       : parseInt($('#vp_frame').val(), 10),
-				ttl         : object_gid += 1,
-				name        : "Название",
-				img         : "nophoto.gif",
-				hintContent : '',
-				address     : '',
-				contact     : '',
-				description : '',
-				imageList   : []
-			};
+
 		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
 			console.log("Рисование запрещено");
 			return false;
@@ -894,16 +918,19 @@ function display_locations() {
 			doFinishAll();
 		}
 
-		ymaps.geocode(coords, {kind: ['house']}).then(function (res) {
-			res.geoObjects.each(function (obj) {
-				names.push(obj.properties.get('name'));
-			});
-			valtz = names[0];
-			decAddr = (valtz === undefined || ![valtz].join(', ').length) ? "Нет адреса" : [valtz].join(', ');
-			properties.description = decAddr;
-			properties.hintContent = decAddr;
-			properties.address     = decAddr;
-		});
+		properties = {
+			preset      : realStyle,
+			attr        : realStyle,
+			frame       : parseInt($('#vp_frame').val(), 10),
+			ttl         : object_gid += 1,
+			name        : "Название",
+			img         : "nophoto.gif",
+			hintContent : '',
+			address     : '',
+			contact     : '',
+			description : '',
+			imageList   : []
+		};
 
 		switch (pr_type) {
 			case 1:
@@ -927,7 +954,17 @@ function display_locations() {
 				traceNode(object);
 			break;
 		}
-		object.properties.set({ preset : realStyle });
+
+		ymaps.geocode(coords, { kind: ['house'] }).then(function (addressComponents) {
+			var names = [];
+			addressComponents.geoObjects.each(function (object) {
+				names.push(object.properties.get('name'));
+			});
+			valtz   = names[0];
+			decAddr = (valtz === undefined || ![valtz].join(', ').length) ? "Нет адреса" : [valtz].join(', ');
+			object.properties.set({ hintContent : decAddr, address : decAddr });
+		});
+
 		object.options.set({ draggable : 1 });
 		e_objects.add(object);
 		if (pr_type === 2 || pr_type === 3) {
@@ -1374,20 +1411,6 @@ function syncToSession(usermap){
 	});
 }
 
-function getsessionImages() {
-	$.ajax({
-		url          : '/mapmanager/listuserimages',
-		type         : "GET",
-		dataType     : 'html',
-		success      : function (data) {
-			$("#sessionImages").append(data);
-		},
-		error        : function (data, stat, err) {
-			console.log([ data, stat, err ]);
-		}
-	});
-}
-
 // события не-карты
 $(".obj_sw").click(function () {
 	$("#current_obj_type").val(intId2GeoType[$(this).attr('pr')]);
@@ -1465,7 +1488,7 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 3) {
 		e.preventDefault();  //stop the browser
 		$.ajax({
-			url      : expController + '/loadscript/' + mp.uhash,
+			url      : "/" + expController + '/loadscript/' + mp.uhash,
 			dataType : "html",
 			type     : "POST",
 			success  : function () {
@@ -1479,15 +1502,11 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 4) {
 		e.preventDefault();  //stop the browser
 		$.ajax({
-			url      : expController + "/createframe/" + mp.uhash,
+			url      : "/" + expController + "/createframe/" + mp.uhash,
 			dataType : "script",
 			type     : "POST",
 			success  : function () {
 				$("#mapLinkContainer").removeClass("hide");
-				if (parseInt(createFrame.status, 10) === 0) {
-					$("#mapLink").val(createFrame.error);
-					return false;
-				}
 				$("#mapLink").val(base_url + expController + '/loadframe/' + mp.uhash);
 			},
 			error    : function (data, stat, err) {
@@ -1498,7 +1517,7 @@ $("#linkFactory a").click(function (e) {
 	if (mode === 5) {
 		e.preventDefault();
 		$.ajax({
-			url      : expController + "/transfer",
+			url      : "/" + expController + "/transfer",
 			data     : {
 				hash : mp.uhash
 			},
@@ -1561,11 +1580,14 @@ $("#linkFactory a").click(function (e) {
 			eval($("#importCode").val());
 			if( $("#cRev").prop("checked") ) {
 				for (a in usermap ) {
-					//alert(usermap[a].c);
-					if (usermap.hasOwnProperty(a)){
-						usermap[a].c = usermap[a].c.split(",").reverse().join(",");
+					if (usermap.hasOwnProperty(a)) {
+						if (typeof usermap[a].c === "string") {
+							usermap[a].c = usermap[a].c.split(",").reverse().join(",");
+						}
+						if (typeof usermap[a].c === "object") {
+							usermap[a].c = usermap[a].c.reverse().join(",");
+						}
 					}
-					//alert(usermap[a].c);
 				}
 			}
 			place_freehand_objects(usermap);
@@ -1591,6 +1613,10 @@ $("#sessDestroy").click(function () {
 });
 
 $("#mapReset").click(function () {
+	resetSession();
+});
+
+function resetSession() {
 	$.ajax({
 		url      : '/' + mainController + "/resetsession",
 		dataType : "script",
@@ -1609,7 +1635,7 @@ $("#mapReset").click(function () {
 			console.log([ data, stat, err ]);
 		}
 	});
-});
+}
 
 $("#linkClose").click(function () {
 	$("#mapLinkContainer").addClass("hide");
@@ -1628,52 +1654,3 @@ $("#submitSelection").click(function () {
 
 ymaps.ready(setup_environment);
 
-// Yet unused FX
-// Frame Control
-/*
-// Fillers
-function style_list() {
-	var a;
-	for (a in style_src) {
-		if (style_src.hasOwnProperty(a)) {
-			$("#m_style").append($('<option value="' + style_src[a][2] + '">' + style_src[a][3] + '</option>'));
-		}
-	}
-}
-// Nullers
-function nullPlacemarkTracer() {
-	$("#m_lon").val('');
-	$("#m_lat").val('');
-}
-// Carousel
-function carousel_destroy() {
-	$('.modal:has(.carousel)').on('shown', function () {
-		var $carousel = $(this).find('.carousel');
-		if ($carousel.data('carousel') && $carousel.data('carousel').sliding) {
-			$carousel.find('.active').trigger($.support.transition.end);
-		}
-	});
-}
-
-function carousel_init() {
-	$.ajax({
-		url      : "/ajaxutils/getimagelist/",
-		data     : {
-			picref: $('#l_photo').attr('picref')
-		},
-		type     : "POST",
-		cache    : false,
-		dataType : "html",
-		success  : function (data) {
-			var newid = 'car_' + ($(".carousel").attr('id').split('_')[1] += 1);
-			$("#pic_collection").empty().append(data);
-			$(".carousel").attr('id', newid);
-			$('#' + newid).carousel();
-		},
-		error    : function (data, stat, err) {
-			console.log("При поиске изображений произошла ошибка на сервере");
-			console.log([ data, stat, err ]);
-		}
-	});
-}
-*/
