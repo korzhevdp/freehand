@@ -24,11 +24,11 @@ var userstyles,
 		"Circle"     : 'layer-shape-ellipse.png'
 	},
 	geoType2IntId    = {
-		"Point" : 1,
+		"Point"      : 1,
 		"LineString" : 2,
-		"Polygon" : 3,
-		"Circle" : 4,
-		"Rectangle" : 5 //not used
+		"Polygon"    : 3,
+		"Circle"     : 4,
+		"Rectangle"  : 5 //not used
 	},
 	intId2GeoType    = {
 		1 : "Point",
@@ -723,6 +723,7 @@ function place_freehand_objects(source) {
 	for (b in source) {
 		if (source.hasOwnProperty(b)) {
 			src = source[b];
+			
 			options = ymaps.option.presetStorage.get(normalize_style(src.a, src.p));
 			frm = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
 			properties = {
@@ -988,6 +989,17 @@ function display_locations() {
 			},
 			dataType : "script",
 			success  : function () {
+				if (mp !== undefined) {
+					if (mp.id == 'void') {
+						$("#mapSave, #ehashID, #SContainer").addClass("hide");
+						$("#mapSave, #mapDelete").parent().addClass("hide");
+					}
+					if (mp.id != 'void') {
+						$("#mapSave, #ehashID, #SContainer").removeClass("hide");
+						$("#mapSave, #mapDelete").parent().removeClass("hide");
+					}
+					map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.c);
+				}
 				if (usermap.error !== undefined) {
 					console.log(usermap.error);
 					return false;
@@ -997,10 +1009,7 @@ function display_locations() {
 				if (usermap.error === undefined) {
 					place_freehand_objects(usermap);
 				}
-				if (mp !== undefined) {
-					$("#mapSave, #ehashID, #SContainer").css('display', ((mp.id === 'void') ? 'none' : 'block'));
-					map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.c);
-				}
+
 				count_objects();
 				lock_center();
 			},
@@ -1075,7 +1084,7 @@ function display_locations() {
 		dX[a] = Math.pow(2, a) - 1;
 	}
 	layerTypes   = {
-		/*
+		
 		0: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "http://luft.korzhevdp.com/maps/nm/base/",
@@ -1090,7 +1099,6 @@ function display_locations() {
 			name  : "Архангельск. План 1998 года",
 			layers: ['yandex#satellite', "base2#arch"]
 		},
-
 		2: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[2].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "http://luft.korzhevdp.com/maps/arch1940/base/",
@@ -1147,7 +1155,6 @@ function display_locations() {
 			name  : "Молотовск. Завод. 15.08.1943 г.",
 			layers: ['yandex#satellite', "base#molot5"]
 		},
-		*/
 		10: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "",
@@ -1177,6 +1184,13 @@ function display_locations() {
 			label : "satellite#google",
 			name  : "Аэрофотосъёмка, Google",
 			layers: ["satellite#google"]
+		},
+		14: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "",
+			label : "base#arch",
+			name  : "Аэрофотосъёмка, Google",
+			layers: ["map#google"]
 		}
 	};
 	a_objects    = new ymaps.GeoObjectArray();
@@ -1533,60 +1547,41 @@ $("#linkFactory a").click(function (e) {
 		});
 	}
 	/*
-	MTAyZjI1OTAxNTg3_d22f0a7d: 1 : { d: 'обрыв кабеля 29.01.2015 и 2.02.2015 отметка по кабелю 2254 м.', n: ' Обрыв', a: 'twirl#truckIcon', p: 1, c: '40.51192676098229,64.59129951947355', b: 'улица Мещерского, 1 с1', l: '' },, b: '', l: '', n: '' },
-
-	mp = { id: '', maptype: 'yandex#map', c: [40.56577018,64.55124603], zoom: 11, uhash: '', ehash: '', indb: 0 };
-	usermap = {
-	1 : { d: '1.Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5594748,40.5249837', b: '', l: '', n: '' },
-	2 : { d: '2. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5594022,40.5249327', b: '', l: '', n: '' },
-	3 : { d: '3. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5566459,40.5235058', b: '', l: '', n: '' },
-	4 : { d: '4. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5535414,40.5213279', b: '', l: '', n: '' },
-	5 : { d: '5.Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5534308,40.5212688', b: '', l: '', n: '' },
-	6 : { d: '6. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5529283,40.5213869', b: '', l: '', n: '' },
-	7 : { d: '7. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5528499,40.5213279', b: '', l: '', n: '' },
-	8 : { d: '8.Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5477116,40.5187261', b: '', l: '', n: '' },
-	9 : { d: '9. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5478269,40.5188119', b: '', l: '', n: '' },
-	10 : { d: '10. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5443778,40.5169129', b: '', l: '', n: '' },
-	11 : { d: '11. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5441841,40.5167413', b: '', l: '', n: '' },
-	12 : { d: '12. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5364682,40.5176961', b: '', l: '', n: '' },
-	13 : { d: '13. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5340925,40.5228997', b: '', l: '', n: '' },
-	14 : { d: '14 Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5340233,40.5231625', b: '', l: '', n: '' },
-	15 : { d: '15. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5343485,40.523538', b: '', l: '', n: '' },
-	16 : { d: '16. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5344062,40.5233395', b: '', l: '', n: '' },
-	17 : { d: '17. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5344938,40.523141', b: '', l: '', n: '' },
-	18 : { d: '18. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5347983,40.5224329', b: '', l: '', n: '' },
-	19 : { d: '19. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5348421,40.5223042', b: '', l: '', n: '' },
-	20 : { d: '20. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5318851,40.5316812', b: '', l: '', n: '' },
-	21 : { d: '21. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5341548,40.5250937', b: '', l: '', n: '' },
-	22 : { d: '22. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5376651,40.5161136', b: '', l: '', n: '' },
-	23 : { d: '23. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5506347,40.5732876', b: '', l: '', n: '' },
-	24 : { d: '24. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5513309,40.5733788', b: '', l: '', n: '' },
-	25 : { d: '25. Торговый павильон (4 шт)', a: 'twirl#truckIcon', p: 1, c: '64.5502129,40.5746502', b: '', l: '', n: '' },
-	26 : { d: '26. Торговый павильон (4 шт)', a: 'twirl#truckIcon', p: 1, c: '64.5507638,40.5729175', b: '', l: '', n: '' },
-	27 : { d: '27. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.550372,40.5734217', b: '', l: '', n: '' },
-	28 : { d: '28. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5493761,40.5686045', b: '', l: '', n: '' },
-	29 : { d: '29. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.5499501,40.5664533', b: '', l: '', n: '' },
-	30 : { d: '31. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5495951,40.5675155', b: '', l: '', n: '' },
-	31 : { d: '30. Торговый киоск', a: 'twirl#truckIcon', p: 1, c: '64.54898650000001,40.5642539', b: '', l: '', n: '' },
-	32 : { d: '32. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5486338,40.5615664', b: '', l: '', n: '' },
-	33 : { d: '33. Торговый павильон', a: 'twirl#truckIcon', p: 1, c: '64.5623517,40.5306244', b: '', l: '', n: '' }
-	}
+		exportedMapObjects = {
+			28: [{ type: "Point", coord: [40.59971845632609,64.48305691751406] }, { b: "улица Нахимова, 15", d: "Митинг Памяти у памятника портовикам, погибшим в годы Великой Отечественной войны, площадь у здания КЦ «Бакарица»", n: "7 мая 14:00", l: '' },{ attr: "twirl#redIcon" }] 
+		} 
 	*/
 	if (mode === 6) {
 		e.preventDefault();
 		$("#importM").modal("show");
 		$("#importBtn").unbind().click(function (){
-			var a;
+			var a,
+				pType,
+				coords,
+				exportedMapObjects;
 			eval($("#importCode").val());
-			if( $("#cRev").prop("checked") ) {
-				for (a in usermap ) {
-					if (usermap.hasOwnProperty(a)) {
-						if (typeof usermap[a].c === "string") {
-							usermap[a].c = usermap[a].c.split(",").reverse().join(",");
-						}
-						if (typeof usermap[a].c === "object") {
-							usermap[a].c = usermap[a].c.reverse().join(",");
-						}
+			for (a in exportedMapObjects) {
+				if (exportedMapObjects.hasOwnProperty(a)) {
+					pType  = geoType2IntId[exportedMapObjects[a][0].type];
+					coords = exportedMapObjects[a][0].coord;
+					//alert(pType + typeof pType);
+					if (pType === 1) {
+						coords = ($("#cRev").prop("checked")) ? coords.reverse().join(",") : coords.join(",");
+					}
+					if (pType === 4) {
+						coords = ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
+						//alert(typeof coords);
+					}
+					usermap[a] = {
+						frame : 1,
+						d     : exportedMapObjects[a][1].d,
+						n     : exportedMapObjects[a][1].n,
+						a     : exportedMapObjects[a][2].attr,
+						p     : pType,
+						c     : coords,
+						b     : exportedMapObjects[a][1].b,
+						l     : exportedMapObjects[a][1].l,
+						i     : ['']
 					}
 				}
 			}
@@ -1616,6 +1611,10 @@ $("#mapReset").click(function () {
 	resetSession();
 });
 
+$("#mapDelete").click(function () {
+	mapDelete();
+});
+
 function resetSession() {
 	$.ajax({
 		url      : '/' + mainController + "/resetsession",
@@ -1625,11 +1624,24 @@ function resetSession() {
 			a_objects.removeAll();
 			e_objects.removeAll();
 			$("#mapSave, #ehashID, #SContainer").css('display', "block");
-			// ({id:"void", maptype:"yandex#map", c:[40.56577018, 64.55124603], zoom:11, uhash:"MTAyZjI1OTAxNTg3", ehash:"MTAyZjI1OTAxNTg3", indb:1})
-			// usermap = []; mp = { ehash:'NGQ2YjQwZmFhYzgx', uhash: 'M2ViZWZiNDEyOTRl', indb: 0 }
 			map.setZoom(mp.zoom);
 			map.setType(mp.maptype);
 			$("#mapName").val(mp.ehash);
+		},
+		error   : function (data, stat, err) {
+			console.log([ data, stat, err ]);
+		}
+	});
+}
+
+function mapDelete() {
+	$.ajax({
+		url      : '/mapmanager/deletemap',
+		dataType : "text",
+		data     : { hash: mp.uhash },
+		type     : "POST",
+		success  : function () {
+			resetSession();
 		},
 		error   : function (data, stat, err) {
 			console.log([ data, stat, err ]);

@@ -27,7 +27,7 @@ class Map extends CI_Controller {
 			'title'			=> $this->config->item('site_title_start')." Интерактивная карта 0.3b",
 			'gcounter'		=> $this->session->userdata('gcounter'),
 			'userid'		=> $this->session->userdata('common_user'),
-			'menu'			=> $this->load->view('cache/menus/menu_'.$this->session->userdata('lang'), array(), true),
+			'menu'			=> '',//$this->load->view('cache/menus/menu_'.$this->session->userdata('lang'), array(), true),
 			'navigator'		=> $this->load->view('freehand/navigator', array(), true),
 			'header'		=> '',//$this->load->view('frontend/page_header', array(), true),
 			'footer'		=> '',//$this->load->view('frontend/page_footer', array(), true),

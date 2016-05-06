@@ -6,14 +6,17 @@ class Exports extends CI_Controller {
 	}
 
 	private function getTransferLine($line, $src, $format) {
-		$coords = explode(",", $src['coord']);
+		$coords      = explode(",", $src['coord']);
+		$src['desc'] = str_replace('"', "&quot;", $src['desc']);
+		$src['name'] = str_replace('"', "&quot;", $src['name']);
+		$src['addr'] = str_replace('"', "&quot;", $src['addr']);
 		if (sizeof($coords) < 3) {
 			$coords = array(0, 0, 0, 0);
 		}
 		$adds  = array(
 			'plainobject' => array(
-				'props' => '{ b: "'.$src['addr'].'", d: "'.$src['desc'].'", n: "'.$src['name'].'", l: \''.$src['link'].'\' },',
-				'opts'  => '{ attr: "'.$src['attr'].'" }'
+				'props' => "{ b: '".$src['addr']."', d: '".$src['desc']."', n: '".$src['name']."', l: '".$src['link']."' },",
+				'opts'  => "{ attr: '".$src['attr']."' }"
 			),
 			'plainjs' => array(
 				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['addr']."', d: '".$src['desc']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
@@ -22,16 +25,16 @@ class Exports extends CI_Controller {
 		);
 		$lines  = array(
 			'plainobject' => array(
-				1 => $line.': [{ type: "Point", coord: ['.$src['coord'].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				2 => $line.': [{ type: "LineString", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				3 => $line.': [{ type: "Polygon", coord: "'.$src['coord'].'" }, '.$adds[$format]['props'].$adds[$format]['opts']."]",
-				4 => $line.': [{ type: "Circle", coord: ['.$coords[0].', '.$coords[1].', '.$coords[2].'] }, '.$adds[$format]['props'].$adds[$format]['opts']."]"
+				1 => $line.": [{ type: 'Point', coord: [".$src['coord']."] }, ".$adds[$format]['props'].$adds[$format]['opts']."]",
+				2 => $line.": [{ type: 'LineString', coord: '".$src['coord']."' }, ".$adds[$format]['props'].$adds[$format]['opts']."]",
+				3 => $line.": [{ type: 'Polygon', coord: '".$src['coord']."' }, ".$adds[$format]['props'].$adds[$format]['opts']."]",
+				4 => $line.": [{ type: 'Circle', coord: [".$coords[0].", ".$coords[1].", ".$coords[2]."] }, ".$adds[$format]['props'].$adds[$format]['opts']."]"
 			),
 			'plainjs' => array(
-				1 => $line.': new ymaps.Placemark(<br>&nbsp;&nbsp;&nbsp;&nbsp;{type: "Point", coordinates: ['.$src['coord'].']},'.$adds[$format]['props']. $adds[$format]['opts']." )",
-				2 => $line.': new ymaps.Polyline(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
-				3 => $line.': new ymaps.Polygon(<br>&nbsp;&nbsp;&nbsp;&nbsp; new ymaps.geometry.LineString.fromEncodedCoordinates("'.$src['coord'].'"), '.$adds[$format]['props'].$adds[$format]['opts']." )",
-				4 => $line.': new ymaps.Circle(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'], '.$coords[2].'), '.$adds[$format]['props'].$adds[$format]['opts']." )"
+				1 => $line.": new ymaps.Placemark(<br>&nbsp;&nbsp;&nbsp;&nbsp;{type: 'Point', coordinates: [".$src['coord']."]},".$adds[$format]['props']. $adds[$format]['opts']." )",
+				2 => $line.": new ymaps.Polyline(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.LineString.fromEncodedCoordinates('".$src['coord']."'), ".$adds[$format]['props'].$adds[$format]['opts']." )",
+				3 => $line.": new ymaps.Polygon(<br>&nbsp;&nbsp;&nbsp;&nbsp; new ymaps.geometry.LineString.fromEncodedCoordinates('".$src['coord']."'), ".$adds[$format]['props'].$adds[$format]['opts']." )",
+				4 => $line.": new ymaps.Circle(<br>&nbsp;&nbsp;&nbsp;&nbsp;new ymaps.geometry.Circle([".$coords[0].", ".$coords[1]."], ".$coords[2]."), ".$adds[$format]['props'].$adds[$format]['opts']." )"
 			)
 		);
 		return $lines[$format][$src['type']];

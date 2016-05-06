@@ -15,20 +15,25 @@ class Mapmanager extends CI_Controller {
 
 	public function getmaps() {
 		$author = ($this->session->userdata('uidx')) ? $this->session->userdata('uidx') : "m12121m";
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
+		`usermaps`.author,
 		`usermaps`.hash_a,
 		`usermaps`.hash_e,
 		`usermaps`.public,
 		`usermaps`.name
 		FROM
 		`usermaps`
-		WHERE `usermaps`.`author` = ?
+		WHERE `usermaps`.active
+		AND (`usermaps`.`author` = ?
 		OR `usermaps`.`public`
+		OR `usermaps`.`author` = 0)
 		ORDER BY usermaps.id DESC", array($author));
 		if ($result->num_rows()) {
 			$output = array();
 			foreach ($result->result_array() as $row) {
-				$row['public'] = ($row['public']) ? ' checked="checked"' : "";
+				$row['disable'] = ($this->session->userdata("uidx") == $row['author']) ? "" : ' disabled="disabled"';
+				$row['public']  = ($row['public']) ? ' checked="checked"' : "";
+				$row['name']    = str_replace('"', "&quot;", $row['name']);
 				array_push($output, $this->load->view("freehand/chunks/maplistitem", $row, true));
 			}
 			print implode($output, "\n");
@@ -99,6 +104,26 @@ class Mapmanager extends CI_Controller {
 			}
 		}
 		print implode($output, "");
+	}
+
+	public function deletemap() {
+		$result = $this->db->query("SELECT 
+		usermaps.author
+		FROM
+		usermaps
+		WHERE
+		(usermaps.`hash_a` = ?)", array($this->input->post('hash')));
+		if ($result->num_rows()) {
+			$row = $result->row(0);
+			if ($this->session->userdata("uidx") == $row->author) {
+				$this->db->query("UPDATE
+				usermaps
+				SET
+				usermaps.active = 0
+				WHERE
+				usermaps.hash_a = ?", array($this->input->post('hash')));
+			}
+		}
 	}
 }
 

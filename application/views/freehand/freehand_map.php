@@ -46,6 +46,7 @@
 				<ul class="dropdown-menu">
 					<li><a href="#" id="mapLoader" title="Показывает карту с указанным идентификатором">Загрузить</a></li>
 					<li><a href="#" id="mapSave" title="Запоминает внесённые изменения">Сохранить</a></li>
+					<li><a href="#" id="mapDelete" title="Удалить карту">Удалить</a></li>
 					<li class="divider"></li>
 					<li><a href="#" id="mapReset" title="Очищает список объектов">Новая карта</a></li>
 				</ul>
