@@ -145,12 +145,12 @@ function count_objects() {
 	$(".mg-btn-list").click(function () {
 		var ttl = $(this).attr("ttl");
 		a_objects.each(function (item) {
-			if (item.properties.get("ttl") === ttl) {
+			if (item.properties.get("ttl") == ttl) {
 				item.balloon.open(item.geometry.getCoordinates());
 			}
 		});
 		e_objects.each(function (item) {
-			if (item.properties.get("ttl") === ttl) {
+			if (item.properties.get("ttl") == ttl) {
 				item.balloon.open(item.geometry.getCoordinates());
 				openEditPane(item.geometry.getType());
 			}
@@ -356,7 +356,7 @@ function doFinish(src) {
 		name = $("#bal_name").val(),
 		ttl  = $(src).attr('ttl');
 	e_objects.each(function (item) {
-		if (item.properties.get("ttl") === ttl) {
+		if (item.properties.get("ttl") == ttl) {
 			item.properties.set({
 				description : desc,
 				address     : addr,
@@ -510,9 +510,9 @@ function showImageSelector() {
 				}
 				imageList = [];
 				$("#imageList li.active").each(function() {
-					imageList.push($(this).attr("file"));
+					imageList.push($(this).attr("thumb"));
 				});
-				//alert(imageList.toSource());
+				console.log(imageList.toSource());
 			});
 		}
 	});
@@ -589,7 +589,7 @@ function doEdit(src) {
 	$("#location_id").val(ttl); // здесь строка
 	map.balloon.close();
 		a_objects.each(function (item) {
-			if (item.properties.get("ttl") === ttl) {
+			if (item.properties.get("ttl") == ttl) {
 				var type = item.geometry.getType(); // получаем YM тип геометрии объекта
 				e_objects.add(item); // переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
@@ -649,7 +649,7 @@ function setCircleCoordinates() {
 	*/
 	var ttl = $('#location_id').val();
 	e_objects.each(function (item) {
-		if (item.properties.get('ttl') === ttl) {
+		if (item.properties.get('ttl') == ttl) {
 			item.geometry.setCoordinates([parseFloat($("#cir_lon").val()), parseFloat($("#cir_lat").val())]);
 			traceNode(item);
 		}
@@ -662,7 +662,7 @@ function setCircleRadius() {
 	*/
 	var ttl = $('#location_id').val();
 	e_objects.each(function (item) {
-		if (item.properties.get('ttl') === ttl) {
+		if (item.properties.get('ttl') == ttl) {
 			item.geometry.setRadius(parseFloat($("#cir_radius").val()));
 			traceNode(item);
 		}
@@ -798,8 +798,8 @@ function display_locations() {
 		lon            = (isNaN(ymaps.geolocation.longitude)) ? parseFloat(map_center.toString().split(",")[0]) : ymaps.geolocation.longitude,
 		lat            = (isNaN(ymaps.geolocation.latitude))  ? parseFloat(map_center.toString().split(",")[1]) : ymaps.geolocation.latitude,
 		current_zoom   = ($("#current_zoom").val().length)    ? $("#current_zoom").val() : 15,
-		tileServerID   = parseInt(Math.random() * (4 - 1) + 1, 10).toString(),
-		tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "d", "4": "e", "5": "f" },
+		tileServerID   = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
+		tileServerLit  = { "0": "a", "1": "b", "2": "c" }, //"3": "d", "4": "e", "5": "f" },
 		genericBalloon = ymaps.templateLayoutFactory.createClass(
 		'<div class="ymaps_balloon">' +
 		'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
@@ -924,7 +924,7 @@ function display_locations() {
 			attr        : realStyle,
 			frame       : parseInt($('#vp_frame').val(), 10),
 			ttl         : object_gid += 1,
-			name        : "Название",
+			name        : "",
 			img         : "nophoto.gif",
 			hintContent : '',
 			address     : '',
@@ -1592,6 +1592,7 @@ $("#linkFactory a").click(function (e) {
 	}
 });
 
+/*
 $("#sessDestroy").click(function () {
 	$.ajax({
 		url      : '/' + mainController + "/resetsession",
@@ -1606,6 +1607,7 @@ $("#sessDestroy").click(function () {
 		}
 	});
 });
+*/
 
 $("#mapReset").click(function () {
 	resetSession();
@@ -1623,7 +1625,9 @@ function resetSession() {
 		success  : function () {
 			a_objects.removeAll();
 			e_objects.removeAll();
-			$("#mapSave, #ehashID, #SContainer").css('display', "block");
+			console.log(111);
+			$("#mapSave, #ehashID, #SContainer, #mapDelete").removeClass("hide");
+			$("#mapSave, #mapDelete").parent().removeClass("hide");
 			map.setZoom(mp.zoom);
 			map.setType(mp.maptype);
 			$("#mapName").val(mp.ehash);
@@ -1654,12 +1658,19 @@ $("#linkClose").click(function () {
 });
 
 $("#submitSelection").click(function () {
-	var target = $("#location_id").val();
+	var target = $("#location_id").val(),
+		a;
 	e_objects.each(function(item) {
 		if (item.properties.get("ttl") == target) {
 			item.properties.set({ imageList : imageList })
 		}
 	});
+	$("#locationImages").empty();
+	for (a in imageList) {
+		$("#locationImages").append('<img src="/'+ imageList[a] +'">');
+		console.log(imageList)
+	}
+	
 	/* здесь должно быть заполнение поля объекта данными */
 	$("#imageM").modal("hide");
 });

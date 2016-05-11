@@ -99,7 +99,7 @@ class Freehand extends CI_Controller {
 		return $output;
 	}
 
-	private function insertUserMapImages ($images) {
+	private function insertUserMapImages($images) {
 		if (sizeof($images)) {
 			$this->db->query("INSERT INTO
 			`userimages`(
@@ -300,10 +300,15 @@ class Freehand extends CI_Controller {
 			$map = $this->insertNotInDBUserMap($map);
 		}
 		$this->session->set_userdata('map', $map);
+		$images = array();
+		foreach ($objects['images'] as $val) {
+			$filename = explode(DIRECTORY_SEPARATOR, $val);
+			array_push($images, array_pop($filename));
+		}
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
 		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
-		$this->insertUserMapImages($objects['images']);
+		$this->insertUserMapImages($images);
 		$this->mapmodel->createframe($map['id']);
 		$output  = $this->getUserMap($map['id']);
 		print "usermap = { ".implode($output, ",\n")." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";

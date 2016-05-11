@@ -24,9 +24,7 @@ class Mapmanager extends CI_Controller {
 		FROM
 		`usermaps`
 		WHERE `usermaps`.active
-		AND (`usermaps`.`author` = ?
-		OR `usermaps`.`public`
-		OR `usermaps`.`author` = 0)
+		AND (`usermaps`.`author` = ? OR `usermaps`.`public` )
 		ORDER BY usermaps.id DESC", array($author));
 		if ($result->num_rows()) {
 			$output = array();
@@ -99,7 +97,7 @@ class Mapmanager extends CI_Controller {
 		foreach($data as $val){
 			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
 				$name   = $val;
-				$string = '<li file="'.$val.'"><img src="/'.implode(array('storage', $login, "128", $val), DIRECTORY_SEPARATOR).'"></li>';
+				$string = '<li file="'.$val.'" thumb="'.implode(array('storage', $login, "32", $val), DIRECTORY_SEPARATOR).'"><img src="/'.implode(array('storage', $login, "128", $val), DIRECTORY_SEPARATOR).'"></li>';
 				array_push($output, $string);
 			}
 		}
