@@ -100,6 +100,8 @@ class Freehand extends CI_Controller {
 	}
 
 	private function insertUserMapImages($images) {
+		print_r($images);
+		return false;
 		if (sizeof($images)) {
 			$this->db->query("INSERT INTO
 			`userimages`(
@@ -203,13 +205,25 @@ class Freehand extends CI_Controller {
 					"name"     => $row->name,
 					"images"   => "['".$locimages."']"
 				);
-				$string = $row->hash.": { d: '".trim($row->description)."', n: '".trim($row->name)."', a: '".trim($row->attributes)."', p: ".trim($row->type).", c: '".trim($row->coord)."', b: '".trim($row->address)."', l: '".trim($row->link)."', i: ['".$locimages."'] }";
+				$string = $row->hash.": { d: '".trim($row->description)."', n: '".trim($row->name)."', a: '".trim($row->attributes)."', p: ".trim($row->type).", c: '".trim($row->coord)."', b: '".trim($row->address)."', l: '".trim($row->link)."', i: ['".$locimages."'], src: 'db' }";
 				array_push($output, preg_replace("/\n/", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
-			return $output;
+			return implode($output, ",\n");
 		}
-		return array("error: 'Содержимого для карты с таким идентификатором не найдено.'");
+		return "error: 'Содержимого для карты с таким идентификатором не найдено.'";
+	}
+
+	private function getUserMapFromSession() {
+		$output = array();
+		foreach ($this->session->userdata('objects') as $key=>$val ) {
+			$images = (gettype($val['images']) === "array") ? "['".implode($val['images'], "', '")."']" : "['']";
+			array_push($output, $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }");
+		}
+		return implode($output, ",\n");
+	}
+
+	private function placeUserMapToSession() {
 	}
 
 	public function deleteobject() {
@@ -220,7 +234,8 @@ class Freehand extends CI_Controller {
 	}
 
 	public function loadmap() {
-		$hash = $this->input->post('name');
+		$hash   = $this->input->post('name');
+		
 		$result = $this->db->query("SELECT 
 		CONCAT_WS(',', `usermaps`.center_lon, `usermaps`.center_lat) AS center,
 		`usermaps`.hash_a,
@@ -236,6 +251,8 @@ class Freehand extends CI_Controller {
 		OR `usermaps`.`hash_e` = ?", array( $hash, $hash ));
 		if ($result->num_rows()) {
 			$row = $result->row();
+			$mapdata = $this->session->userdata('map');
+			$newMap   = ($mapdata && $hash !==$mapdata['id'] && $hash !==$mapdata['eid']) ? 1 : 0;
 			if ($row->hash_e == $hash) {
 				$mapid = $row->hash_a;
 				$ehash = $row->hash_e;
@@ -255,9 +272,19 @@ class Freehand extends CI_Controller {
 				"indb"		=> 1,
 				"author"	=> $row->author
 			);
+			
+			//print implode(array($hash, $uhash, $ehash, $newMap), " - ");
 			$this->session->set_userdata('map', $data);
 			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
-			print $mapparam."usermap = { ".implode($this->getUserMap($uhash), ",\n")."\n}";
+			
+			if( $newMap ) {
+				//print "database";
+				
+				print $mapparam."usermap = { ".$this->getUserMap($uhash)."\n}";
+				return true;
+			}
+			//print "session";
+			print $mapparam."usermap = { ".$this->getUserMapFromSession()."}";
 			return true;
 		}
 		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
@@ -301,17 +328,17 @@ class Freehand extends CI_Controller {
 		}
 		$this->session->set_userdata('map', $map);
 		$images = array();
+		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
 		foreach ($objects['images'] as $val) {
 			$filename = explode(DIRECTORY_SEPARATOR, $val);
 			array_push($images, array_pop($filename));
 		}
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['id']));
-		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
 		$this->insertUserMapImages($images);
 		$this->mapmodel->createframe($map['id']);
 		$output  = $this->getUserMap($map['id']);
-		print "usermap = { ".implode($output, ",\n")." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";
+		print "usermap = { ".$output." }; mp = { ehash: '".$map['eid']."', uhash: '".$map['id']."' }";
 	}
 
 	public function save() {
@@ -336,6 +363,7 @@ class Freehand extends CI_Controller {
 			"images"	=> $this->input->post('images')
 		);
 		$this->session->set_userdata("objects", $data);
+		//print_r($data);
 	}
 
 	public function synctosession() {
@@ -364,10 +392,10 @@ class Freehand extends CI_Controller {
 	public function getuserdata() {
 		if ($this->session->userdata('uidx')) {
 			$title = ($this->session->userdata('supx')) ? "Ваши загруженные фотографии публикуются сразу" : "Ваши загруженные фотографии просмотрит модератор";
-			print "logindata = { name: '".$this->session->userdata('name')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
+			print "logindata = { name: '".$this->session->userdata('name')."', uid: '".$this->session->userdata('uidx')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
 			return true;
 		}
-		print "logindata = { name: 'Гость', photo: '', title: 'После авторизации Вы можете загружать фото' }";
+		print "logindata = { name: 'Гость', photo: '', uid: 0, title: 'После авторизации Вы можете загружать фото' }";
 	}
 
 	public function getsession() {

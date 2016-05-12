@@ -401,6 +401,8 @@ function action_listeners_add() {
 		return false;
 	}
 
+	$("#uploadDir").val(mp.uhash);
+
 	$(".sw-finish").unbind().click(function () {
 		doFinish(this);
 		nullTracers();
@@ -491,11 +493,15 @@ function action_listeners_add() {
 function showImageSelector() {
 	$.ajax({
 		url         : '/mapmanager/listuserimages',
-		type        : 'GET',
-		dataType    : 'html',
-		success     : function(data){
+		type        : 'POST',
+		data        : { uploadDir : mp.uhash },
+		dataType    : 'script',
+		success     : function(){
 			var a;
-			$("#imageList").empty().append(data);
+			$("#imageList").empty();
+			for ( a in imagesData) {
+				$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/' + mp.uhash + '/128/' + imagesData[a].file + '"></li>');
+			}
 			for ( a in imageList ) {
 				$('#imageList li[file="' + imageList[a].split("/")[1] + '"]').addClass("active");
 			}
@@ -509,10 +515,12 @@ function showImageSelector() {
 					//return false;
 				}
 				imageList = [];
+				$("#locationImages").empty();
 				$("#imageList li.active").each(function() {
-					imageList.push($(this).attr("thumb"));
+					imageList.push($(this).attr("file"));
+					$("#locationImages").append('<img src="/storage/' + mp.uhash + '/32/'+ $(this).attr("file") +'">');
 				});
-				console.log(imageList.toSource());
+				//console.log(imageList.toSource());
 			});
 		}
 	});
@@ -692,7 +700,7 @@ function getImageBySize(image, size) {
 		if (image.hasOwnProperty(a)) {
 			if (image[a].length) {
 				pathComponents = image[a].split("/");
-				output.push('<img src="' + base_url + [ "storage", pathComponents[0], size, pathComponents[1]].join("/") + '">');
+				output.push('<img src="/storage/' + mp.uhash + '/' + size +'/' + image[a] +'">');
 			}
 			if (!image[a].length){
 				if (size === 32) {
@@ -702,7 +710,7 @@ function getImageBySize(image, size) {
 					output.push('<img src="' + api_url + '/images/nophoto.jpg">');
 				}
 			}
-			
+
 		}
 	}
 	return output;
@@ -723,7 +731,7 @@ function place_freehand_objects(source) {
 	for (b in source) {
 		if (source.hasOwnProperty(b)) {
 			src = source[b];
-			
+
 			options = ymaps.option.presetStorage.get(normalize_style(src.a, src.p));
 			frm = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
 			properties = {
@@ -851,6 +859,7 @@ function display_locations() {
 		'</div>' +
 		'<div id="uploadForm" class="hide"><h4>Загрузить изображения<button type="button" id="toMain" class="btn pull-right" title="Вернуться к свойствам"><i class="icon-list" ></i></button></h4>' +
 		'<form method="post" id="uForm" action="/upload/files">' +
+		'<input type="hidden" name="uploadDir" id="uploadDir" value="' + mp.uhash + '">' +
 		'<input type="file" name="file0" id="file0"><button type="button" class="btn delPicture" id="del0" ref=0><i class="icon-minus"></i></button>' +
 		'<button type="button" id="addUploadItem" class="btn pull-right" title="Добавить файл"><i class="icon-plus"></i></button>' +
 		'</form>' +
@@ -1084,7 +1093,7 @@ function display_locations() {
 		dX[a] = Math.pow(2, a) - 1;
 	}
 	layerTypes   = {
-		
+
 		0: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "http://luft.korzhevdp.com/maps/nm/base/",
@@ -1548,8 +1557,8 @@ $("#linkFactory a").click(function (e) {
 	}
 	/*
 		exportedMapObjects = {
-			28: [{ type: "Point", coord: [40.59971845632609,64.48305691751406] }, { b: "улица Нахимова, 15", d: "Митинг Памяти у памятника портовикам, погибшим в годы Великой Отечественной войны, площадь у здания КЦ «Бакарица»", n: "7 мая 14:00", l: '' },{ attr: "twirl#redIcon" }] 
-		} 
+			28: [{ type: "Point", coord: [40.59971845632609,64.48305691751406] }, { b: "улица Нахимова, 15", d: "Митинг Памяти у памятника портовикам, погибшим в годы Великой Отечественной войны, площадь у здания КЦ «Бакарица»", n: "7 мая 14:00", l: '' },{ attr: "twirl#redIcon" }]
+		}
 	*/
 	if (mode === 6) {
 		e.preventDefault();
@@ -1662,15 +1671,11 @@ $("#submitSelection").click(function () {
 		a;
 	e_objects.each(function(item) {
 		if (item.properties.get("ttl") == target) {
-			item.properties.set({ imageList : imageList })
+			item.properties.set({ imageList : imageList });
+			usermap[target].i = imageList;
+			console.log(usermap[target].i);
 		}
 	});
-	$("#locationImages").empty();
-	for (a in imageList) {
-		$("#locationImages").append('<img src="/'+ imageList[a] +'">');
-		console.log(imageList)
-	}
-	
 	/* здесь должно быть заполнение поля объекта данными */
 	$("#imageM").modal("hide");
 });

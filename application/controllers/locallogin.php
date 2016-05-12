@@ -27,7 +27,7 @@ class Locallogin extends CI_Controller {
 				$this->session->set_userdata('name', $login);
 				$this->session->set_userdata('photo', '<i class="icon-user"></i>');
 				$this->session->set_userdata('supx', 1);
-				print "logresult = { status: 1, error: '', login: '".$login."', center: [".$row->map_center."], zoom: ".$row->map_zoom.", mapType: ".$row->map_type."}";
+				print "logresult = { status: 1, error: '', uid: '".$row->uid."', login: '".$login."', center: [".$row->map_center."], zoom: ".$row->map_zoom.", mapType: ".$row->map_type."}";
 				return true;
 			}
 			print "logresult = { status: 2, error: 'Неправильно введён пароль'}";

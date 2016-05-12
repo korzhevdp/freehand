@@ -21,13 +21,12 @@ $("#tryLogIn").click(function(){
 			if (parseInt(logresult.status, 10) === 0) {
 				$("#password2span, #regWelcome, #tryRegIn").removeClass("hide");
 				$("#tryLogIn, #logAlert").addClass("hide");
+				return false;
 			}
-			if (parseInt(logresult.status, 10) === 1) {
-				$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');
-				$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
-				$("#tryLogIn, #logAlert, #logIn").addClass("hide");
-				$("#loginM").modal("hide");
-			}
+			$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');
+			$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
+			$("#tryLogIn, #logAlert, #logIn").addClass("hide");
+			$("#loginM").modal("hide");
 		},
 		error: function (data, stat, err) {
 			console.log([ data, stat, err ]);
@@ -76,11 +75,11 @@ function getUser(){
 			if (logindata.name === "Гость") {
 				$(".logIn").removeClass("hide");
 				$(".logOut").addClass("hide");
+				return false;
 			}
-			if (logindata.name !== "Гость")  {
-				$(".logOut").removeClass("hide");
-				$(".logIn").addClass("hide");
-			}
+			$(".logOut").removeClass("hide");
+			$(".logIn").addClass("hide");
+			userUID = logindata.uid;
 		},
 		error: function(data,stat,err){
 			alert([data,stat,err].join("\n"));

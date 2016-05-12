@@ -83,7 +83,7 @@ class Mapmanager extends CI_Controller {
 
 	public function listuserimages() {
 		$output    = array();
-		$login     = $this->session->userdata('uidx');
+		$login     = $this->input->post("uploadDir", true);
 		if (!$this->session->userdata("name") || !strlen($this->session->userdata("name")) || $this->session->userdata("name") === "Гость"){
 			print "";
 			return false;
@@ -94,14 +94,13 @@ class Mapmanager extends CI_Controller {
 			return false;
 		}
 		$data      = scandir($directory);
-		foreach($data as $val){
+		foreach ($data as $val) {
 			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
-				$name   = $val;
-				$string = '<li file="'.$val.'" thumb="'.implode(array('storage', $login, "32", $val), DIRECTORY_SEPARATOR).'"><img src="/'.implode(array('storage', $login, "128", $val), DIRECTORY_SEPARATOR).'"></li>';
+				$string = "{ login : '".$login."', file : '".$val."'}";
 				array_push($output, $string);
 			}
 		}
-		print implode($output, "");
+		print "imagesData = [ ".implode($output, ",\n\t")."\n]";
 	}
 
 	public function deletemap() {

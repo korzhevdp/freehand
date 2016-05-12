@@ -1,5 +1,5 @@
 var userstyles = {},
-	apiURL = "http://api.arhcity.ru";
+	apiURL = "http://api.korzhevdp.com";
 userstyles['user#here'] = {
 	iconUrl         : apiURL + '/gisicons/userstyles/redarrowdown.png',
 	iconImageHref   : apiURL + '/gisicons/userstyles/redarrowdown.png',
