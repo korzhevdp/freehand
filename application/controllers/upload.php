@@ -25,33 +25,33 @@ class Upload extends CI_Controller {
 		return $image;
 	}
 
-	private function resize_image($file, $data, $TMD = 600, $quality = 100){
-		$filesDir     = $this->input->post('uploadDir');
+	private function resizeImage($file, $data, $tmd = 600, $quality = 100){
+		$filesDir  = $this->input->post('uploadDir');
 		$uploaddir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $filesDir;
 		$basename  = basename($file);
 		$srcFile   = $uploaddir . DIRECTORY_SEPARATOR . $basename;
-		if (!file_exists($uploaddir . DIRECTORY_SEPARATOR . $TMD)) {
-			mkdir($uploaddir . DIRECTORY_SEPARATOR . $TMD, 0775, true);
+		if (!file_exists($uploaddir . DIRECTORY_SEPARATOR . $tmd)) {
+			mkdir($uploaddir . DIRECTORY_SEPARATOR . $tmd, 0775, true);
 		}
 		$data['type'] = "image/jpeg";
-		$image        = $this->createimageByType($data, $srcFile);
 		$size         = GetImageSize($srcFile);
-		if ($size['1'] < $TMD && $size['0'] < $TMD) {
-			$new      = $image;
-		} else {
+		if ($size['1'] < $tmd && $size['0'] < $tmd) {
+			$new      = $this->createimageByType($data, $srcFile)
+		}
+		if ($size['1'] > $tmd || $size['0'] > $tmd) {
 			if ($size['1'] < $size['0']) {
-				$h_new    = round($TMD * $size['1'] / $size['0']);
-				$new      = ImageCreateTrueColor ($TMD, $h_new);
-				ImageCopyResampled($new, $image, 0, 0, 0, 0, $TMD, $h_new, $size['0'], $size['1']);
+				$hNew = round($tmd * $size['1'] / $size['0']);
+				$new  = ImageCreateTrueColor ($tmd, $hNew);
+				ImageCopyResampled($new, $image, 0, 0, 0, 0, $tmd, $hNew, $size['0'], $size['1']);
 			}
 			if($size['1'] >= $size['0']){
-				$h_new    = round($TMD * $size['0'] / $size['1']);
-				$new      = ImageCreateTrueColor ($h_new, $TMD);
-				ImageCopyResampled($new, $image, 0, 0, 0, 0, $h_new, $TMD, $size['0'], $size['1']);
+				$hNew = round($tmd * $size['0'] / $size['1']);
+				$new  = ImageCreateTrueColor ($hNew, $tmd);
+				ImageCopyResampled($new, $image, 0, 0, 0, 0, $hNew, $tmd, $size['0'], $size['1']);
 			}
 		}
 		//print $uploaddir."/".TMD."/".$filename.".jpg<br>";
-		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $TMD . DIRECTORY_SEPARATOR . $basename, $quality);
+		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $tmd . DIRECTORY_SEPARATOR . $basename, $quality);
 		//header("content-type: image/jpeg");// активировать для отладки
 		//imageJpeg ($new, "", 100);//активировать для отладки
 		imageDestroy($new);
@@ -86,9 +86,9 @@ class Upload extends CI_Controller {
 			$file     = $baseDir . DIRECTORY_SEPARATOR . $filesDir . DIRECTORY_SEPARATOR . implode($filename, "").".jpeg";
 			$this->recodeOriginalFile($data);
 			unlink($data['tmp_name']);
-			$this->resize_image($file, $data,  32, 100);
-			$this->resize_image($file, $data, 128, 100);
-			$this->resize_image($file, $data, 600, 100);
+			$this->resizeImage($file, $data,  32, 100);
+			$this->resizeImage($file, $data, 128, 100);
+			$this->resizeImage($file, $data, 600, 100);
 		}
 		print "uploadprocess = { status: 1, error: 'Файлы загружены.}";
 	}

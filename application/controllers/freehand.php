@@ -100,8 +100,8 @@ class Freehand extends CI_Controller {
 	}
 
 	private function insertUserMapImages($images) {
-		print_r($images);
-		return false;
+		//print_r($images);
+		//return false;
 		if (sizeof($images)) {
 			$this->db->query("INSERT INTO
 			`userimages`(
@@ -221,9 +221,6 @@ class Freehand extends CI_Controller {
 			array_push($output, $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }");
 		}
 		return implode($output, ",\n");
-	}
-
-	private function placeUserMapToSession() {
 	}
 
 	public function deleteobject() {
@@ -386,7 +383,7 @@ class Freehand extends CI_Controller {
 		$session = $this->session->userdata('objects');
 		$session = array_merge($session, $output);
 		$this->session->set_userdata("objects", $session);
-		print_r($session);
+		//print_r($session);
 	}
 	
 	public function getuserdata() {
