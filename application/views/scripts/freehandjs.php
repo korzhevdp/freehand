@@ -166,7 +166,7 @@ function fromClipboard(src, wst) {
 	вставка данных из локального буфера обмена
 	*/
 	var ttl = $(src).attr('ttl');
-	e_objects.each(function (item) {
+	function getClipboard(item, wst) {
 		if (ttl === item.properties.get('ttl')) {
 			item.properties.set({
 				name        : clipboard.name,
@@ -179,20 +179,13 @@ function fromClipboard(src, wst) {
 				item.properties.set({ preset: clipboard.preset });
 			}
 		}
+	}
+
+	e_objects.each(function (item) {
+		getClipboard(item, wst);
 	});
 	a_objects.each(function (item) {
-		if (ttl === item.properties.get('ttl')) {
-			item.properties.set({
-				name        : clipboard.name,
-				address     : clipboard.address,
-				description : clipboard.description,
-				hintContent : clipboard.name + ' ' + clipboard.address
-			});
-			if (wst === 1 && item.geometry.getType() === clipboard.gtype) {
-				item.options.set(ymaps.option.presetStorage.get(normalize_style(clipboard.preset, clipboard.gtype)));
-				item.properties.set({ preset: clipboard.preset });
-			}
-		}
+		getClipboard(item, wst);
 	});
 	count_objects();
 }
