@@ -431,11 +431,11 @@ function eventListenersAdd() {
 			processData : false,
 			type        : 'POST',
 			success     : function(data){
-				if (uploadresult.status == "1") {
+				if (uploadresult.status.toString() === "1") {
 					$("#uploadForm").addClass("hide");
 					$("#mainForm").removeClass("hide");
 				}
-				if (uploadresult.status == "0") {
+				if (uploadresult.status.toString() === "0") {
 					$("#uploadError").html(uploadresult.error);
 					$("#uploadError").removeClass("hide");
 				}
@@ -674,23 +674,15 @@ function getImageBySize(image, size) {
 	return output;
 }
 
-function setFrameData(mframes) {
+function setFrameData (mframes) {
 	var a,
-		frameCounter = 1,
-		frm;
+		frm = (mframes[$("#vp_frame").val()] === undefined) ?  mframes.length - 1 : $("#vp_frame").val();
 	for (a in mframes) {
-		if (mframes.hasOwnProperty(a)) {
-			if (a > frameCounter) {
-				frameCounter = a;
-			}
-		}
-	}
-	for (a = 1; a <= frameCounter; a += 1) {
-		if (mframes[a] === undefined) {
+		if (mframes.hasOwnProperty(a) && mframes[a] === undefined) {
 			mframes[a] = new ymaps.GeoObjectArray();
 		}
 	}
-	return frm = (mframes[$("#vp_frame").val()] === undefined) ?  mframes.length - 1 : $("#vp_frame").val();
+	return frm;
 }
 
 function placeFreehandObjects(source) {
@@ -1188,10 +1180,10 @@ function displayLocations() {
 
 	/* ViewPort data fields */
 	viewPort = {
-		frame  : 1,
-		vPCenter    : [ map.getCenter()[0].toFixed(precision), map.getCenter()[1].toFixed(precision) ],
-		zoom   : 13,
-		cType : 'yandex#satellite'
+		frame    : 1,
+		vPCenter : [ map.getCenter()[0].toFixed(precision), map.getCenter()[1].toFixed(precision) ],
+		zoom     : 13,
+		cType    : 'yandex#satellite'
 	};
 
 	$("#vp_frame").val(1);
@@ -1375,6 +1367,42 @@ function openLink(linkhash) {
 	$("#mapLinkContainer").removeClass("hide");
 }
 
+function setMapItem (data) {
+	var coords,
+		initCoord = data[0].coord,
+		pType     = geoType2IntId[data[0].type],
+		reverse   = $("#cRev").prop("checked"),
+		coordsFX  = {
+			1 : function (coords, reverse) {
+				return (reverse) ? coords.reverse().join(",") : coords.join(",");
+			},
+			2 : function (coords, reverse) {
+				return coords;
+			},
+			3 : function (coords, reverse) {
+				return coords;
+			},
+			4 : function (coords, reverse) {
+				return ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
+			},
+			5 : function (coords, reverse) {
+				return coords;
+			}
+		}
+	coords = coordsFX[pType](initCoord, reverse);
+	return {
+		frame : 1,
+		d     : data[1].d,
+		n     : data[1].n,
+		a     : data[2].attr,
+		p     : pType,
+		c     : coords,
+		b     : data[1].b,
+		l     : data[1].l,
+		i     : ['']
+	}
+}
+
 function syncToSession(usermap){
 	$.ajax({
 		url          : '/' + mainController + "/synctosession",
@@ -1513,25 +1541,7 @@ $("#linkFactory a").click(function (e) {
 					eval($("#importCode").val());
 					for (a in exportedMapObjects) {
 						if (exportedMapObjects.hasOwnProperty(a)) {
-							pType  = geoType2IntId[exportedMapObjects[a][0].type];
-							coords = exportedMapObjects[a][0].coord;
-							if (pType === 1) {
-								coords = ($("#cRev").prop("checked")) ? coords.reverse().join(",") : coords.join(",");
-							}
-							if (pType === 4) {
-								coords = ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
-							}
-							usermap[a] = {
-								frame : 1,
-								d     : exportedMapObjects[a][1].d,
-								n     : exportedMapObjects[a][1].n,
-								a     : exportedMapObjects[a][2].attr,
-								p     : pType,
-								c     : coords,
-								b     : exportedMapObjects[a][1].b,
-								l     : exportedMapObjects[a][1].l,
-								i     : ['']
-							}
+							usermap[a] = setMapItem(exportedMapObjects[a]);
 						}
 					}
 					placeFreehandObjects(usermap);
