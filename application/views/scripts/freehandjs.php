@@ -40,7 +40,9 @@ var userstyles,
 	mframes          = [],
 	precision        = 8,
 	metricPrecision  = 2,
-	isCenterFixed    = 0;
+	isCenterFixed    = 0,
+	optionEdit       = { draggable: 1, zIndex: 300, zIndexActive: 300, zIndexDrag: 300, zIndexHover: 300 },
+	optionIdle       = { draggable: 0, zIndex:   1, zIndexActive:   1, zIndexDrag:   1, zIndexHover:   1 };
 
 function normalizeStyle(style, type) {
 	var defaults   = {
@@ -334,13 +336,7 @@ function doFinish(src) {
 				hintContent : name + ' ' + addr
 			});
 			aObjects.add(item);
-			item.options.set({
-				draggable   : 0,
-				zIndex      : 1,
-				zIndexActive: 1,
-				zIndexDrag  : 1,
-				zIndexHover : 1
-			});
+			item.options.set(optionIdle);
 			sendObject(item);
 		}
 	});
@@ -568,15 +564,14 @@ function doEdit(src) {
 				var type = item.geometry.getType(); // получаем YM тип геометрии объекта
 				eObjects.add(item); // переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
-				imageList = ( usermap[ttl].i !== undefined ) ? usermap[ttl].i : [];
-				//item.options.set({ zIndex: 1, zIndexActive: 1, zIndexDrag: 1, zIndexHover: 1, draggable: ((item.options.get('draggable') === 0) ? 1 : 0) });
+				imageList = ( usermap[ttl] === undefined || usermap[ttl].i === undefined ) ? [] : usermap[ttl].i;
 			if (eObjects.getLength() > 1) { // нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
 				$(".pointcoord, .circlecoord").prop('disabled', true);
 			}
 			if (type === "LineString" || type === "Polygon") {
 				item.editor.startEditing();
 			}
-			item.options.set({ draggable: 1, zIndex: 300, zIndexActive: 300, zIndexDrag: 300, zIndexHover: 300 });
+			item.options.set(optionEdit);
 			openEditPane(type); // открываем требуемую панель редактора
 			traceNode(item);
 		}
@@ -588,14 +583,7 @@ function doFinishAll() {
 	eObjects.each(function (item) {
 		while (eObjects.getLength()) {
 			aObjects.add(item); // эта операция не столько добавляет, сколько ПЕРЕМЕЩАЕТ объекты.
-			item.options.set({
-				draggable    : 0,
-				zIndex       : 1,
-				zIndexActive : 1,
-				zIndexDrag   : 1,
-				zIndexHover  : 1,
-				strokeStyle  : 'solid'
-			});
+			item.options.set({ optionIdle });
 		}
 	});
 	countObjects();
@@ -605,11 +593,10 @@ function lockCenter() {
 	if (isCenterFixed) {
 		$(".mapcoord").prop('disabled', true);
 		$("#mapFix").html('Отслеживать центр').attr('title', 'Разрешить перемещать центр');
+		return true;
 	}
-	if (!isCenterFixed) {
-		$(".mapcoord").prop('disabled', false);
-		$("#mapFix").html('Фиксировать центр').attr('title', 'Не перемещать центр');
-	}
+	$("#mapFix").attr('title', 'Не перемещать центр').html('Фиксировать центр');
+	$(".mapcoord").prop('disabled', false);
 }
 
 function setPointCoordinates() {
@@ -674,17 +661,6 @@ function getImageBySize(image, size) {
 	return output;
 }
 
-function setFrameData (mframes) {
-	var a,
-		frm = (mframes[$("#vp_frame").val()] === undefined) ?  mframes.length - 1 : $("#vp_frame").val();
-	for (a in mframes) {
-		if (mframes.hasOwnProperty(a) && mframes[a] === undefined) {
-			mframes[a] = new ymaps.GeoObjectArray();
-		}
-	}
-	return frm;
-}
-
 function placeFreehandObjects(source) {
 	var src,
 		object,
@@ -739,11 +715,11 @@ function placeFreehandObjects(source) {
 			mframes[frame].add(object);
 		}
 	}
-	countObjects();
-	frm = setFrameData(mframes);
-	while (mframes[frm].get(0)) {
-		aObjects.add(mframes[frm].get(0));
+	if(!mframes.length){
+		mframes[1] = new ymaps.GeoObjectArray();
 	}
+	showFrame(mframes[1]);
+	countObjects();
 }
 
 function runGeoCoding(coords) {
@@ -780,64 +756,63 @@ function displayLocations() {
 		tileServerID   = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
 		tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "c", "4": "b", "5": "a" },
 		genericBalloon = ymaps.templateLayoutFactory.createClass(
-		'<div class="ymaps_balloon">' +
-		'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
-		'$[properties.img128|<img src="' + apiURL + '/images/nophoto.jpg">]' +
-		'</div>' +
-		'<div class="propertyContainer"><div class="property">Название:</div>&nbsp;$[properties.name|без имени]</div>' +
-		'<div class="propertyContainer"><div class="property">Адрес:</div>&nbsp;$[properties.address|нет]</div>' +
-		'<div class="propertyContainer"><div class="property">Описание:</div>&nbsp;$[properties.description|без описания]</div>' +
-		'<div class="link"><a href="$[properties.link|#]" class="btn btn-block" target="_blank">Подробности здесь</a></div>' +
-		'<div class="pull-right" style="margin-top:20px;">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:8px;">Редактировать </button>' +
-		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
-		'</div></div>'
+			'<div class="ymaps_balloon">' +
+			'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
+			'$[properties.img128|<img src="' + apiURL + '/images/nophoto.jpg">]' +
+			'</div>' +
+			'<div class="propertyContainer"><div class="property">Название:</div>&nbsp;$[properties.name|без имени]</div>' +
+			'<div class="propertyContainer"><div class="property">Адрес:</div>&nbsp;$[properties.address|нет]</div>' +
+			'<div class="propertyContainer"><div class="property">Описание:</div>&nbsp;$[properties.description|без описания]</div>' +
+			'<div class="link"><a href="$[properties.link|#]" class="btn btn-block" target="_blank">Подробности здесь</a></div>' +
+			'<div class="pull-right" style="margin-top:20px;">' +
+			'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:8px;">Редактировать </button>' +
+			'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
+			'</div></div>'
 		),
 		iframeBalloon = ymaps.templateLayoutFactory.createClass(
-		'<div class="ymaps_balloon_iframed">' +
-		'<iframe src="$[properties.link|]" width="400" height="400" style="border:none;margin:0;padding:0;"></iframe>' +
-		'<div class="link"><a href="$[properties.link|#]" class="btn btn-mini btn-block" target="_blank">Подробности здесь</a></div>' +
-		'<div class="pull-right" style="margin-top:20px;">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]">Редактировать </button>' +
-		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
-		'</div></div>'
+			'<div class="ymaps_balloon_iframed">' +
+			'<iframe src="$[properties.link|]" width="400" height="400" style="border:none;margin:0;padding:0;"></iframe>' +
+			'<div class="link"><a href="$[properties.link|#]" class="btn btn-mini btn-block" target="_blank">Подробности здесь</a></div>' +
+			'<div class="pull-right" style="margin-top:20px;">' +
+			'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]">Редактировать </button>' +
+			'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
+			'</div></div>'
 		),
-
 		// http://stackoverflow.com/questions/5392344/sending-multipart-formdata-with-jquery-ajax
 		editBalloon = ymaps.templateLayoutFactory.createClass(
-		'<div class="ymaps_balloonX">' +
-		'<div id="mainForm" class="">' +
-		'<label>Название:<input type="text" id="bal_name" value="$[properties.name|без имени]"></label>' +
-		'<label>Адрес:<input type="text" id="bal_addr" placeholder="Правый щелчок по карте добавит адрес места" value="$[properties.address|нет]"></label>' +
-		'<label>Ссылка:' +
-		'<input type="text" id="bal_link" placeholder="Ссылка на web-страницу или изображение" value="$[properties.link|#]">' +
-		'</label>' +
-		'<label for="a2232G">Фото:' +
-		'<span id="locationImages">' +
-		'$[properties.images|]' +
-		'<div class="btn-group" style="float:right;margin-top: 4px;">' +
-		'<button class="btn" type="button" id="imgSelector" title="Выбрать изображения"><i class="icon-picture"></i></button>' +
-		'<button class="btn" type="button" id="imgUploader" title="Загрузить изображения"><i class="icon-upload"></i></button>' +
-		'</div>' +
-		'</span>' +
-		'</label>' +
-		'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.description|нет]</textarea></label>' +
-		'<div class="pull-right">' +
-		'<button type="button" class="btn btn-mini btn-primary sw-finish" ttl="$[properties.ttl|0]">Готово</button>' +
-		'<button type="button" class="btn btn-mini btn-danger sw-del" ttl="$[properties.ttl|0]">Удалить</button>' +
-		'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
-		'</div>' +
-		'</div>' +
-		'<div id="uploadForm" class="hide"><h4>Загрузить изображения<button type="button" id="toMain" class="btn pull-right" title="Вернуться к свойствам"><i class="icon-list" ></i></button></h4>' +
-		'<form method="post" id="uForm" action="/upload/files">' +
-		'<input type="hidden" name="uploadDir" id="uploadDir" value="' + mp.uhash + '">' +
-		'<input type="file" name="file0" id="file0"><button type="button" class="btn delPicture" id="del0" ref=0><i class="icon-minus"></i></button>' +
-		'<button type="button" id="addUploadItem" class="btn pull-right" title="Добавить файл"><i class="icon-plus"></i></button>' +
-		'</form>' +
-		'<button type="button" id="uploadImages" class="btn btn-info btn-block" title="Добавить файл">Загрузить изображения</button>' +
-		'<div class="alert alert-info hide" id="uploadError"></div>' +
-		'</div>' +
-		'</div>'
+			'<div class="ymaps_balloonX">' +
+			'<div id="mainForm" class="">' +
+			'<label>Название:<input type="text" id="bal_name" value="$[properties.name|без имени]"></label>' +
+			'<label>Адрес:<input type="text" id="bal_addr" placeholder="Правый щелчок по карте добавит адрес места" value="$[properties.address|нет]"></label>' +
+			'<label>Ссылка:' +
+			'<input type="text" id="bal_link" placeholder="Ссылка на web-страницу или изображение" value="$[properties.link|#]">' +
+			'</label>' +
+			'<label for="a2232G">Фото:' +
+			'<span id="locationImages">' +
+			'$[properties.images|]' +
+			'<div class="btn-group" style="float:right;margin-top: 4px;">' +
+			'<button class="btn" type="button" id="imgSelector" title="Выбрать изображения"><i class="icon-picture"></i></button>' +
+			'<button class="btn" type="button" id="imgUploader" title="Загрузить изображения"><i class="icon-upload"></i></button>' +
+			'</div>' +
+			'</span>' +
+			'</label>' +
+			'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.description|нет]</textarea></label>' +
+			'<div class="pull-right">' +
+			'<button type="button" class="btn btn-mini btn-primary sw-finish" ttl="$[properties.ttl|0]">Готово</button>' +
+			'<button type="button" class="btn btn-mini btn-danger sw-del" ttl="$[properties.ttl|0]">Удалить</button>' +
+			'<button type="button" class="btn btn-mini btn-info balloonClose">Закрыть</button>' +
+			'</div>' +
+			'</div>' +
+			'<div id="uploadForm" class="hide"><h4>Загрузить изображения<button type="button" id="toMain" class="btn pull-right" title="Вернуться к свойствам"><i class="icon-list" ></i></button></h4>' +
+			'<form method="post" id="uForm" action="/upload/files">' +
+			'<input type="hidden" name="uploadDir" id="uploadDir" value="' + mp.uhash + '">' +
+			'<input type="file" name="file0" id="file0"><button type="button" class="btn delPicture" id="del0" ref=0><i class="icon-minus"></i></button>' +
+			'<button type="button" id="addUploadItem" class="btn pull-right" title="Добавить файл"><i class="icon-plus"></i></button>' +
+			'</form>' +
+			'<button type="button" id="uploadImages" class="btn btn-info btn-block" title="Добавить файл">Загрузить изображения</button>' +
+			'<div class="alert alert-info hide" id="uploadError"></div>' +
+			'</div>' +
+			'</div>'
 		);
 
 	function showAddress(e) {
@@ -858,6 +833,25 @@ function displayLocations() {
 		src.options.set(ymaps.option.presetStorage.get(style)); // назначение стиля в опции.
 		src.properties.set({ attr: style }); // параллельная запись определения в свойства.
 		sendObject(src);
+	}
+
+	function detectErrors(mp, prType, counter) {
+		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+			console.log("Рисование запрещено");
+			return true;
+		}
+		if (prType === 0) {
+			console.log("Ошибка в декодировании типа объекта. 0 не является допустимым типом");
+			return true;
+		}
+		if (counter) {
+			if (!confirm("На карте присутствуют редактируемые объекты.\nЗавершить их редактирование и создать новый объект?")) {
+				return true;
+			}
+			doFinishAll();
+			return false;
+		}
+		return false;
 	}
 
 	function drawObject(click) {
@@ -912,19 +906,8 @@ function displayLocations() {
 				imageList   : []
 			};
 
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
-			console.log("Рисование запрещено");
+		if( detectErrors(mp, prType, counter) ) {
 			return false;
-		}
-		if (prType === 0) {
-			console.log("Ошибка в декодировании типа объекта. 0 не является допустимым типом");
-			return false;
-		}
-		if (counter) {
-			if (!confirm("На карте присутствуют редактируемые объекты.\nЗавершить их редактирование и создать новый объект?")) {
-				return false;
-			}
-			doFinishAll();
 		}
 
 		fx[prType](click);
@@ -933,8 +916,8 @@ function displayLocations() {
 		runGeoCoding(coords).then(function(decAddr){
 			object.properties.set({ hintContent : decAddr, address : decAddr });
 		});
-		/// WORKI-I-I-I-I-I-ING!!!!!
-		object.options.set({ draggable : 1 });
+
+		object.options.set( optionEdit );
 		eObjects.add(object);
 		if (prType === 2 || prType === 3) {
 			object.editor.startDrawing();
@@ -1047,7 +1030,6 @@ function displayLocations() {
 		});
 	}
 	//определение механизма пересчёта стандартной сетки тайлов в сетку тайлов Яндекс-карт (TMS)
-	//apiURL = (typeof $("#apiURL") != 'undefined' && $("#apiURL").val().length) ? $("#apiURL").val() : "http://api.arhcity.ru",
 	for (a = 0; a < 21; a += 1) {
 		dX[a] = Math.pow(2, a) - 1;
 	}
@@ -1215,89 +1197,86 @@ function displayLocations() {
 		balloonContentBodyLayout: 'editing#balloonLayout',
 		balloonWidth: 800
 	});
+
 	// ##### события #####
 	// карта
-	map.events.add('balloonopen', function () {
-		$('#upload_location').val($('#l_photo').attr('picref'));
-		eventListenersAdd();
-	});
-	/*
-	map.events.add('balloonclose', function () {
-	//carousel_destroy();
-	});
-	*/
-	map.events.add('boundschange', function (data) {
-		if (!isCenterFixed) {
-			$("#vp_lon").val(data.get('newCenter')[0].toFixed(precision)); // сохраняем в поле новое значение центра карты
-			$("#vp_lat").val(data.get('newCenter')[1].toFixed(precision)); // сохраняем в поле новое значение центра карты
-			$("#map_center").val(data.get('newCenter').join(",")); // сохраняем в поле новое значение центра карты
-			$("#current_zoom").val(data.get('newZoom')); // сохраняем в поле новое значение масштаба карты
-			sendMap();
-		}
-	});
-
-	map.events.add('typechange', function () {
-		$("#current_type").val(map.getType()); // сохраняем в поле новое значение типа карты
-		sendMap();
-	});
-
-	map.events.add('click', function (click) {
-		drawObject(click);
-	});
-
-	map.events.add('contextmenu', function (e) {
-		showAddress(e);
-	});
-
-	eObjects.events.add('dragend', function (e) {
-		var object = e.get('target');
-		traceNode(object);
-	});
-
-	aObjects.events.add('contextmenu', function (e) {
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
-			return false;
-		}
-		object = e.get('target');
-		doEdit(object);
-		countObjects();
-		counter = 1;
-	});
-
-	aObjects.events.add('click', function (e) {
-		var object = e.get('target');
-		if (eObjects.getLength() !== 1) {
-			return false;
-		}
-		eObjects.each(function (item) {
-			var auxGeometry;
-			if (item.geometry.getType() === "LineString") {
-				item.geometry.insert(item.geometry.getLength() + 1, object.geometry.getCoordinates());
-			}
-			if (item.geometry.getType() === "Polygon") {
-				auxGeometry = item.geometry.getCoordinates();
-				auxGeometry[0][auxGeometry[0].length - 1] = object.geometry.getCoordinates();
-				item.geometry.setCoordinates(auxGeometry);
-			}
+	function setMapEvents() {
+		map.events.add('balloonopen', function () {
+			$('#upload_location').val($('#l_photo').attr('picref'));
+			eventListenersAdd();
 		});
-		map.balloon.close();
-	});
-	/*
-	eObjects.events.add('contextmenu', function (e) {
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
-			return false;
-		}
-		object = e.get('target');
-		doEdit(object);
-		countObjects();
-		counter = 1;
-	});
-	*/
+		/*
+		map.events.add('balloonclose', function () {
+			//carousel_destroy();
+		});
+		*/
+		map.events.add('boundschange', function (event) {
+			if (isCenterFixed) {
+				return false;
+			}
+			$("#vp_lon").val(event.get('newCenter')[0].toFixed(precision)); // сохраняем в поле новое значение центра карты
+			$("#vp_lat").val(event.get('newCenter')[1].toFixed(precision)); // сохраняем в поле новое значение центра карты
+			$("#map_center").val(event.get('newCenter').join(",")); // сохраняем в поле новое значение центра карты
+			$("#current_zoom").val(event.get('newZoom')); // сохраняем в поле новое значение масштаба карты
+			sendMap();
+		});
+
+		map.events.add('typechange', function () {
+			$("#current_type").val(map.getType()); // сохраняем в поле новое значение типа карты
+			sendMap();
+		});
+
+		map.events.add('click', function (event) {
+			drawObject(event);
+		});
+
+		map.events.add('contextmenu', function (event) {
+			showAddress(event);
+		});
+	}
+	function setBackgroundEvents() {
+		aObjects.events.add('contextmenu', function (e) {
+			if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+				return false;
+			}
+			object = e.get('target');
+			doEdit(object);
+			countObjects();
+			counter = 1;
+		});
+
+		aObjects.events.add('click', function (e) {
+			var object = e.get('target');
+			if (eObjects.getLength() !== 1) {
+				return false;
+			}
+			eObjects.each(function (item) {
+				var auxGeometry;
+				if (item.geometry.getType() === "LineString") {
+					item.geometry.insert(item.geometry.getLength() + 1, object.geometry.getCoordinates());
+				}
+				if (item.geometry.getType() === "Polygon") {
+					auxGeometry = item.geometry.getCoordinates();
+					auxGeometry[0][auxGeometry[0].length - 1] = object.geometry.getCoordinates();
+					item.geometry.setCoordinates(auxGeometry);
+				}
+			});
+			map.balloon.close();
+		});
+	}
+	function setActiveEvents() {
+		eObjects.events.add('dragend', function (e) {
+			var object = e.get('target');
+			traceNode(object);
+		});
+	}
+	setActiveEvents();
+	setMapEvents();
+	setBackgroundEvents();
 	// ###### конец описания событий
 
 	map.geoObjects.add(aObjects);
 	map.geoObjects.add(eObjects);
-	//sendMap();
 	//################################## выносные функции
 
 	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
@@ -1352,14 +1331,13 @@ function hideFrame(frame) {
 	}
 }
 
-function showFrame(frm) {
+function showFrame(frame) {
 	/*
-	функция переключения фрейма
+	функция отображения фрейма
 	*/
-	while (mframes[frm].get(0)) {
-		aObjects.add(mframes[frm].get(0));
+	while (frame.get(0)) {
+		aObjects.add(frame.get(0));
 	}
-	//map.geoObjects.add(aObjects);
 }
 
 function openLink(linkhash) {

@@ -217,7 +217,7 @@ class Freehand extends CI_Controller {
 	private function getUserMapFromSession() {
 		$output = array();
 		foreach ($this->session->userdata('objects') as $key=>$val ) {
-			$images = (gettype($val['images']) === "array") ? "['".implode($val['images'], "', '")."']" : "['']";
+			$images = (isset($val['images']) && gettype($val['images']) === "array") ? "['".implode($val['images'], "', '")."']" : "['']";
 			array_push($output, $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }");
 		}
 		return implode($output, ",\n");
