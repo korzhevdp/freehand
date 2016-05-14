@@ -202,20 +202,9 @@ function toClipboard(src) {
 	помещение данных в локальный буфер обмена
 	*/
 	var ttl = $(src).attr('ttl');
-	e_objects.each(function (item) {
+	function setClipboard(item) {
 		if (ttl === item.properties.get('ttl')) {
-			clipboard = {
-			name        : item.properties.get('name'),
-			address     : item.properties.get('address'),
-			description : item.properties.get('description'),
-			preset      : item.properties.get('preset'),
-			gtype       : item.geometry.getType()
-			};
-		}
-	});
-	a_objects.each(function (item) {
-		if (ttl === item.properties.get('ttl')) {
-			clipboard = {
+			return {
 				name        : item.properties.get('name'),
 				address     : item.properties.get('address'),
 				description : item.properties.get('description'),
@@ -223,6 +212,12 @@ function toClipboard(src) {
 				gtype       : item.geometry.getType()
 			};
 		}
+	}
+	e_objects.each(function (item) {
+		clipboard = setClipboard(item);
+	});
+	a_objects.each(function (item) {
+		clipboard = setClipboard(item);
 	});
 	count_objects();
 }
