@@ -40,9 +40,7 @@ var userstyles,
 	mframes          = [],
 	precision        = 8,
 	metricPrecision  = 2,
-	isCenterFixed    = 0,
-	eventListenersAdd,
-	doEdit;
+	isCenterFixed    = 0;
 
 function normalizeStyle(style, type) {
 	var defaults   = {
@@ -70,7 +68,7 @@ function listStyles() {
 			2 : "#line_style",
 			3 : "#polygon_style",
 			4 : "#circle_style",
-			5 : "#rectangle_style",
+			5 : "#rectangle_style"
 		};
 	$("#m_style").append('<optgroup label="Объекты">');
 	for (a in yandex_styles + yandex_markers) {
@@ -472,10 +470,14 @@ function showImageSelector() {
 			var a;
 			$("#imageList").empty();
 			for ( a in imagesData) {
-				$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/' + mp.uhash + '/128/' + imagesData[a].file + '"></li>');
+				if (imageList.hasOwnProperty(a)) {
+					$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/' + mp.uhash + '/128/' + imagesData[a].file + '"></li>');
+				}
 			}
 			for ( a in imageList ) {
-				$('#imageList li[file="' + imageList[a].split("/")[1] + '"]').addClass("active");
+				if (imageList.hasOwnProperty(a)) {
+					$('#imageList li[file="' + imageList[a].split("/")[1] + '"]').addClass("active");
+				}
 			}
 			$("#imageList li").click(function(){
 				if ($(this).hasClass("active")) {
@@ -501,18 +503,11 @@ function showImageSelector() {
 
 function tracePoint(src) {
 	var names = [],
-		valtz,
 		coords = src.geometry.getCoordinates(),
 		cstyle = src.properties.get("attr");
 	if ($("#traceAddress").prop('checked')) {
-		ymaps.geocode(coords, { kind: ['house'] })
-			.then(function (addressComponents) {
-				addressComponents.geoObjects.each(function (obj) {
-					names.push(obj.properties.get('name'));
-				});
-			valtz = names[0];
-			valtz = (valtz === undefined || ![valtz].join(', ').length) ? "Нет адреса" : [valtz].join(', ');
-			src.properties.set({ hintContent: valtz, address: valtz });
+		runGeoCoding(coords).then(function(decAddr){
+			src.properties.set({ hintContent: decAddr, address: decAddr });
 		});
 	}
 	sendObject(src);
@@ -656,92 +651,33 @@ function setMapCoordinates() {
 }
 
 function getImageBySize(image, size) {
-	var output = [],
-		a,
-		pathComponents;
+	var a,
+		pathComponents,
+		output = [],
+		sizes  = {
+			small   : '<img src="' + apiURL + '/images/nophoto.gif">',
+			preview : '<img src="' + apiURL + '/images/nophoto.jpg">'
+		};
 	if (!image.length) {
-		if (size === 32) {
-			return ['<img src="' + apiURL + '/images/nophoto.gif">'];
-		}
-		if (size === 128) {
-			return ['<img src="' + apiURL + '/images/nophoto.jpg">'];
-		}
+		return [sizes[size]];
 	}
 	for ( a in image ) {
 		if (image.hasOwnProperty(a)) {
 			if (image[a].length) {
-				pathComponents = image[a].split("/");
 				output.push('<img src="/storage/' + mp.uhash + '/' + size +'/' + image[a] +'">');
 			}
-			if (!image[a].length){
-				if (size === 32) {
-					output.push('<img src="' + apiURL + '/images/nophoto.gif">');
-				}
-				if (size === 128) {
-					output.push('<img src="' + apiURL + '/images/nophoto.jpg">');
-				}
+			if (!image[a].length) {
+				output.push(sizes[size]);
 			}
-
 		}
 	}
 	return output;
 }
 
-function placeFreehandObjects(source) {
-	var src,
-		img128,
-		img32,
-		object,
-		geometry,
-		options,
-		properties,
-		b,
-		a,
-		frameCounter,
+function setFrameData(mframes) {
+	var a,
+		frameCounter = 1,
 		frm;
-	for (b in source) {
-		if (source.hasOwnProperty(b)) {
-			src = source[b];
-
-			options = ymaps.option.presetStorage.get(normalizeStyle(src.a, src.p));
-			frm = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
-			properties = {
-				attr        : src.a,
-				description : src.d,
-				address     : src.b,
-				hintContent : src.n + ' ' + src.d,
-				img         : getImageBySize(src.i, 32)[0],
-				img128      : getImageBySize(src.i, 128)[0],
-				frame       : frm,
-				link        : src.l,
-				name        : src.n,
-				ttl         : b.toString(),
-				images      : getImageBySize(src.i, 32).join(" ")
-			};
-			if (mframes[frm] === undefined) {
-				mframes[frm] = new ymaps.GeoObjectArray();
-			}
-			if (src.p === 1) {
-				geometry = src.c.split(",");
-				object   = new ymaps.Placemark(geometry, properties, options);
-			}
-			if (src.p === 2) {
-				geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.c);
-				object   = new ymaps.Polyline(geometry, properties, options);
-			}
-			if (src.p === 3) {
-				geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.c);
-				object   = new ymaps.Polygon(geometry, properties, options);
-			}
-			if (src.p === 4) {
-				geometry = new ymaps.geometry.Circle([parseFloat(src.c.split(",")[0]), parseFloat(src.c.split(",")[1])], parseFloat(src.c.split(",")[2]));
-				object   = new ymaps.Circle(geometry, properties, options);
-			}
-			mframes[frm].add(object);
-		}
-	}
-	countObjects();
-	frameCounter = 1;
 	for (a in mframes) {
 		if (mframes.hasOwnProperty(a)) {
 			if (a > frameCounter) {
@@ -754,10 +690,83 @@ function placeFreehandObjects(source) {
 			mframes[a] = new ymaps.GeoObjectArray();
 		}
 	}
-	frm = (mframes[$("#vp_frame").val()] === undefined) ?  mframes.length - 1 : $("#vp_frame").val();
+	return frm = (mframes[$("#vp_frame").val()] === undefined) ?  mframes.length - 1 : $("#vp_frame").val();
+}
+
+function placeFreehandObjects(source) {
+	var src,
+		object,
+		geometry,
+		options,
+		properties,
+		b,
+		a,
+		frame,
+		frm,
+		fx = {
+			1: function () {
+				geometry = src.c.split(",");
+				object   = new ymaps.Placemark(geometry, properties, options);
+			},
+			2: function () {
+				geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.c);
+				object   = new ymaps.Polyline(geometry, properties, options);
+			},
+			3: function () {
+				geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.c);
+				object   = new ymaps.Polygon(geometry, properties, options);
+			},
+			4: function () {
+				geometry = new ymaps.geometry.Circle([parseFloat(src.c.split(",")[0]), parseFloat(src.c.split(",")[1])], parseFloat(src.c.split(",")[2]));
+				object   = new ymaps.Circle(geometry, properties, options);
+			},
+			5: function () {}
+		};
+	for (b in source) {
+		if (source.hasOwnProperty(b)) {
+			src     = source[b];
+			options = ymaps.option.presetStorage.get(normalizeStyle(src.a, src.p));
+			frame   = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
+			properties = {
+				attr        : src.a,
+				description : src.d,
+				address     : src.b,
+				hintContent : src.n + ' ' + src.d,
+				img         : getImageBySize(src.i, 'small')[0],
+				img128      : getImageBySize(src.i, 'preview')[0],
+				frame       : frm,
+				link        : src.l,
+				name        : src.n,
+				ttl         : b.toString(),
+				images      : getImageBySize(src.i, 'small').join(" ")
+			};
+			fx[src.p]();
+			if (mframes[frame] === undefined) {
+				mframes[frame] = new ymaps.GeoObjectArray();
+			}
+			mframes[frame].add(object);
+		}
+	}
+	countObjects();
+	frm = setFrameData(mframes);
 	while (mframes[frm].get(0)) {
 		aObjects.add(mframes[frm].get(0));
 	}
+}
+
+function runGeoCoding(coords) {
+	var addressArray,
+		decAddr,
+		names = [];
+	return ymaps.geocode(coords, { kind: ['house'] })
+	.then(function (addressComponents) {
+		addressComponents.geoObjects.each(function (object) {
+			names.push(object.properties.get('name'));
+		});
+		addressArray = names[0];
+		decAddr      = (addressArray === undefined || ![addressArray].join(', ').length) ? "Нет адреса" : [addressArray].join(', ');
+		return decAddr;
+	});
 }
 
 function displayLocations() {
@@ -769,7 +778,6 @@ function displayLocations() {
 		typeSelector,
 		searchControl,
 		viewPort,
-		valtz,
 		coords,
 		forIFrame      = 0,
 		objectGID      = parseInt($("#gCounter").val(), 10),
@@ -840,37 +848,17 @@ function displayLocations() {
 		'</div>'
 		);
 
-	/*
-	function runGeoCoding(coords) {
-		var names = [],
-			address;
-		ymaps.geocode(coords, {kind: ['house']}).then(function (addressComponents) {
-			addressComponents.geoObjects.each(function (obj) {
-				names.push(obj.properties.get('name'));
-			});
-		});
-		address = (names[0] !== undefined) ? [names[0]].join(', ') : "Нет адреса";
-		return address;
-	}
-	*/
-
 	function showAddress(e) {
 		var names = [],
 			coords = e.get('coordPosition');
-		ymaps.geocode(coords, {kind: ['house']})
-			.then(function (addressComponents) {
-				addressComponents.geoObjects.each(function (obj) {
-					names.push(obj.properties.get('name'));
-				});
-			valtz = (names[0] !== undefined) ? [names[0]].join(', ') : "Нет адреса";
-			if (!map.balloon.isOpen()) {
-				map.balloon.open(coords, {
-					contentBody: '<div class="ymaps_balloon row-fluid"><input type="text" value="' + [ coords[0].toPrecision(precision), coords[1].toPrecision(precision)].join(', ') + '"><br>' + valtz + '</div>'
-				});
-			}
+		runGeoCoding(coords).then(function(decAddr){
 			if (map.balloon.isOpen()) {
-				$("#bal_addr").val(valtz);
+				$("#bal_addr").val(decAddr);
+				return true;
 			}
+			map.balloon.open(coords, {
+				contentBody: '<div class="ymaps_balloon row-fluid"><input type="text" value="' + [ coords[0].toPrecision(precision), coords[1].toPrecision(precision)].join(', ') + '"><br>' + decAddr + '</div>'
+			});
 		});
 	}
 
@@ -882,22 +870,55 @@ function displayLocations() {
 
 	function drawObject(click) {
 		var geometry,
-			properties = {},
 			object,
-			decAddr,
-			names = [],
-			valtz = '',
-			coords = click.get('coordPosition'),
-			selectors = {
+			names      = [],
+			coords     = click.get('coordPosition'),
+			selectors  = {
 				1 : '#m_style',
 				2 : '#line_style',
 				3 : '#polygon_style',
 				4 : '#circle_style',
 				5 : ''
 			},
-			prType = geoType2IntId[$("#current_obj_type").val()],
-			realStyle = normalizeStyle($(selectors[prType]).val(), prType),
-			options = ymaps.option.presetStorage.get(realStyle);
+			prType     = geoType2IntId[$("#current_obj_type").val()],
+			realStyle  = normalizeStyle($(selectors[prType]).val(), prType),
+			options    = ymaps.option.presetStorage.get(realStyle),
+			fx         = {
+				1: function (click) {
+					geometry = { type: "Point", coordinates: click.get('coordPosition') };
+					object   = new ymaps.Placemark(geometry, properties, options);
+					traceNode(object);
+				},
+				2: function (click) {
+					geometry = { type: 'LineString', coordinates: [click.get('coordPosition')] };
+					object   = new ymaps.Polyline(geometry, properties, options);
+					sendObject(object);
+				},
+				3: function (click) {
+					geometry = { type: 'Polygon', coordinates: [[click.get('coordPosition')]] };
+					object   = new ymaps.Polygon(geometry, properties, options);
+					sendObject(object);
+				},
+				4: function (click){
+					geometry = [click.get('coordPosition'), $("#cir_radius").val()];
+					object   = new ymaps.Circle(geometry, properties, options);
+					traceNode(object);
+				},
+				5: function(){}
+			},
+			properties = {
+				preset      : realStyle,
+				attr        : realStyle,
+				frame       : parseInt($('#vp_frame').val(), 10),
+				ttl         : (objectGID += 1).toString(),
+				name        : "",
+				img         : "nophoto.gif",
+				hintContent : '',
+				address     : '',
+				contact     : '',
+				description : '',
+				imageList   : []
+			};
 
 		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
 			console.log("Рисование запрещено");
@@ -914,54 +935,13 @@ function displayLocations() {
 			doFinishAll();
 		}
 
-		properties = {
-			preset      : realStyle,
-			attr        : realStyle,
-			frame       : parseInt($('#vp_frame').val(), 10),
-			ttl         : (objectGID += 1).toString(),
-			name        : "",
-			img         : "nophoto.gif",
-			hintContent : '',
-			address     : '',
-			contact     : '',
-			description : '',
-			imageList   : []
-		};
+		fx[prType](click);
 
-		switch (prType) {
-			case 1:
-				geometry = { type: "Point", coordinates: click.get('coordPosition') };
-				object   = new ymaps.Placemark(geometry, properties, options);
-				traceNode(object);
-			break;
-			case 2:
-				geometry = { type: 'LineString', coordinates: [click.get('coordPosition')] };
-				object   = new ymaps.Polyline(geometry, properties, options);
-				sendObject(object);
-			break;
-			case 3:
-				geometry = { type: 'Polygon', coordinates: [[click.get('coordPosition')]] };
-				object   = new ymaps.Polygon(geometry, properties, options);
-				sendObject(object);
-			break;
-			case 4:
-				geometry = [click.get('coordPosition'), $("#cir_radius").val()];
-				object   = new ymaps.Circle(geometry, properties, options);
-				traceNode(object);
-			break;
-		}
-
-		ymaps.geocode(coords, { kind: ['house'] })
-			.then(function (addressComponents) {
-			var names = [];
-			addressComponents.geoObjects.each(function (object) {
-				names.push(object.properties.get('name'));
-			});
-			valtz   = names[0];
-			decAddr = (valtz === undefined || ![valtz].join(', ').length) ? "Нет адреса" : [valtz].join(', ');
+		// YET ANOTHER GEOCODE
+		runGeoCoding(coords).then(function(decAddr){
 			object.properties.set({ hintContent : decAddr, address : decAddr });
 		});
-
+		/// WORKI-I-I-I-I-I-ING!!!!!
 		object.options.set({ draggable : 1 });
 		eObjects.add(object);
 		if (prType === 2 || prType === 3) {
