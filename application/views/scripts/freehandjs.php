@@ -63,48 +63,28 @@ function normalize_style(style, type) {
 	return style;
 }
 
-function list_marker_styles() {
-	var a;
+function list_styles() {
+	var a,
+		targets = {
+			1 : "m_style",
+			2 : "#line_style",
+			3 : "#polygon_style",
+			4 : "#circle_style",
+			5 : "#rectangle_style",
+		};
 	$("#m_style").append('<optgroup label="Объекты">');
 	for (a in yandex_styles + yandex_markers) {
 		if (yandex_styles.hasOwnProperty(a)) {
-			$("#m_style").append(yandex_styles[a]);
+			$(targets[1]).append(yandex_styles[a]);
 		}
 	}
 	$("#m_style").append('</optgroup><optgroup label="Пользовательские">');
 	for (a in userstyles) {
-		if (userstyles.hasOwnProperty(a) && userstyles[a].type === 1) {
-			$("#m_style").append('<option value="' + a + '">' + userstyles[a].title + '</option>');
+		if (userstyles.hasOwnProperty(a) && userstyles[a].type === 2) {
+			$(targets[userstyles[a].type]).append('<option value="' + a + '">' + userstyles[a].title + '</option>');
 		}
 	}
 	$("#m_style").append('</optgroup>');
-}
-
-function list_route_styles() {
-	var a;
-	for (a in userstyles) {
-		if (userstyles.hasOwnProperty(a) && userstyles[a].type === 2) {
-			$("#line_style").append('<option value="' + a + '">' + userstyles[a].title + '</option>');
-		}
-	}
-}
-
-function list_polygon_styles() {
-	var a;
-	for (a in userstyles) {
-		if (userstyles.hasOwnProperty(a) && userstyles[a].type === 3) {
-			$("#polygon_style").append('<option value="' + a + '">' + userstyles[a].title + '</option>');
-		}
-	}
-}
-
-function list_circle_styles() {
-	var a;
-	for (a in userstyles) {
-		if (userstyles.hasOwnProperty(a) && userstyles[a].type === 4) {
-			$("#circle_style").append('<option value="' + a + '">' + userstyles[a].title + '</option>');
-		}
-	}
 }
 
 function genListItem(item) {
@@ -392,14 +372,18 @@ function action_listeners_add() {
 		return false;
 	}
 
-	$("#uploadDir").val(mp.uhash);
-
-	$(".sw-finish").unbind().click(function () {
-		doFinish(this);
+	function stopEdit() {
 		nullTracers();
 		counter = 0;
 		map.balloon.close();
 		count_objects();
+	}
+
+	$("#uploadDir").val(mp.uhash);
+
+	$(".sw-finish").unbind().click(function () {
+		doFinish(this);
+		stopEdit();
 	});
 
 	$(".sw-edit").unbind().click(function () {
@@ -410,10 +394,7 @@ function action_listeners_add() {
 
 	$(".sw-del").unbind().click(function () {
 		doDelete(this);
-		nullTracers();
-		counter = 0;
-		map.balloon.close();
-		count_objects();
+		stopEdit();
 	});
 
 	$("#imgUploader").unbind().click(function () {
@@ -525,8 +506,8 @@ function tracePoint(src) {
 		cstyle = src.properties.get("attr");
 	if ($("#traceAddress").prop('checked')) {
 		ymaps.geocode(coords, { kind: ['house'] })
-			.then(function (res) {
-				res.geoObjects.each(function (obj) {
+			.then(function (addressComponents) {
+				addressComponents.geoObjects.each(function (obj) {
 					names.push(obj.properties.get('name'));
 				});
 			valtz = names[0];
@@ -627,11 +608,11 @@ function doFinishAll() {
 
 function lock_center() {
 	if (isCenterFixed) {
-		$(".mapcoord").attr('readonly', 'readonly');
+		$(".mapcoord").prop('disabled', true);
 		$("#mapFix").html('Отслеживать центр').attr('title', 'Разрешить перемещать центр');
 	}
 	if (!isCenterFixed) {
-		$(".mapcoord").removeAttr('readonly');
+		$(".mapcoord").prop('disabled', false);
 		$("#mapFix").html('Фиксировать центр').attr('title', 'Не перемещать центр');
 	}
 }
@@ -859,13 +840,28 @@ function display_locations() {
 		'</div>'
 		);
 
+	/*
+	function runGeoCoding(coords) {
+		var names = [],
+			address;
+		ymaps.geocode(coords, {kind: ['house']}).then(function (addressComponents) {
+			addressComponents.geoObjects.each(function (obj) {
+				names.push(obj.properties.get('name'));
+			});
+		});
+		address = (names[0] !== undefined) ? [names[0]].join(', ') : "Нет адреса";
+		return address;
+	}
+	*/
+
 	function showAddress(e) {
 		var names = [],
 			coords = e.get('coordPosition');
-		ymaps.geocode(coords, {kind: ['house']}).then(function (res) {
-			res.geoObjects.each(function (obj) {
-				names.push(obj.properties.get('name'));
-			});
+		ymaps.geocode(coords, {kind: ['house']})
+			.then(function (addressComponents) {
+				addressComponents.geoObjects.each(function (obj) {
+					names.push(obj.properties.get('name'));
+				});
 			valtz = (names[0] !== undefined) ? [names[0]].join(', ') : "Нет адреса";
 			if (!map.balloon.isOpen()) {
 				map.balloon.open(coords, {
@@ -955,7 +951,8 @@ function display_locations() {
 			break;
 		}
 
-		ymaps.geocode(coords, { kind: ['house'] }).then(function (addressComponents) {
+		ymaps.geocode(coords, { kind: ['house'] })
+			.then(function (addressComponents) {
 			var names = [];
 			addressComponents.geoObjects.each(function (object) {
 				names.push(object.properties.get('name'));
@@ -992,6 +989,7 @@ function display_locations() {
 					if (mp.id === "void") {
 						$("#mapSave, #ehashID, #SContainer").addClass("hide");
 						$("#mapSave, #mapDelete").parent().addClass("hide");
+						lock_center();
 					}
 					if (mp.id !== "void") {
 						$("#mapSave, #ehashID, #SContainer").removeClass("hide");
@@ -1008,9 +1006,7 @@ function display_locations() {
 				if (usermap.error === undefined) {
 					place_freehand_objects(usermap);
 				}
-				//history.pushState("", "", "/map/" + mp.uhash);
 				count_objects();
-				lock_center();
 			},
 			error    : function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -1084,7 +1080,7 @@ function display_locations() {
 		dX[a] = Math.pow(2, a) - 1;
 	}
 	layerTypes   = {
-
+		/*
 		0: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "http://luft.korzhevdp.com/maps/nm/base/",
@@ -1155,6 +1151,7 @@ function display_locations() {
 			name  : "Молотовск. Завод. 15.08.1943 г.",
 			layers: ['yandex#satellite', "base#molot5"]
 		},
+		*/
 		10: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "",
@@ -1169,28 +1166,12 @@ function display_locations() {
 			name  : "Схема местности, OSM",
 			layers: ["map#osm"]
 		},
-		/*
 		12: {
-			func  : '',
-			folder: "",
-			label : "default#map",
-			name  : "По умолчанию",
-			layers: ["yandex#satellite"]
-		},
-		*/
-		13: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=s&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "",
 			label : "satellite#google",
 			name  : "Аэрофотосъёмка, Google",
 			layers: ["satellite#google"]
-		},
-		14: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "",
-			label : "base#arch",
-			name  : "Аэрофотосъёмка, Google",
-			layers: ["map#google"]
 		}
 	};
 	a_objects    = new ymaps.GeoObjectArray();
@@ -1329,7 +1310,7 @@ function display_locations() {
 		});
 		map.balloon.close();
 	});
-
+	/*
 	e_objects.events.add('contextmenu', function (e) {
 		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
 			return false;
@@ -1339,6 +1320,7 @@ function display_locations() {
 		count_objects();
 		counter = 1;
 	});
+	*/
 	// ###### конец описания событий
 
 	map.geoObjects.add(a_objects);
@@ -1380,10 +1362,7 @@ function display_locations() {
 
 function setup_environment() {
 	styleAddToStorage(userstyles);
-	list_marker_styles();
-	list_route_styles();
-	list_polygon_styles();
-	list_circle_styles();
+	list_styles();
 	display_locations();
 }
 
@@ -1409,6 +1388,11 @@ function show_frame(frm) {
 		a_objects.add(mframes[frm].get(0));
 	}
 	//map.geoObjects.add(a_objects);
+}
+
+function openLink(linkhash) {
+	$("#mapLink").val(base_url + 'map/' + linkhash);
+	$("#mapLinkContainer").removeClass("hide");
 }
 
 function syncToSession(usermap){
@@ -1482,114 +1466,111 @@ $(".mapcoord").blur(function () {
 
 $("#mapFix").click(function () {
 	isCenterFixed = (isCenterFixed) ? 0 : 1;
-	//lock_center();
+	lock_center();
 });
 
 $("#linkFactory a").click(function (e) {
-	var mode = parseInt($(this).attr('pr'), 10);
+
+	var mode = parseInt($(this).attr('pr'), 10),
+		fx = {
+			1: function () {
+				openLink(mp.ehash);
+			},
+			2: function () {
+				openLink(mp.uhash);
+			},
+			3: function (e) {
+				$.ajax({
+					url      : "/" + expController + '/loadscript/' + mp.uhash,
+					dataType : "html",
+					type     : "POST",
+					success  : function () {
+						window.location.href = expController + '/loadscript/' + mp.uhash;
+					},
+					error    : function (data, stat, err) {
+						console.log([ data, stat, err ]);
+					}
+				});
+			},
+			4: function (e) {
+				$.ajax({
+					url      : "/" + expController + "/createframe/" + mp.uhash,
+					dataType : "script",
+					type     : "POST",
+					success  : function () {
+						$("#mapLinkContainer").removeClass("hide");
+						$("#mapLink").val(base_url + expController + '/loadframe/' + mp.uhash);
+					},
+					error    : function (data, stat, err) {
+						console.log([ data, stat, err ]);
+					}
+				});
+			},
+			5: function () {
+				$.ajax({
+					url      : "/" + expController + "/transfer",
+					data     : {
+						hash : mp.uhash
+					},
+					dataType : "html",
+					type     : "POST",
+					success  : function (data) {
+						$("#transferCode").html(data);
+						$("#transferM").modal("show");
+					},
+					error    : function (data, stat, err) {
+						console.log([ data, stat, err ]);
+					}
+				});
+			},
+			6: function () {
+				$("#importM").modal("show");
+				$("#importBtn").unbind().click(function (){
+					var a,
+						pType,
+						coords,
+						exportedMapObjects;
+					eval($("#importCode").val());
+					for (a in exportedMapObjects) {
+						if (exportedMapObjects.hasOwnProperty(a)) {
+							pType  = geoType2IntId[exportedMapObjects[a][0].type];
+							coords = exportedMapObjects[a][0].coord;
+							if (pType === 1) {
+								coords = ($("#cRev").prop("checked")) ? coords.reverse().join(",") : coords.join(",");
+							}
+							if (pType === 4) {
+								coords = ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
+							}
+							usermap[a] = {
+								frame : 1,
+								d     : exportedMapObjects[a][1].d,
+								n     : exportedMapObjects[a][1].n,
+								a     : exportedMapObjects[a][2].attr,
+								p     : pType,
+								c     : coords,
+								b     : exportedMapObjects[a][1].b,
+								l     : exportedMapObjects[a][1].l,
+								i     : ['']
+							}
+						}
+					}
+					place_freehand_objects(usermap);
+					syncToSession(usermap);
+					$("#importM").modal("hide");
+				});
+			}
+		};
+		e.preventDefault();
 	if (mp === undefined) {
 		console.log("Текущая карта ещё не была обработана.");
 		return false;
 	}
-	if (mode === 1) {
-		$("#mapLink").val(base_url + 'map/' + mp.ehash);
-		$("#mapLinkContainer").removeClass("hide");
-	}
-	if (mode === 2) {
-		$("#mapLink").val(base_url + 'map/' + mp.uhash);
-		$("#mapLinkContainer").removeClass("hide");
-	}
-	if (mode === 3) {
-		e.preventDefault();  //stop the browser
-		$.ajax({
-			url      : "/" + expController + '/loadscript/' + mp.uhash,
-			dataType : "html",
-			type     : "POST",
-			success  : function () {
-				window.location.href = expController + '/loadscript/' + mp.uhash;
-			},
-			error    : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
-	if (mode === 4) {
-		e.preventDefault();  //stop the browser
-		$.ajax({
-			url      : "/" + expController + "/createframe/" + mp.uhash,
-			dataType : "script",
-			type     : "POST",
-			success  : function () {
-				$("#mapLinkContainer").removeClass("hide");
-				$("#mapLink").val(base_url + expController + '/loadframe/' + mp.uhash);
-			},
-			error    : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
-	if (mode === 5) {
-		e.preventDefault();
-		$.ajax({
-			url      : "/" + expController + "/transfer",
-			data     : {
-				hash : mp.uhash
-			},
-			dataType : "html",
-			type     : "POST",
-			success  : function (data) {
-				$("#transferCode").html(data);
-				$("#transferM").modal("show");
-			},
-			error    : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
+	fx[mode]();
 	/*
 		exportedMapObjects = {
 			28: [{ type: "Point", coord: [40.59971845632609,64.48305691751406] }, { b: "улица Нахимова, 15", d: "Митинг Памяти у памятника портовикам, погибшим в годы Великой Отечественной войны, площадь у здания КЦ «Бакарица»", n: "7 мая 14:00", l: '' },{ attr: "twirl#redIcon" }]
 		}
 	*/
-	if (mode === 6) {
-		e.preventDefault();
-		$("#importM").modal("show");
-		$("#importBtn").unbind().click(function (){
-			var a,
-				pType,
-				coords,
-				exportedMapObjects;
-			eval($("#importCode").val());
-			for (a in exportedMapObjects) {
-				if (exportedMapObjects.hasOwnProperty(a)) {
-					pType  = geoType2IntId[exportedMapObjects[a][0].type];
-					coords = exportedMapObjects[a][0].coord;
-					//alert(pType + typeof pType);
-					if (pType === 1) {
-						coords = ($("#cRev").prop("checked")) ? coords.reverse().join(",") : coords.join(",");
-					}
-					if (pType === 4) {
-						coords = ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
-						//alert(typeof coords);
-					}
-					usermap[a] = {
-						frame : 1,
-						d     : exportedMapObjects[a][1].d,
-						n     : exportedMapObjects[a][1].n,
-						a     : exportedMapObjects[a][2].attr,
-						p     : pType,
-						c     : coords,
-						b     : exportedMapObjects[a][1].b,
-						l     : exportedMapObjects[a][1].l,
-						i     : ['']
-					}
-				}
-			}
-			place_freehand_objects(usermap);
-			syncToSession(usermap);
-			$("#importM").modal("hide");
-		});
-	}
 });
 
 /*
