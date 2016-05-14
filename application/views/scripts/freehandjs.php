@@ -12,7 +12,7 @@ var userstyles,
 	layerTypes,
 	counter          = 0,
 	apiURL           = '<?=$this->config->item("api");?>',
-	baseURL          = '<?=$this->config->item("baseURL");?>',
+	baseURL          = '<?=$this->config->item("base_url");?>',
 	mainController   = 'freehand',
 	expController    = 'exports',
 	objectGID        = parseInt($("#gCounter").val(), 10),
@@ -170,21 +170,21 @@ function init() {
 		var a,
 			targets = {
 				1 : "m_style",
-				2 : "#line_style",
-				3 : "#polygon_style",
-				4 : "#circle_style",
-				5 : "#rectangle_style"
+				2 : "line_style",
+				3 : "polygon_style",
+				4 : "circle_style",
+				5 : "rectangle_style"
 			};
 		$("#m_style").append('<optgroup label="Объекты">');
 		for (a in yandex_styles + yandex_markers) {
 			if (yandex_styles.hasOwnProperty(a)) {
-				$(targets[1]).append(yandex_styles[a]);
+				$("#" + targets[1]).append(yandex_styles[a]);
 			}
 		}
 		$("#m_style").append('</optgroup><optgroup label="Пользовательские">');
 		for (a in userstyles) {
-			if (userstyles.hasOwnProperty(a) && userstyles[a].type === 2) {
-				$(targets[userstyles[a].type]).append('<option value="' + a + '">' + userstyles[a].title + '</option>');
+			if (userstyles.hasOwnProperty(a)) {
+				$("#" + targets[userstyles[a].type]).append('<option value="' + a + '">' + userstyles[a].title + '</option>');
 			}
 		}
 		$("#m_style").append('</optgroup>');
@@ -353,18 +353,18 @@ function init() {
 		return routelength.toFixed(metricPrecision);
 	}
 
+	function deleteItemByTtl(collection, ttl) {
+		collection.each(function(item) {
+			if (item.properties.get("ttl") === ttl) { // !!!!!!!!!!!!!!!!! === OR == ?
+				collection.remove(item);
+			}
+		});
+	}
+
 	function doDelete(src) {
 		var ttl = $(src).attr('ttl');
-		eObjects.each(function (item) {
-			if (item.properties.get("ttl") === ttl) { // !!!!!!!!!!!!!!!!! === OR == ?
-				eObjects.remove(item);
-			}
-		});
-		aObjects.each(function (item) {
-			if (item.properties.get("ttl") === ttl) {
-				aObjects.remove(item);
-			}
-		});
+		deleteItemByTtl(eObjects, ttl);
+		deleteItemByTtl(aObjects, ttl);
 		$.ajax({
 			url: "/" + mainController + "/deleteobject",
 			data: {
@@ -495,8 +495,8 @@ function init() {
 		});
 
 		$("#imgUploader").unbind().click(function () {
-			$("#mainForm").addClass("hide");
 			$("#uploadForm").removeClass("hide");
+			$("#mainForm").addClass("hide");
 		});
 
 		$("#toMain").unbind().click(function () {
@@ -601,12 +601,12 @@ function init() {
 	}
 
 	function tracePoint(src) {
-		var names = [],
+		var names  = [],
 			coords = src.geometry.getCoordinates(),
 			cstyle = src.properties.get("attr");
 		if ($("#traceAddress").prop('checked')) {
-			runGeoCoding(coords).then(function(decAddr){
-				src.properties.set({ hintContent: decAddr, address: decAddr });
+			runGeoCoding(coords).then(function(decAddr) {
+				src.properties.set({ address: decAddr, hintContent: decAddr });
 			});
 		}
 		sendObject(src);
@@ -1304,21 +1304,15 @@ function init() {
 	$(".circlecoord").blur(function () {
 		setCircleCoordinates();
 	});
+
 	$("#cir_radius").keyup(function () {
 		setCircleRadius();
 	});
-	// последняя функция процессора карты - загрузка карты по id из строки браузера #################################
-	if ($("#maphash").val().length === 16) {
-		loadmap($("#maphash").val());
-		$("#mapName").val($("#maphash").val());
-	}
-	if ($("#maphash").val().length !== 16) {
-		loadSessionData();
-	}
 
 	function setupEnvironment() {
 		styleAddToStorage(userstyles);
 		listStyles();
+		loadSessionData();
 		displayLocations();
 	}
 
@@ -1499,7 +1493,7 @@ function init() {
 	});
 
 	$("#linkFactory a").click(function (event) {
-		var mode = parseInt($(this).attr('pr'), 10),
+		var mode = $(this).attr('pr'),
 			fx = {
 				1: function () {
 					openLink(mp.ehash);
