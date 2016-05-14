@@ -157,8 +157,8 @@ class Freehand extends CI_Controller {
 
 	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
 		$images = array();
-		$result = $this->db->query("SELECT 
-		CONCAT_WS('/', `userimages`.owner, `userimages`.filename) AS filename,
+		$result = $this->db->query("SELECT
+		`userimages`.filename,
 		`userimages`.superhash
 		FROM
 		`userimages`
@@ -235,6 +235,7 @@ class Freehand extends CI_Controller {
 		
 		$result = $this->db->query("SELECT 
 		CONCAT_WS(',', `usermaps`.center_lon, `usermaps`.center_lat) AS center,
+		`usermaps`.name,
 		`usermaps`.hash_a,
 		`usermaps`.hash_e,
 		`usermaps`.zoom,
@@ -272,7 +273,7 @@ class Freehand extends CI_Controller {
 			
 			//print implode(array($hash, $uhash, $ehash, $newMap), " - ");
 			$this->session->set_userdata('map', $data);
-			$mapparam = "mp = { id: '".$mapid."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
+			$mapparam = "mp = { id: '".$mapid."', name: '".$row->name."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
 			
 			if( $newMap ) {
 				//print "database";

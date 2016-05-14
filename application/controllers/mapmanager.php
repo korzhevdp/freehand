@@ -23,8 +23,8 @@ class Mapmanager extends CI_Controller {
 		`usermaps`.name
 		FROM
 		`usermaps`
-		WHERE `usermaps`.active
-		AND (`usermaps`.`author` = ? OR `usermaps`.`public` )
+		WHERE (`usermaps`.active)
+		AND ((`usermaps`.`author` = ?) OR (`usermaps`.public))
 		ORDER BY usermaps.id DESC", array($author));
 		if ($result->num_rows()) {
 			$output = array();

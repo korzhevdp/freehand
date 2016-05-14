@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title id="headTitle"></title>
+<title id="headTitle">MiniGis Freehand</title>
   <meta name="keywords" content="<?=$keywords;?>" />
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/jquery.js"></script>

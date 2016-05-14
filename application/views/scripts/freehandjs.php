@@ -42,7 +42,9 @@ var userstyles,
 	metricPrecision  = 2,
 	isCenterFixed    = 0,
 	action_listeners_add,
-	doEdit;
+	doEdit,
+	a_objects      = new ymaps.GeoObjectArray(),
+	e_objects      = new ymaps.GeoObjectArray();
 
 function normalize_style(style, type) {
 	var defaults   = {
@@ -378,6 +380,7 @@ function doFinish(src) {
 	if (e_objects.getLength() === 1) {
 		$(".pointcoord, .circlecoord").removeAttr('disabled');
 	}
+	a_objects.options.set({ hasBalloon: 1 });
 }
 
 function nullTracers() {
@@ -609,6 +612,7 @@ function doEdit(src) {
 			}
 			if (type === "LineString" || type === "Polygon") {
 				item.editor.startEditing();
+				a_objects.options.set({ hasBalloon: 0 });
 			}
 			item.options.set({ draggable: 1, zIndex: 300, zIndexActive: 300, zIndexDrag: 300, zIndexHover: 300 });
 			openEditPane(type); // открываем требуемую панель редактора
@@ -632,6 +636,7 @@ function doFinishAll() {
 			});
 		}
 	});
+	a_objects.options.set({ hasBalloon: 1 });
 	count_objects();
 }
 
@@ -806,8 +811,8 @@ function display_locations() {
 		lon            = (isNaN(ymaps.geolocation.longitude)) ? parseFloat(map_center.toString().split(",")[0]) : ymaps.geolocation.longitude,
 		lat            = (isNaN(ymaps.geolocation.latitude))  ? parseFloat(map_center.toString().split(",")[1]) : ymaps.geolocation.latitude,
 		current_zoom   = ($("#current_zoom").val().length)    ? $("#current_zoom").val() : 15,
-		tileServerID   = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
-		tileServerLit  = { "0": "a", "1": "b", "2": "c" }, //"3": "d", "4": "e", "5": "f" },
+		tileServerID   = parseInt(Math.random() * (4 - 1) + 1, 10).toString(),
+		tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "c", "4": "b", "5": "a" },
 		genericBalloon = ymaps.templateLayoutFactory.createClass(
 		'<div class="ymaps_balloon">' +
 		'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
@@ -867,7 +872,8 @@ function display_locations() {
 		'<div class="alert alert-info hide" id="uploadError"></div>' +
 		'</div>' +
 		'</div>'
-		);
+		),
+		typeSelector   = new ymaps.control.TypeSelector();
 
 	function showAddress(e) {
 		var names = [],
@@ -979,6 +985,7 @@ function display_locations() {
 		e_objects.add(object);
 		if (pr_type === 2 || pr_type === 3) {
 			object.editor.startDrawing();
+			a_objects.options.set({ hasBalloon: 0 });
 		}
 		counter += 1;
 		$('#location_id').val(object_gid);
@@ -1008,6 +1015,7 @@ function display_locations() {
 						$("#mapSave, #mapDelete").parent().removeClass("hide");
 					}
 					map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.c);
+					$("#headTitle").html(mp.name);
 				}
 				if (usermap.error !== undefined) {
 					console.log(usermap.error);
@@ -1038,6 +1046,7 @@ function display_locations() {
 			type     : "POST",
 			success  : function () {
 				place_freehand_objects(usermap);
+				count_objects();
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -1087,13 +1096,22 @@ function display_locations() {
 			}
 		});
 	}
+
+	function setLayers(layerTypes) {
+		for (a in layerTypes) {
+			if (layerTypes.hasOwnProperty(a)) {
+				ymaps.layer.storage.add(layerTypes[a].label, layerTypes[a].func);
+				ymaps.mapType.storage.add(layerTypes[a].label, new ymaps.MapType(layerTypes[a].name, layerTypes[a].layers));
+				typeSelector.addMapType(layerTypes[a].label, a);
+			}
+		}
+	}
 	//определение механизма пересчёта стандартной сетки тайлов в сетку тайлов Яндекс-карт (TMS)
 	//api_url = (typeof $("#api_url") != 'undefined' && $("#api_url").val().length) ? $("#api_url").val() : "http://api.arhcity.ru",
 	for (a = 0; a < 21; a += 1) {
 		dX[a] = Math.pow(2, a) - 1;
 	}
 	layerTypes   = {
-
 		0: {
 			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
 			folder: "http://luft.korzhevdp.com/maps/nm/base/",
@@ -1202,19 +1220,10 @@ function display_locations() {
 			layers: ["map#google"]
 		}
 	};
-	a_objects    = new ymaps.GeoObjectArray();
-	e_objects    = new ymaps.GeoObjectArray();
-	typeSelector = new ymaps.control.TypeSelector();
+	setLayers(layerTypes);
 	//ex_objects    = new ymaps.GeoObjectArray(), //--B2
 
 	// создаём слои наложения для карты
-	for (a in layerTypes) {
-		if (layerTypes.hasOwnProperty(a)) {
-			ymaps.layer.storage.add(layerTypes[a].label, layerTypes[a].func);
-			ymaps.mapType.storage.add(layerTypes[a].label, new ymaps.MapType(layerTypes[a].name, layerTypes[a].layers));
-			typeSelector.addMapType(layerTypes[a].label, a);
-		}
-	}
 
 	map = new ymaps.Map("YMapsID", {
 		center               : [lon, lat],//(map_center.length) ? [ parseFloat(map_center.split(",")[1]), parseFloat(map_center.split(",")[0]) ] : [lon, lat],
@@ -1361,15 +1370,12 @@ function display_locations() {
 			apply_preset(item, val);
 		});
 	});
-
 	$("#mapLoader").click(function () {
 		loadmap($("#mapName").val());
 	});
-
 	$("#mapSave").click(function () {
 		saveAll();
 	});
-
 	// установка параметров круга
 	$(".circlecoord").blur(function () {
 		setCircleCoordinates();
