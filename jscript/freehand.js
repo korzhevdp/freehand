@@ -11,11 +11,12 @@ var userstyles,
 	eObjects,
 	layerTypes,
 	counter          = 0,
-	apiURL          = '<?=$this->config->item("api");?>',
-	baseURL         = '<?=$this->config->item("baseURL");?>',
+	apiURL           = '<?=$this->config->item("api");?>',
+	baseURL          = '<?=$this->config->item("baseURL");?>',
 	mainController   = 'freehand',
 	expController    = 'exports',
-	objectGID      = parseInt($("#gCounter").val(), 10),
+	objectGID        = parseInt($("#gCounter").val(), 10),
+	forIFrame        = 0,
 	imageList        = [],
 	mp               = {},
 	clipboard        = { name: '', description: '', address: '', preset: '', gtype: "Point" },
@@ -44,7 +45,106 @@ var userstyles,
 	metricPrecision  = 2,
 	isCenterFixed    = 0,
 	optionEdit       = { draggable: 1, zIndex: 300, zIndexActive: 300, zIndexDrag: 300, zIndexHover: 300 },
-	optionIdle       = { draggable: 0, zIndex:   1, zIndexActive:   1, zIndexDrag:   1, zIndexHover:   1 };
+	optionIdle       = { draggable: 0, zIndex:   1, zIndexActive:   1, zIndexDrag:   1, zIndexHover:   1 },
+	optionBgArray    = { balloonContentBodyLayout: (forIFrame) ? 'iframe#balloonLayout' : 'generic#balloonLayout', balloonMaxWidth: 800, balloonMaxHeight: 800 },
+	optionActArray   = { balloonContentBodyLayout: 'editing#balloonLayout', balloonWidth: 800 },
+	tileServerID     = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
+	tileServerLit    = { "0": "a", "1": "b", "2": "c", "3": "c", "4": "b", "5": "a" },
+	layerTypes       = {
+		/*
+		0: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/nm/base/",
+			label : "base#nm",
+			name  : "Нарьян-Мар 1943 HD",
+			layers: ['yandex#satellite', "base#nm"]
+		},
+		1: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[1].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/1990/",
+			label : "base2#arch",
+			name  : "Архангельск. План 1998 года",
+			layers: ['yandex#satellite', "base2#arch"]
+		},
+		2: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[2].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/arch1940/base/",
+			label : "base3#arch",
+			name  : "Архангельск. 1941-43 гг. Стандартное разрешение",
+			layers: ['yandex#satellite', "base3#arch"]
+		},
+		3: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[3].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/arch1940/centerhr/",
+			label : "base4#arch",
+			name  : "Архангельск. 1941-43 гг. Центр. Высокое разрешение",
+			layers: ['yandex#satellite', "base4#arch"]
+		},
+		4: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[4].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/arch1940/farnorth/",
+			label : "base5#arch",
+			name  : "Архангельск. 1941-43 гг. Север, фрагменты. Высокое разрешение",
+			layers: ['yandex#satellite', "base5#arch"]
+		},
+		5: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[5].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk041/",
+			label : "base#molot",
+			name  : "Молотовск и окрестности 25.04.1943 г.",
+			layers: ['yandex#satellite', "base#molot"]
+		},
+		6: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[6].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk040/",
+			label : "base#molot2",
+			name  : "Молотовск, центр города 25.04.1943 г.",
+			layers: ['yandex#satellite', "base#molot", "base#molot2"]
+		},
+		7: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[7].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk042/",
+			label : "base#molot3",
+			name  : "Молотовск. Завод. 8.07.1943 г.",
+			layers: ['yandex#satellite', "base#molot", "base#molot3"]
+		},
+		8: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[8].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "Molotowsk044/",
+			label : "base#molot4",
+			name  : "Молотовск. Завод. Ягры. 15.08.1943 г.",
+			layers: ['yandex#satellite', "base#molot", "base#molot4"]
+		},
+		9: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[9].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk049/",
+			label : "base#molot5",
+			name  : "Молотовск. Завод. 15.08.1943 г.",
+			layers: ['yandex#satellite', "base#molot5"]
+		},
+		*/
+		10: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "",
+			label : "map#google",
+			name  : "Схема местности, Google",
+			layers: ["map#google"]
+		},
+		11: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://" + tileServerLit[tileServerID] + ".tile.openstreetmap.org/" + zoom + "/" + tile[0] + "/" + tile[1] + ".png"; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "",
+			label : "map#osm",
+			name  : "Схема местности, OSM",
+			layers: ["map#osm"]
+		},
+		12: {
+			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=s&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
+			folder: "",
+			label : "satellite#google",
+			name  : "Аэрофотосъёмка, Google",
+			layers: ["satellite#google"]
+		}
+	};
 
 function init() {
 	function normalizeStyle(style, type) {
@@ -955,101 +1055,18 @@ function init() {
 		countObjects();
 	}
 
-	layerTypes   = {
-		/*
-		0: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[0].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/nm/base/",
-			label : "base#nm",
-			name  : "Нарьян-Мар 1943 HD",
-			layers: ['yandex#satellite', "base#nm"]
-		},
-		1: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[1].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/1990/",
-			label : "base2#arch",
-			name  : "Архангельск. План 1998 года",
-			layers: ['yandex#satellite', "base2#arch"]
-		},
-		2: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[2].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/arch1940/base/",
-			label : "base3#arch",
-			name  : "Архангельск. 1941-43 гг. Стандартное разрешение",
-			layers: ['yandex#satellite', "base3#arch"]
-		},
-		3: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[3].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/arch1940/centerhr/",
-			label : "base4#arch",
-			name  : "Архангельск. 1941-43 гг. Центр. Высокое разрешение",
-			layers: ['yandex#satellite', "base4#arch"]
-		},
-		4: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[4].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/arch1940/farnorth/",
-			label : "base5#arch",
-			name  : "Архангельск. 1941-43 гг. Север, фрагменты. Высокое разрешение",
-			layers: ['yandex#satellite', "base5#arch"]
-		},
-		5: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[5].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk041/",
-			label : "base#molot",
-			name  : "Молотовск и окрестности 25.04.1943 г.",
-			layers: ['yandex#satellite', "base#molot"]
-		},
-		6: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[6].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk040/",
-			label : "base#molot2",
-			name  : "Молотовск, центр города 25.04.1943 г.",
-			layers: ['yandex#satellite', "base#molot", "base#molot2"]
-		},
-		7: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[7].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk042/",
-			label : "base#molot3",
-			name  : "Молотовск. Завод. 8.07.1943 г.",
-			layers: ['yandex#satellite', "base#molot", "base#molot3"]
-		},
-		8: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[8].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "Molotowsk044/",
-			label : "base#molot4",
-			name  : "Молотовск. Завод. Ягры. 15.08.1943 г.",
-			layers: ['yandex#satellite', "base#molot", "base#molot4"]
-		},
-		9: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return layerTypes[9].folder + zoom + '/' + tile[0] + '/' + (dX[zoom] - tile[1]) + '.png'; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "http://luft.korzhevdp.com/maps/molotowsk/Molotowsk049/",
-			label : "base#molot5",
-			name  : "Молотовск. Завод. 15.08.1943 г.",
-			layers: ['yandex#satellite', "base#molot5"]
-		},
-		*/
-		10: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=m&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "",
-			label : "map#google",
-			name  : "Схема местности, Google",
-			layers: ["map#google"]
-		},
-		11: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://" + tileServerLit[tileServerID] + ".tile.openstreetmap.org/" + zoom + "/" + tile[0] + "/" + tile[1] + ".png"; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "",
-			label : "map#osm",
-			name  : "Схема местности, OSM",
-			layers: ["map#osm"]
-		},
-		12: {
-			func  : function () {return new ymaps.Layer(function (tile, zoom) {return "http://mt" + tileServerID + ".google.com/vt/lyrs=s&hl=ru&x=" + tile[0] + "&y=" + tile[1] + "&z=" + zoom + "&s=Galileo"; }, {tileTransparent: 1, zIndex: 1000}); },
-			folder: "",
-			label : "satellite#google",
-			name  : "Аэрофотосъёмка, Google",
-			layers: ["satellite#google"]
-		}
-	};
+	function fillMapForms() {
+		$("#vp_frame").val(1);
+		$("#vp_lon").val(map.getCenter()[0].toFixed(precision));
+		$("#vp_lat").val(map.getCenter()[1].toFixed(precision));
+		$("#current_obj_type").val("Point");
+	}
+
+	function filterTypeSelector(selector){
+		selector.removeMapType('yandex#publicMapHybrid');
+		selector.removeMapType('yandex#hybrid');
+		selector.removeMapType('yandex#publicMap');
+	}
 
 	function displayLocations() {
 		var a,
@@ -1060,13 +1077,10 @@ function init() {
 			searchControl,
 			viewPort,
 			coords,
-			forIFrame      = 0,
 			mapCenter      = $("#mapCenter").val(),
 			lon            = (isNaN(ymaps.geolocation.longitude)) ? parseFloat(mapCenter.toString().split(",")[0]) : ymaps.geolocation.longitude,
 			lat            = (isNaN(ymaps.geolocation.latitude))  ? parseFloat(mapCenter.toString().split(",")[1]) : ymaps.geolocation.latitude,
 			currentZoom    = ($("#current_zoom").val().length)    ? $("#current_zoom").val() : 15,
-			tileServerID   = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
-			tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "c", "4": "b", "5": "a" },
 			genericBalloon = ymaps.templateLayoutFactory.createClass(
 				'<div class="ymaps_balloon">' +
 				'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
@@ -1134,7 +1148,7 @@ function init() {
 		aObjects     = new ymaps.GeoObjectArray();
 		eObjects     = new ymaps.GeoObjectArray();
 		typeSelector = new ymaps.control.TypeSelector();
-		//ex_objects    = new ymaps.GeoObjectArray(), //--B2
+		//ex_objects = new ymaps.GeoObjectArray(), //--B2
 
 		function setupMapLayers(layers) {
 			var a;
@@ -1154,7 +1168,7 @@ function init() {
 			zoom                 : currentZoom,
 			//type                 : currentType,
 			type                 : 'yandex#satellite',
-			behaviors            : ["scrollZoom", "drag", "dblClickZoom"]
+			behaviors            : ["scrollZoom", "drag", "dblClickZoom", "multiTouch"]
 		},
 		{
 			maxZoom              : 19,
@@ -1166,6 +1180,8 @@ function init() {
 		/* назначаем курсор-стрелку для улучшенного позиционирования */
 		cursor = map.cursors.push('crosshair', 'arrow');
 		cursor.setKey('arrow');
+		searchControl = new ymaps.control.SearchControl({ provider: 'yandex#publicMap'});
+		map.controls.add('zoomControl').add(typeSelector).add('mapTools').add(searchControl);
 
 		/* ViewPort data fields */
 		viewPort = {
@@ -1175,18 +1191,9 @@ function init() {
 			cType    : 'yandex#satellite'
 		};
 
-		$("#vp_frame").val(1);
-		$("#vp_lon").val(map.getCenter()[0].toFixed(precision));
-		$("#vp_lat").val(map.getCenter()[1].toFixed(precision));
-		$("#current_obj_type").val("Point");
-
+		fillMapForms();
 		// ##### настройка представления карты #####
-		searchControl = new ymaps.control.SearchControl({ provider: 'yandex#publicMap'});
-
-		map.controls.add('zoomControl').add(typeSelector).add('mapTools').add(searchControl);
-		typeSelector.removeMapType('yandex#publicMapHybrid');
-		typeSelector.removeMapType('yandex#hybrid');
-		typeSelector.removeMapType('yandex#publicMap');
+		filterTypeSelector(typeSelector);
 		//$(".ymaps-b-form-input__input").empty().attr("placeholder", ymaps.geolocation.city);
 
 		ymaps.layout.storage.add('generic#balloonLayout', genericBalloon);
@@ -1194,19 +1201,10 @@ function init() {
 		ymaps.layout.storage.add('iframe#balloonLayout',  iframeBalloon);
 		//ymaps.layout.storage.add('editingx#balloonLayout', editxBalloon); //--B2
 
-		aObjects.options.set({
-			balloonContentBodyLayout: (forIFrame) ? 'iframe#balloonLayout' : 'generic#balloonLayout',
-			balloonMaxWidth:  800,
-			balloonMaxHeight: 800
-		});
-
-		eObjects.options.set({
-			balloonContentBodyLayout: 'editing#balloonLayout',
-			balloonWidth: 800
-		});
+		aObjects.options.set(optionBgArray);
+		eObjects.options.set(optionActArray);
 
 		// ##### события #####
-		// карта
 		function setMapEvents() {
 			map.events.add('balloonopen', function () {
 				$('#upload_location').val($('#l_photo').attr('picref'));
@@ -1388,7 +1386,7 @@ function init() {
 		}
 	}
 
-	function syncToSession(usermap){
+	function syncToSession(usermap) {
 		$.ajax({
 			url          : '/' + mainController + "/synctosession",
 			type         : "POST",
@@ -1397,6 +1395,43 @@ function init() {
 				console.log("The objects are to be believed sent");
 			},
 			error        : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	}
+
+	function resetSession() {
+		$.ajax({
+			url      : '/' + mainController + "/resetsession",
+			dataType : "script",
+			type     : "POST",
+			success  : function () {
+				aObjects.removeAll();
+				eObjects.removeAll();
+				$("#mapSave, #ehashID, #SContainer, #mapDelete").removeClass("hide");
+				$("#mapSave, #mapDelete").parent().removeClass("hide");
+				map.setZoom(mp.zoom);
+				map.setType(mp.maptype);
+				$("#mapName").val(mp.ehash);
+				counter = 0;
+				countObjects();
+			},
+			error   : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	}
+
+	function mapDelete() {
+		$.ajax({
+			url      : '/mapmanager/deletemap',
+			dataType : "text",
+			data     : { hash: mp.uhash },
+			type     : "POST",
+			success  : function () {
+				resetSession();
+			},
+			error   : function (data, stat, err) {
 				console.log([ data, stat, err ]);
 			}
 		});
@@ -1463,8 +1498,7 @@ function init() {
 		lockCenter();
 	});
 
-	$("#linkFactory a").click(function (e) {
-
+	$("#linkFactory a").click(function (event) {
 		var mode = parseInt($(this).attr('pr'), 10),
 			fx = {
 				1: function () {
@@ -1473,7 +1507,7 @@ function init() {
 				2: function () {
 					openLink(mp.uhash);
 				},
-				3: function (e) {
+				3: function (event) {
 					$.ajax({
 						url      : "/" + expController + '/loadscript/' + mp.uhash,
 						dataType : "html",
@@ -1486,7 +1520,7 @@ function init() {
 						}
 					});
 				},
-				4: function (e) {
+				4: function (event) {
 					$.ajax({
 						url      : "/" + expController + "/createframe/" + mp.uhash,
 						dataType : "script",
@@ -1536,7 +1570,7 @@ function init() {
 					});
 				}
 			};
-			e.preventDefault();
+			event.preventDefault();
 		if (mp === undefined) {
 			console.log("Текущая карта ещё не была обработана.");
 			return false;
@@ -1557,43 +1591,6 @@ function init() {
 		mapDelete();
 	});
 
-	function resetSession() {
-		$.ajax({
-			url      : '/' + mainController + "/resetsession",
-			dataType : "script",
-			type     : "POST",
-			success  : function () {
-				aObjects.removeAll();
-				eObjects.removeAll();
-				$("#mapSave, #ehashID, #SContainer, #mapDelete").removeClass("hide");
-				$("#mapSave, #mapDelete").parent().removeClass("hide");
-				map.setZoom(mp.zoom);
-				map.setType(mp.maptype);
-				$("#mapName").val(mp.ehash);
-				counter = 0;
-				countObjects();
-			},
-			error   : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
-
-	function mapDelete() {
-		$.ajax({
-			url      : '/mapmanager/deletemap',
-			dataType : "text",
-			data     : { hash: mp.uhash },
-			type     : "POST",
-			success  : function () {
-				resetSession();
-			},
-			error   : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
-
 	$("#linkClose").click(function () {
 		$("#mapLinkContainer").addClass("hide");
 	});
@@ -1611,6 +1608,7 @@ function init() {
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");
 	});
+
 	setupEnvironment();
 }
 ymaps.ready(init);
