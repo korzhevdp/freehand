@@ -20,10 +20,11 @@ var userstyles,
 	mp               = {},
 	clipboard        = { name: '', description: '', address: '', preset: '', gtype: "Point" },
 	gIcons = {
-		"Point"      : 'marker.png',
-		"LineString" : 'layer-shape-polyline.png',
-		"Polygon"    : 'layer-shape-polygon.png',
-		"Circle"     : 'layer-shape-ellipse.png'
+		1 : 'marker.png',
+		2 : 'layer-shape-polyline.png',
+		3 : 'layer-shape-polygon.png',
+		4 : 'layer-shape-ellipse.png',
+		5 : "rectangle.png"
 	},
 	geoType2IntId    = {
 		"Point"      : 1,
@@ -31,13 +32,6 @@ var userstyles,
 		"Polygon"    : 3,
 		"Circle"     : 4,
 		"Rectangle"  : 5 //not used
-	},
-	intId2GeoType    = {
-		1 : "Point",
-		2 : "LineString",
-		3 : "Polygon",
-		4 : "Circle",
-		5 : "Rectangle"  //not used
 	},
 	mframes          = [],
 	precision        = 8,
@@ -193,7 +187,7 @@ function init() {
 		var ttl     = item.properties.get('ttl'),
 			name    = item.properties.get('name'),
 			address = item.properties.get('address'),
-			pic     = gIcons[item.geometry.getType()];
+			pic     = gIcons[geoType2IntId[item.geometry.getType()]];
 		return '<div class="btn-group">' +
 			'<button class="btn btn-mini mg-btn-list" ttl=' + ttl + '>' +
 			'<img src="' + apiURL + '/images/' + pic + '" alt="">Название: ' + name + '<br>' +
@@ -212,12 +206,11 @@ function init() {
 	}
 
 	function openEditPane(type) {
-		var intType = geoType2IntId[type];
 		$("#current_obj_type").val(type);
 		$(".obj_sw, #navheader li, #results").removeClass('active');
-		$(".obj_sw[pr=" + intType + "], #palette, #mainselector").addClass('active');
+		$(".obj_sw[pr=" + type + "], #palette, #mainselector").addClass('active');
 		$(".navigator-pane").addClass("hide");
-		$("#navigator-pane" + intType).removeClass("hide");
+		$("#navigator-pane" + type).removeClass("hide");
 	}
 
 	function countObjects() {
@@ -499,8 +492,8 @@ function init() {
 		});
 
 		$("#toMain").unbind().click(function () {
-			$("#uploadForm").addClass("hide");
 			$("#mainForm").removeClass("hide");
+			$("#uploadForm").addClass("hide");
 		});
 
 		$("#addUploadItem").unbind().click(function(){
@@ -647,34 +640,40 @@ function init() {
 
 	function traceNode(src) {
 		/* заполнение полей навигатора характеристиками текущего редактируемого объекта в соответствии с типом геометрии объекта */
-		var type   = src.geometry.getType(),
+		var type   = geoType2IntId[src.geometry.getType()],
 			fx     = {
-				"Point"      : function (src) { tracePoint(src); },
-				"LineString" : function (src) { tracePolyline(src); },
-				"Polygon"    : function (src) { tracePolygon(src); },
-				"Circle"     : function (src) { traceCircle(src); }
+				1: function (src) { tracePoint(src); },
+				2: function (src) { tracePolyline(src); },
+				3: function (src) { tracePolygon(src); },
+				4: function (src) { traceCircle(src); }
 			};
 		fx[type](src);
+	}
+
+	function disableMultiplePointCoordsInput() {
+		if (eObjects.getLength() > 1) {
+			$(".pointcoord, .circlecoord").prop('disabled', true);
+		}
 	}
 
 	function doEdit(src) {
 		var ttl = $(src).attr('ttl');
 		$("#location_id").val(ttl); // здесь строка
 		map.balloon.close();
-			aObjects.each(function (item) {
-				if (item.properties.get("ttl") === ttl) {
-					var type = item.geometry.getType(); // получаем YM тип геометрии объекта
-					eObjects.add(item); // переводим объект в группу редактируемых
-					item.balloon.open(item.geometry.getCoordinates());
-					imageList = ( usermap[ttl] === undefined || usermap[ttl].i === undefined ) ? [] : usermap[ttl].i;
-				if (eObjects.getLength() > 1) { // нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
-					$(".pointcoord, .circlecoord").prop('disabled', true);
-				}
-				if (type === "LineString" || type === "Polygon") {
+		aObjects.each(function (item) {
+			if (item.properties.get("ttl") === ttl) {
+				var type = geoType2IntId[item.geometry.getType()];		// получаем YM тип геометрии объекта
+				eObjects.add(item);										// переводим объект в группу редактируемых
+				item.balloon.open(item.geometry.getCoordinates());
+				imageList = ( usermap[ttl] === undefined || usermap[ttl].i === undefined ) ? [] : usermap[ttl].i;
+				// нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
+				disableMultiplePointCoordsInput();
+				if (type === 2 || type === 3) {
 					item.editor.startEditing();
 				}
 				item.options.set(optionEdit);
-				openEditPane(type); // открываем требуемую панель редактора
+				// открываем требуемую панель редактора
+				openEditPane(type);
 				traceNode(item);
 			}
 		});
@@ -972,11 +971,11 @@ function init() {
 			return true;
 		}
 		if (counter) {
-			if (!confirm("На карте присутствуют редактируемые объекты.\nЗавершить их редактирование и создать новый объект?")) {
-				return true;
+			if (confirm("На карте присутствуют редактируемые объекты.\nЗавершить их редактирование и создать новый объект?")) {
+				doFinishAll();
+				return false;
 			}
-			doFinishAll();
-			return false;
+			return true;
 		}
 		return false;
 	}
@@ -993,7 +992,7 @@ function init() {
 				4 : '#circle_style',
 				5 : ''
 			},
-			prType     = geoType2IntId[$("#current_obj_type").val()],
+			prType     = $("#current_obj_type").val(),
 			realStyle  = normalizeStyle($(selectors[prType]).val(), prType),
 			options    = ymaps.option.presetStorage.get(realStyle),
 			fx         = {
@@ -1046,7 +1045,7 @@ function init() {
 
 		object.options.set( optionEdit );
 		eObjects.add(object);
-		if (prType === 2 || prType === 3) {
+		if (prType === "2" || prType === "3") {
 			object.editor.startDrawing();
 		}
 		counter += 1;
@@ -1058,7 +1057,7 @@ function init() {
 		$("#vp_frame").val(1);
 		$("#vp_lon").val(map.getCenter()[0].toFixed(precision));
 		$("#vp_lat").val(map.getCenter()[1].toFixed(precision));
-		$("#current_obj_type").val("Point");
+		$("#current_obj_type").val(1);
 	}
 
 	function filterTypeSelector(selector){
@@ -1255,11 +1254,12 @@ function init() {
 					return false;
 				}
 				eObjects.each(function (item) {
-					var auxGeometry;
-					if (item.geometry.getType() === "LineString") {
+					var auxGeometry
+						type = geoType2IntId[item.geometry.getType()];
+					if (item.geometry.getType() === 2) {
 						item.geometry.insert(item.geometry.getLength() + 1, object.geometry.getCoordinates());
 					}
-					if (item.geometry.getType() === "Polygon") {
+					if (item.geometry.getType() === 3) {
 						auxGeometry = item.geometry.getCoordinates();
 						auxGeometry[0][auxGeometry[0].length - 1] = object.geometry.getCoordinates();
 						item.geometry.setCoordinates(auxGeometry);
@@ -1432,7 +1432,7 @@ function init() {
 
 	// события не-карты
 	$(".obj_sw").click(function () {
-		$("#current_obj_type").val(intId2GeoType[$(this).attr('pr')]);
+		$("#current_obj_type").val($(this).attr('pr'));
 		$(".navigator-pane").addClass('hide');
 		$("#navigator-pane" + $(this).attr('pr')).removeClass('hide');
 	});
