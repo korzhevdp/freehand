@@ -652,7 +652,7 @@ function setMapCoordinates() {
 	/*
 	ручной ввод параметров центра карты из полей навигатора
 	*/
-	map.setCenter([parseFloat($("#vp_lon").val()), parseFloat($("#vp_lat").val())], parseInt($("#currentZoom").val(), 10));
+	map.setCenter([parseFloat($("#vp_lon").val()), parseFloat($("#vp_lat").val())], parseInt($("#current_zoom").val(), 10));
 }
 
 function getImageBySize(image, size) {
@@ -776,9 +776,9 @@ function displayLocations() {
 		mapCenter      = $("#mapCenter").val(),
 		lon            = (isNaN(ymaps.geolocation.longitude)) ? parseFloat(mapCenter.toString().split(",")[0]) : ymaps.geolocation.longitude,
 		lat            = (isNaN(ymaps.geolocation.latitude))  ? parseFloat(mapCenter.toString().split(",")[1]) : ymaps.geolocation.latitude,
-		currentZoom    = ($("#currentZoom").val().length)    ? $("#currentZoom").val() : 15,
+		currentZoom    = ($("#current_zoom").val().length)    ? $("#current_zoom").val() : 15,
 		tileServerID   = parseInt(Math.random() * (3 - 1) + 1, 10).toString(),
-		tileServerLit  = { "0": "a", "1": "b", "2": "c" }, //"3": "d", "4": "e", "5": "f" },
+		tileServerLit  = { "0": "a", "1": "b", "2": "c", "3": "c", "4": "b", "5": "a" },
 		genericBalloon = ymaps.templateLayoutFactory.createClass(
 		'<div class="ymaps_balloon">' +
 		'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
@@ -1258,14 +1258,14 @@ function displayLocations() {
 		if (!isCenterFixed) {
 			$("#vp_lon").val(data.get('newCenter')[0].toFixed(precision)); // сохраняем в поле новое значение центра карты
 			$("#vp_lat").val(data.get('newCenter')[1].toFixed(precision)); // сохраняем в поле новое значение центра карты
-			$("#mapCenter").val(data.get('newCenter').join(",")); // сохраняем в поле новое значение центра карты
-			$("#currentZoom").val(data.get('newZoom')); // сохраняем в поле новое значение масштаба карты
+			$("#map_center").val(data.get('newCenter').join(",")); // сохраняем в поле новое значение центра карты
+			$("#current_zoom").val(data.get('newZoom')); // сохраняем в поле новое значение масштаба карты
 			sendMap();
 		}
 	});
 
 	map.events.add('typechange', function () {
-		$("#currentType").val(map.getType()); // сохраняем в поле новое значение типа карты
+		$("#current_type").val(map.getType()); // сохраняем в поле новое значение типа карты
 		sendMap();
 	});
 
