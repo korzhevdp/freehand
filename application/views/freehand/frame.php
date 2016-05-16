@@ -23,8 +23,8 @@
 }
 </style>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&load=package.full&lang=ru-RU" type="text/javascript"></script>
-<script type="text/javascript" src="<?=$this->config->item("api");?>/jscript/map_styles2.js"></script>
+<script type="text/javascript" src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&load=package.full&lang=ru-RU" ></script>
+<script type="text/javascript" src="<?=$this->config->item("base_url");?>scripts/styles"></script>
 
 <div id="YMapsID" style="width:100%;height:98%;border:1px solid #FFFFFF;margin:0px;"></div>
 <script type="text/javascript">

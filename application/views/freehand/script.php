@@ -28,7 +28,7 @@
 	<div id="YMapsID"></div>
 
 	<script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;lang=ru-RU" type="text/javascript"></script>
-	<script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/styles2.js"></script>
+	<script type="text/javascript" src="<?=$this->config->item("base_url");?>scripts/styles"></script>
 	<script type="text/javascript">
 		ymaps.ready(display_locations);
 		function display_locations(){

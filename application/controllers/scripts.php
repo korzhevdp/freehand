@@ -13,6 +13,9 @@ class Scripts extends CI_Controller {
 	public function login(){
 		print $this->load->view("scripts/loginjs", array(), true);
 	}
+	public function styles(){
+		print $this->load->view("scripts/stylesjs", array(), true);
+	}
 }
 
 /* End of file mapmanager.php */

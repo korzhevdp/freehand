@@ -1082,12 +1082,12 @@ function init() {
 	}
 
 	function getLongitude() {
-		lon = (isNaN(ymaps.geolocation.longitude)) ? parseFloat($("#mapCenter").val().split(",")[0]) : ymaps.geolocation.longitude;
+		var lon = (isNaN(ymaps.geolocation.longitude)) ? parseFloat($("#mapCenter").val().split(",")[0]) : ymaps.geolocation.longitude;
 		return lon;
 	}
 
 	function getLatitude() {
-		lat = (isNaN(ymaps.geolocation.latitude))  ? parseFloat($("#mapCenter").val().split(",")[1]) : ymaps.geolocation.latitude;
+		var lat = (isNaN(ymaps.geolocation.latitude))  ? parseFloat($("#mapCenter").val().split(",")[1]) : ymaps.geolocation.latitude;
 		return lat;
 	}
 

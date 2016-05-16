@@ -185,7 +185,7 @@
 </div>
 <!-- API 2.0 -->
 <script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;mode=debug&amp;lang=ru-RU" type="text/javascript"></script>
-<script type="text/javascript" src="/jscript/styles2.js"></script>
+<script type="text/javascript" src="/scripts/styles"></script>
 <script type="text/javascript" src="/jscript/yandex_styles.js"></script>
 <script type="text/javascript" src="/scripts/freehand"></script>
 <script type="text/javascript" src="/scripts/login"></script>
