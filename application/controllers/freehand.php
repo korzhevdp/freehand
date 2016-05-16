@@ -393,7 +393,7 @@ class Freehand extends CI_Controller {
 	public function getuserdata() {
 		if ($this->session->userdata('uidx')) {
 			$title = ($this->session->userdata('supx')) ? "Ваши загруженные фотографии публикуются сразу" : "Ваши загруженные фотографии просмотрит модератор";
-			print "logindata = { name: '".$this->session->userdata('name')."', uid: '".$this->session->userdata('uidx')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
+			print "logindata = { name: '".$this->session->userdata('name')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
 			return true;
 		}
 		print "logindata = { name: 'Гость', photo: '', uid: 0, title: 'После авторизации Вы можете загружать фото' }";

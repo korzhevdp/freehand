@@ -17,6 +17,7 @@ var userstyles,
 	objectGID        = parseInt($("#gCounter").val(), 10),
 	forIFrame        = 0,
 	imageList        = [],
+	availableLayers  = {},
 	mp               = {},
 	clipboard        = { name: '', description: '', address: '', preset: '', gtype: "Point" },
 	gIcons = {
@@ -592,16 +593,21 @@ function init() {
 		$("#imageM").modal("show");
 	}
 
-	function tracePoint(src) {
-		var names  = [],
-			coords = src.geometry.getCoordinates(),
-			cstyle = src.properties.get("attr");
-		if ($("#traceAddress").prop('checked')) {
-			runGeoCoding(coords).then(function(decAddr) {
-				src.properties.set({ address: decAddr, hintContent: decAddr });
-			});
-		}
-		sendObject(src);
+	function insertGeoCodingProperty(object) {
+		var coords = object.geometry.getCoordinates();
+		runGeoCoding(coords).then(function(decAddr) {
+			object.properties.set({ address: decAddr, hintContent: decAddr });
+		});
+	}
+
+	function tracePoint(object) {
+		var coords = object.geometry.getCoordinates(),
+			cstyle = object.properties.get("attr");
+
+		//if ($("#traceAddress").prop('checked')) {
+		insertGeoCodingProperty(object);
+		//}
+		sendObject(object);
 		countObjects();
 		$("#m_lon").val(parseFloat(coords[0]).toFixed(precision));
 		$("#m_lat").val(parseFloat(coords[1]).toFixed(precision));
@@ -840,7 +846,8 @@ function init() {
 
 	function loadmap(name) {
 		if (!name.length) {
-			$("#mapName").val("Введите идентификатор карты");
+			$("#mapName").val("Введите идентификатор карты").css('color', 'red');
+			setTimeout(function(){ $("#mapName").val("").css('color', 'black') }, 2000);
 			return false;
 		}
 		$.ajax({
@@ -851,17 +858,21 @@ function init() {
 			},
 			dataType : "script",
 			success  : function () {
+				var mapType;
 				if (mp !== undefined) {
+					$("#headTitle").html(mp.name);
 					if (mp.id === "void") {
 						$("#mapSave, #ehashID, #SContainer").addClass("hide");
 						$("#mapSave, #mapDelete").parent().addClass("hide");
 						lockCenter();
 					}
 					if (mp.id !== "void") {
-						$("#mapSave, #ehashID, #SContainer").removeClass("hide");
+						$("#mapSave, #ehashID").removeClass("hide");
 						$("#mapSave, #mapDelete").parent().removeClass("hide");
+						$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]).removeClass("hide");
 					}
-					map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.c);
+					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
+					map.setType(mapType).setZoom(mp.zoom).panTo(mp.c);
 				}
 				if (usermap.error !== undefined) {
 					console.log(usermap.error);
@@ -890,6 +901,8 @@ function init() {
 			type     : "POST",
 			success  : function () {
 				placeFreehandObjects(usermap);
+				$("#SContainer").removeClass("hide");
+				//css('top', mp.nav[0]).css('left', mp.nav[1])
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -949,7 +962,8 @@ function init() {
 			data    : {
 				maptype : map.getType(),
 				center  : [ $("#vp_lat").val(), $("#vp_lon").val() ],
-				zoom    : map.getZoom()
+				zoom    : map.getZoom(),
+				nav     : mp.nav
 			},
 			datatype    : "text",
 			success     : function () {
@@ -1039,9 +1053,7 @@ function init() {
 		fx[prType](click);
 
 		// YET ANOTHER GEOCODE
-		runGeoCoding(coords).then(function(decAddr){
-			object.properties.set({ hintContent : decAddr, address : decAddr });
-		});
+		insertGeoCodingProperty(object);
 
 		object.options.set( optionEdit );
 		eObjects.add(object);
@@ -1156,6 +1168,7 @@ function init() {
 					ymaps.layer.storage.add(layerTypes[a].label, layerTypes[a].func);
 					ymaps.mapType.storage.add(layerTypes[a].label, new ymaps.MapType(layerTypes[a].name, layerTypes[a].layers));
 					typeSelector.addMapType(layerTypes[a].label, a);
+					availableLayers[layerTypes[a].label] = 1;
 				}
 			}
 		}
@@ -1278,40 +1291,28 @@ function init() {
 		setMapEvents();
 		setBackgroundEvents();
 		// ###### конец описания событий
+		// поисковая форма
+		$("#searchFormToggle").click(function () {
+			var a = map.controls.indexOf(searchControl);
+			if (a === (-1)) {
+				map.controls.add(searchControl);
+				return false
+			}
+			map.controls.remove(searchControl);
+		});
 
 		map.geoObjects.add(aObjects);
 		map.geoObjects.add(eObjects);
 		//################################## выносные функции
 	}
 
-	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
-		var val = $(this).val();
-		eObjects.each(function (item) {
-			applyPreset(item, val);
-		});
-	});
-
-	$("#mapLoader").click(function () {
-		loadmap($("#mapName").val());
-	});
-
-	$("#mapSave").click(function () {
-		saveAll();
-	});
-
-	// установка параметров круга
-	$(".circlecoord").blur(function () {
-		setCircleCoordinates();
-	});
-
-	$("#cir_radius").keyup(function () {
-		setCircleRadius();
-	});
-
 	function setupEnvironment() {
 		styleAddToStorage(userstyles);
 		listStyles();
 		loadSessionData();
+		if ($("#maphash").val().length === 16 ) {
+			loadmap($("#maphash").val());
+		}
 		displayLocations();
 	}
 
@@ -1406,6 +1407,7 @@ function init() {
 				map.setZoom(mp.zoom);
 				map.setType(mp.maptype);
 				$("#mapName").val(mp.ehash);
+				history.pushState("", "", "/map/" + mp.ehash);
 				counter = 0;
 				countObjects();
 			},
@@ -1429,6 +1431,30 @@ function init() {
 			}
 		});
 	}
+
+	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
+		var val = $(this).val();
+		eObjects.each(function (item) {
+			applyPreset(item, val);
+		});
+	});
+
+	$("#mapLoader").click(function () {
+		loadmap($("#mapName").val());
+	});
+
+	$("#mapSave").click(function () {
+		saveAll();
+	});
+
+	// установка параметров круга
+	$(".circlecoord").blur(function () {
+		setCircleCoordinates();
+	});
+
+	$("#cir_radius").keyup(function () {
+		setCircleRadius();
+	});
 
 	// события не-карты
 	$(".obj_sw").click(function () {

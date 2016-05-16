@@ -15,11 +15,11 @@ class Exports extends CI_Controller {
 		}
 		$adds  = array(
 			'plainobject' => array(
-				'props' => "{ b: '".$src['addr']."', d: '".$src['desc']."', n: '".$src['name']."', l: '".$src['link']."' },",
+				'props' => "{ b: '".$src['addr']."', d: '".str_replace("\n", " ", $src['desc'])."', n: '".$src['name']."', l: '".$src['link']."' },",
 				'opts'  => "{ attr: '".$src['attr']."' }"
 			),
 			'plainjs' => array(
-				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['addr']."', d: '".$src['desc']."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
+				'props' => "<br>&nbsp;&nbsp;&nbsp;&nbsp;{ b: '".$src['addr']."', d: '".str_replace("\n", " ", $src['desc'])."', n: '".$src['name']."', l: '".$src['link']."' },<br>",
 				'opts'  => "&nbsp;&nbsp;&nbsp;&nbsp;ymaps.option.presetStorage.get('".$src['attr']."')<br>"
 			)
 		);
@@ -60,14 +60,14 @@ class Exports extends CI_Controller {
 		if ($result->num_rows()) {
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
-				$constant = "{address: '".$row['addr']."', description: '".$row['desc']."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attr']."'));ms.add(object);";
+				$constant = "{ address: '".$row['addr']."', description: '".str_replace("\n", " ", $row['desc'])."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attr']."'));ms.add(object);";
 				array_push($output, $this->mapmodel->returnScriptLineByType($row, $row['type']).$constant);
 			}
 		}
 		$this->writeIncrementedMapCounter();
 		$objects['mapobjects'] = implode($output, "\n");
 		$this->load->helper('download');
-		force_download("Minigis.NET - ".$objects['hash_a'].".html", $this->load->view('freehand/script', $objects, true)); 
+		force_download("Export of ".$objects['name'].".html", $this->load->view('freehand/script', $objects, true)); 
 	}
 
 	public function loadframe($hash = "YzkxNzVjYTI0MGZk") {

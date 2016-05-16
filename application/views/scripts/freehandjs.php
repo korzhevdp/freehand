@@ -593,16 +593,21 @@ function init() {
 		$("#imageM").modal("show");
 	}
 
-	function tracePoint(src) {
-		var names  = [],
-			coords = src.geometry.getCoordinates(),
-			cstyle = src.properties.get("attr");
-		if ($("#traceAddress").prop('checked')) {
-			runGeoCoding(coords).then(function(decAddr) {
-				src.properties.set({ address: decAddr, hintContent: decAddr });
-			});
-		}
-		sendObject(src);
+	function insertGeoCodingProperty(object) {
+		var coords = object.geometry.getCoordinates();
+		runGeoCoding(coords).then(function(decAddr) {
+			object.properties.set({ address: decAddr, hintContent: decAddr });
+		});
+	}
+
+	function tracePoint(object) {
+		var coords = object.geometry.getCoordinates(),
+			cstyle = object.properties.get("attr");
+
+		//if ($("#traceAddress").prop('checked')) {
+		insertGeoCodingProperty(object);
+		//}
+		sendObject(object);
 		countObjects();
 		$("#m_lon").val(parseFloat(coords[0]).toFixed(precision));
 		$("#m_lat").val(parseFloat(coords[1]).toFixed(precision));
@@ -1048,9 +1053,7 @@ function init() {
 		fx[prType](click);
 
 		// YET ANOTHER GEOCODE
-		runGeoCoding(coords).then(function(decAddr){
-			object.properties.set({ hintContent : decAddr, address : decAddr });
-		});
+		insertGeoCodingProperty(object);
 
 		object.options.set( optionEdit );
 		eObjects.add(object);
@@ -1303,30 +1306,6 @@ function init() {
 		//################################## выносные функции
 	}
 
-	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
-		var val = $(this).val();
-		eObjects.each(function (item) {
-			applyPreset(item, val);
-		});
-	});
-
-	$("#mapLoader").click(function () {
-		loadmap($("#mapName").val());
-	});
-
-	$("#mapSave").click(function () {
-		saveAll();
-	});
-
-	// установка параметров круга
-	$(".circlecoord").blur(function () {
-		setCircleCoordinates();
-	});
-
-	$("#cir_radius").keyup(function () {
-		setCircleRadius();
-	});
-
 	function setupEnvironment() {
 		styleAddToStorage(userstyles);
 		listStyles();
@@ -1453,6 +1432,30 @@ function init() {
 		});
 	}
 
+	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
+		var val = $(this).val();
+		eObjects.each(function (item) {
+			applyPreset(item, val);
+		});
+	});
+
+	$("#mapLoader").click(function () {
+		loadmap($("#mapName").val());
+	});
+
+	$("#mapSave").click(function () {
+		saveAll();
+	});
+
+	// установка параметров круга
+	$(".circlecoord").blur(function () {
+		setCircleCoordinates();
+	});
+
+	$("#cir_radius").keyup(function () {
+		setCircleRadius();
+	});
+
 	// события не-карты
 	$(".obj_sw").click(function () {
 		$("#current_obj_type").val($(this).attr('pr'));
@@ -1529,7 +1532,7 @@ function init() {
 						dataType : "html",
 						type     : "POST",
 						success  : function () {
-							window.location.href = expController + '/loadscript/' + mp.uhash;
+							window.location.href = "/" + expController + '/loadscript/' + mp.uhash;
 						},
 						error    : function (data, stat, err) {
 							console.log([ data, stat, err ]);

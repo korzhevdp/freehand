@@ -17,7 +17,7 @@ class Mapmodel extends CI_Model {
 			foreach ($result->result_array() as $row) {
 				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
 				$row['link'] = str_replace('"', "'", $row['link']);
-				$prop        = "{address: '".trim($row['addr'])."', description: '".trim($row['desc'])."', name: '".trim($row['name'])."', hasHint: 1, hintContent: '".trim($row['name'])." ".trim($row['desc'])."', link: '".trim($row['link'])."' }";
+				$prop        = "{address: '".trim($row['addr'])."', description: '".trim(str_replace("\n", " ", $src['desc']))."', name: '".trim($row['name'])."', hasHint: 1, hintContent: '".trim($row['name'])." ".trim($row['desc'])."', link: '".trim($row['link'])."' }";
 				$opts        = 'ymaps.option.presetStorage.get(\''.$row['attr'].'\')';
 				$constant    = $prop.", ".$opts." );\nms.add(object);";
 				array_push($output, $this->returnScriptLineByType($row, $row['type']).$constant);
