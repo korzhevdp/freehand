@@ -844,6 +844,18 @@ function init() {
 		});
 	}
 
+	function setMapControls(state) {
+		if (state === "void") {
+			$("#mapSave, #ehashID, #SContainer").addClass("hide");
+			$("#mapSave, #mapDelete").parent().addClass("hide");
+			lockCenter();
+			return true;
+		}
+		$("#mapSave, #ehashID").removeClass("hide");
+		$("#mapSave, #mapDelete").parent().removeClass("hide");
+		$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]).removeClass("hide");
+	}
+
 	function loadmap(name) {
 		if (!name.length) {
 			$("#mapName").val("Введите идентификатор карты").css('color', 'red');
@@ -861,16 +873,7 @@ function init() {
 				var mapType;
 				if (mp !== undefined) {
 					$("#headTitle").html(mp.name);
-					if (mp.id === "void") {
-						$("#mapSave, #ehashID, #SContainer").addClass("hide");
-						$("#mapSave, #mapDelete").parent().addClass("hide");
-						lockCenter();
-					}
-					if (mp.id !== "void") {
-						$("#mapSave, #ehashID").removeClass("hide");
-						$("#mapSave, #mapDelete").parent().removeClass("hide");
-						$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]).removeClass("hide");
-					}
+					setMapControls(mp.id);
 					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
 					map.setType(mapType).setZoom(mp.zoom).panTo(mp.c);
 				}
@@ -1078,6 +1081,16 @@ function init() {
 		selector.removeMapType('yandex#publicMap');
 	}
 
+	function getLongitude() {
+		lon = (isNaN(ymaps.geolocation.longitude)) ? parseFloat($("#mapCenter").val().split(",")[0]) : ymaps.geolocation.longitude;
+		return lon;
+	}
+
+	function getLatitude() {
+		lat = (isNaN(ymaps.geolocation.latitude))  ? parseFloat($("#mapCenter").val().split(",")[1]) : ymaps.geolocation.latitude;
+		return lat;
+	}
+
 	function displayLocations() {
 		var a,
 			cursor,
@@ -1087,9 +1100,8 @@ function init() {
 			searchControl,
 			viewPort,
 			coords,
-			mapCenter      = $("#mapCenter").val(),
-			lon            = (isNaN(ymaps.geolocation.longitude)) ? parseFloat(mapCenter.toString().split(",")[0]) : ymaps.geolocation.longitude,
-			lat            = (isNaN(ymaps.geolocation.latitude))  ? parseFloat(mapCenter.toString().split(",")[1]) : ymaps.geolocation.latitude,
+			lon            = getLongitude(),
+			lat            = getLatitude(),
 			currentZoom    = ($("#current_zoom").val().length)    ? $("#current_zoom").val() : 15,
 			genericBalloon = ymaps.templateLayoutFactory.createClass(
 				'<div class="ymaps_balloon">' +
@@ -1532,7 +1544,7 @@ function init() {
 						dataType : "html",
 						type     : "POST",
 						success  : function () {
-							window.location.href = expController + '/loadscript/' + mp.uhash;
+							window.location.href = "/" + expController + '/loadscript/' + mp.uhash;
 						},
 						error    : function (data, stat, err) {
 							console.log([ data, stat, err ]);
