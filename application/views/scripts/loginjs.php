@@ -24,6 +24,7 @@ $("#tryLogIn").click(function(){
 				return false;
 			}
 			$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');
+			mp.nav = logresult.nav;
 			$("#password2span, #regWelcome, #tryRegIn, #logOut").removeClass("hide");
 			$("#tryLogIn, #logAlert, #logIn").addClass("hide");
 			$("#loginM").modal("hide");

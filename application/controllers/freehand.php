@@ -19,6 +19,7 @@ class Freehand extends CI_Controller {
 			'id'		=> $hasha,
 			'eid'		=> $hashe,
 			'maptype'	=> 'yandex#satellite',
+			'nav'		=> array('95px','120px'),
 			'center'	=> $this->config->item('map_center'),
 			'zoom'		=> 15,
 			'indb'		=> 0,
@@ -188,8 +189,8 @@ class Freehand extends CI_Controller {
 		userobjects
 		INNER JOIN `usermaps` ON (userobjects.map_id = `usermaps`.hash_a)
 		WHERE
-		`usermaps`.hash_a = ?
-		OR `usermaps`.hash_e = ?", array($hash, $hash));
+		`usermaps`.active
+		AND ( `usermaps`.hash_a = ? OR `usermaps`.hash_e = ? )", array($hash, $hash));
 		$output = array();
 		if ($result->num_rows()) {
 			$newobjects = array();
@@ -218,7 +219,8 @@ class Freehand extends CI_Controller {
 		$output = array();
 		foreach ($this->session->userdata('objects') as $key=>$val ) {
 			$images = (isset($val['images']) && gettype($val['images']) === "array") ? "['".implode($val['images'], "', '")."']" : "['']";
-			array_push($output, $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }");
+			$string = $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }";
+			array_push($output, preg_replace("/\n/", " ", $string));
 		}
 		return implode($output, ",\n");
 	}
@@ -232,7 +234,6 @@ class Freehand extends CI_Controller {
 
 	public function loadmap() {
 		$hash   = $this->input->post('name');
-		
 		$result = $this->db->query("SELECT 
 		CONCAT_WS(',', `usermaps`.center_lon, `usermaps`.center_lat) AS center,
 		`usermaps`.name,
@@ -250,7 +251,7 @@ class Freehand extends CI_Controller {
 		if ($result->num_rows()) {
 			$row = $result->row();
 			$mapdata = $this->session->userdata('map');
-			$newMap   = ($mapdata && $hash !==$mapdata['id'] && $hash !==$mapdata['eid']) ? 1 : 0;
+			$newMap   = ($mapdata && $hash !== $mapdata['id'] && $hash !== $mapdata['eid']) ? 1 : 0;
 			if ($row->hash_e == $hash) {
 				$mapid = $row->hash_a;
 				$ehash = $row->hash_e;
@@ -268,12 +269,13 @@ class Freehand extends CI_Controller {
 				"center"	=> $row->center,
 				"zoom"		=> $row->zoom,
 				"indb"		=> 1,
+				"nav"		=> (gettype($mapdata['nav']) == "array") ? implode($mapdata['nav'], "','") : implode($this->config->item("nav_position"), "','"),
 				"author"	=> $row->author
 			);
 			
 			//print implode(array($hash, $uhash, $ehash, $newMap), " - ");
 			$this->session->set_userdata('map', $data);
-			$mapparam = "mp = { id: '".$mapid."', name: '".$row->name."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
+			$mapparam = "mp = { id: '".$mapid."', nav: ['".$data['nav']."'], name: '".$row->name."', maptype: '".$row->maptype."', c: [".$row->center."], zoom: ".$row->zoom.", uhash: '".$uhash."', ehash: '".$ehash."', indb: 1 };\n";
 			
 			if( $newMap ) {
 				//print "database";
@@ -293,6 +295,7 @@ class Freehand extends CI_Controller {
 		$data['maptype'] = $this->input->post('maptype');
 		$data['center']  = $this->input->post('center');
 		$data['zoom']    = $this->input->post('zoom');
+		$data['nav']     = $this->input->post('nav');
 		$this->session->set_userdata("map", $data);
 	}
 
@@ -400,23 +403,24 @@ class Freehand extends CI_Controller {
 		$data = $this->session->userdata('map');
 		if ($data['id'] == 'void') {
 			$this->mapInit();
-			print "usermap = []";
+			print "usermap = {}";
 			return false;
 		}
+		$nav     = (isset($data['nav']) && is_array($data['nav'])) ? implode($data['nav'], "','") : implode($this->config->item("nav_position"), "','") ;
 		$objects = $this->session->userdata('objects');
-		$output = array();
+		$output  = array();
 		foreach ($objects as $hash => $val) {
 			$images = array();
 			if (isset($val['images']) && is_array($val['images'])) {
 				foreach ($val['images'] as $img) {
-					array_push($images, $this->session->userdata("uidx"). DIRECTORY_SEPARATOR . $img);
+					array_push($images, $img);
 				}
 			}
 			$string = $hash." : { d: '".$val['desc']."', n: '".$val['name']."', a: '".$val['attr']."', p: ".$val['type'].", c: '".$val['geometry']."', b: '".$val['address']."', l: '".$val['link']."', i: ['".implode($images, "', '")."'] }";
 			array_push($output, $string);
 		}
 		$center = $data['center'];
-		print  "mp = { id: '".$data['id']."', maptype: '".$data['maptype']."', c0: ".$center[0].", c1: ".$center[1].", zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
+		print  "mp = { id: '".$data['id']."', nav: ['".$nav."'], maptype: '".$data['maptype']."', c: [".$center[1].",".$center[0]."], zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
 	}
 }
 

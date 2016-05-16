@@ -840,7 +840,7 @@ function init() {
 
 	function loadmap(name) {
 		if (!name.length) {
-			alert("Введите идентификатор карты");
+			$("#mapName").val("Введите идентификатор карты");
 			return false;
 		}
 		$.ajax({

@@ -52,12 +52,33 @@ class Mapmodel extends CI_Model {
 		userobjects.attributes AS `attr`,
 		userobjects.address AS `addr`,
 		userobjects.`type`,
+		userobjects.`hash`,
 		userobjects.`link`
 		FROM
 		userobjects
 		WHERE
 		`userobjects`.`map_id` = ?
 		ORDER BY userobjects.timestamp", array($hash));
+	}
+
+	public function getImagesForTransfer($maphash) {
+		$output = array();
+		$result = $this->db->query("SELECT
+		userimages.filename,
+		userimages.superhash
+		FROM
+		userimages
+		WHERE
+		(userimages.mapID = ?)", array($maphash));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				if (!isset($output[$row->superhash])) {
+					$row->superhash = array();
+				}
+				array_push($output[$row->superhash], $row->filename);
+			}
+		}
+		return $output;
 	}
 
 	public function getMapData($hash) {

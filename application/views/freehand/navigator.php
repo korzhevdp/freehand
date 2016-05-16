@@ -1,4 +1,4 @@
-<div id="SContainer" class="well">
+<div id="SContainer" class="well hide">
 	<div id="YMHead" class="well">
 		<div class="pull-left" style="margin-left:10px;">
 			<i class="icon-move icon-white" style="margin:0px;padding:0px;vertical-align:middle;"></i> 

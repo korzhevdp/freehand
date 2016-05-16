@@ -19,6 +19,20 @@
 		<div class="navbar-inner">
 			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
 			<ul class="nav pull-right">
+				<li id="prevFrame" class="hide">
+					<a href="#"><i class="icon-chevron-left"></i></a>
+				</li>
+				<li id="frameNum" class="hide">
+					<input type="text" id="frameNum" value="1" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
+				</li>
+				<li id="nextFrame" class="hide">
+					<a href="#"><i class="icon-chevron-right"></i></a>
+				</li>
+
+				<li id="searchFormToggle">
+					<a href="#"><i class="icon-search"></i></a>
+				</li>
+
 				<li>
 					<ul class="nav">
 						<li class="dropdown" style="min-width:240px;">
@@ -159,8 +173,6 @@
 	<input type="text" name="mapLink" id="mapLink" value="" style="width:480px;" class="pull-left">
 	<button type="button" class="btn btn-small btn-primary pull-right" id="linkClose" style="margin-top:2px;">Закрыть</button>
 </div>
-
-<div class="hide"><?=$links_heap;?></div>
 
 <div style="display:none;">
 	<input type="hidden" name="maphash"      id="maphash"      value="<?=$maphash;?>">
