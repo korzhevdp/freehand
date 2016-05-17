@@ -60,14 +60,15 @@ class Exports extends CI_Controller {
 		if ($result->num_rows()) {
 			foreach ($result->result_array() as $row) {
 				$row = preg_replace("/'/", '"', $row);
-				$constant = "{ address: '".$row['addr']."', description: '".str_replace("\n", " ", $row['desc'])."', name: '".$row['name']."', link: '".$row['link']."' }, ymaps.option.presetStorage.get('".$row['attr']."'));ms.add(object);";
-				array_push($output, $this->mapmodel->returnScriptLineByType($row, $row['type']).$constant);
+				$constant = "{ type: ".$row['type'].", coords: '".$row['coord']."', addr: '".$row['addr']."', desc: '".str_replace("\n", "<br>", $row['desc'])."', name: '".$row['name']."', link: '".$row['link']."', attr: '".$row['attr']."'}";
+				array_push($output, $constant);
 			}
 		}
 		$this->writeIncrementedMapCounter();
-		$objects['mapobjects'] = implode($output, "\n");
+		$objects['mapobjects'] = implode($output, ",\n\t\t\t\t\t");
 		$this->load->helper('download');
 		force_download("Export of ".$objects['name'].".html", $this->load->view('freehand/script', $objects, true)); 
+		//print $this->load->view('freehand/script', $objects, true); 
 	}
 
 	public function loadframe($hash = "YzkxNzVjYTI0MGZk") {
