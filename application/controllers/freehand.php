@@ -262,6 +262,7 @@ class Freehand extends CI_Controller {
 				$ehash = $row->hash_a;
 				$uhash = $row->hash_a;
 			}
+			$nav = (gettype($mapdata['nav']) == "array") ? implode($mapdata['nav'], "','") : implode($this->config->item("nav_position"), "','");
 			$data = array(
 				"id"		=> $mapid,
 				"eid"		=> $ehash,
@@ -269,7 +270,7 @@ class Freehand extends CI_Controller {
 				"center"	=> $row->center,
 				"zoom"		=> $row->zoom,
 				"indb"		=> 1,
-				"nav"		=> (gettype($mapdata['nav']) == "array") ? implode($mapdata['nav'], "','") : implode($this->config->item("nav_position"), "','"),
+				"nav"		=> $nav,
 				"author"	=> $row->author
 			);
 			
