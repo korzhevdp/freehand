@@ -5,43 +5,54 @@ class Mapmodel extends CI_Model {
 		parent::__construct();
 	}
 
+	public function makeTransferList($result, $newLine = "<br>") {
+		if ($result->num_rows()) {
+			foreach ($result->result_array() as $row) {
+				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
+				$row['link'] = str_replace('"', "'", $row['link']);
+				$constant   = "{ type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."', link: '".trim($row['link'])."', attr: '".$row['attr']."' }";
+				array_push($output, $constant);
+			}
+			return implode($output, ",\n\t\t\t\t");
+		}
+		return false;
+	}
+
 	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$objects = $this->getMapData($hash);
 		if (!$objects) {
 			print "createFrame = { status: 0, error: 'Карта ещё не была обработана' };";
 			return false;
 		}
-		$output  = array();
 		$result  = $this->getMapObjectsList($objects['hash_a']);
-		if ($result->num_rows()) {
-			foreach ($result->result_array() as $row) {
-				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
-				$row['link'] = str_replace('"', "'", $row['link']);
-				$constant   = "{ type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", "<br>", $row['desc']))."', name: '".trim($row['name'])."', link: '".trim($row['link'])."', attr: '".$row['attr']."' }";
-				array_push($output, $constant);
-			}
-		}
-		$objects['mapobjects'] = implode($output, ",\n\t\t\t\t");
-		
+		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, $newLine = "<br>") : "";
 		$this->load->helper("file");
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
 		}
-		//print $this->load->view('freehand/frame', $objects, true);
+		print $this->load->view('freehand/frame', $objects, true);
 	}
 
-	public function returnScriptLineByType($row, $type) {
-		$coords = explode(",", $row['coord']);
-		if (sizeof($coords) !== 3) {
-			$coords = array(0, 0, 0);
+	public function getMapData($hash) {
+		$result = $this->db->query("SELECT 
+		`usermaps`.center_lon as `maplon`,
+		`usermaps`.center_lat as `maplat`,
+		`usermaps`.hash_a,
+		`usermaps`.hash_e,
+		`usermaps`.zoom as `mapzoom`,
+		`usermaps`.maptype,
+		`usermaps`.name
+		FROM
+		`usermaps`
+		WHERE
+		`usermaps`.`hash_a` = ?
+		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
+		if ($result->num_rows()) {
+			$objects = $result->row_array();
+			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
+			return $objects;
 		}
-		$types = array(
-			1 => 'object = new ymaps.Placemark({type: "Point", coordinates: ['.$row['coord'].']}, ',
-			2 => 'object = new ymaps.Polyline(new ymaps.geometry.LineString.fromEncodedCoordinates("'.$row['coord'].'"), ',
-			3 => 'object = new ymaps.Polygon(new ymaps.geometry.Polygon.fromEncodedCoordinates("'.$row['coord'].'"), ',
-			4 => 'object = new ymaps.Circle(new ymaps.geometry.Circle(['.$coords[0].', '.$coords[1].'],'.$coords[2].'), '
-		);
-		return $types[$type];
+		return false;
 	}
 
 	public function getMapObjectsList($hash) {
@@ -79,28 +90,6 @@ class Mapmodel extends CI_Model {
 			}
 		}
 		return $output;
-	}
-
-	public function getMapData($hash) {
-		$result = $this->db->query("SELECT 
-		`usermaps`.center_lon as `maplon`,
-		`usermaps`.center_lat as `maplat`,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.zoom as `mapzoom`,
-		`usermaps`.maptype,
-		`usermaps`.name
-		FROM
-		`usermaps`
-		WHERE
-		`usermaps`.`hash_a` = ?
-		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
-		if ($result->num_rows()) {
-			$objects = $result->row_array();
-			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
-			return $objects;
-		}
-		return false;
 	}
 
 	public function listuserimages () {

@@ -780,19 +780,19 @@ function init() {
 			frm,
 			fx = {
 				1: function () {
-					geometry = src.c.split(",");
+					geometry = src.coords.split(",");
 					object   = new ymaps.Placemark(geometry, properties, options);
 				},
 				2: function () {
-					geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.c);
+					geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.coords);
 					object   = new ymaps.Polyline(geometry, properties, options);
 				},
 				3: function () {
-					geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.c);
+					geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.coords);
 					object   = new ymaps.Polygon(geometry, properties, options);
 				},
 				4: function () {
-					geometry = new ymaps.geometry.Circle([parseFloat(src.c.split(",")[0]), parseFloat(src.c.split(",")[1])], parseFloat(src.c.split(",")[2]));
+					geometry = new ymaps.geometry.Circle([parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1])], parseFloat(src.coords.split(",")[2]));
 					object   = new ymaps.Circle(geometry, properties, options);
 				},
 				5: function () {}
@@ -800,22 +800,22 @@ function init() {
 		for (b in source) {
 			if (source.hasOwnProperty(b)) {
 				src     = source[b];
-				options = ymaps.option.presetStorage.get(normalizeStyle(src.a, src.p));
+				options = ymaps.option.presetStorage.get(normalizeStyle(src.attr, src.type));
 				frame   = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
 				properties = {
-					attr        : src.a,
-					description : src.d,
-					address     : src.b,
-					hintContent : src.n + ' ' + src.d,
-					img         : getImageBySize(src.i, 'small')[0],
-					img128      : getImageBySize(src.i, 'preview')[0],
+					attr        : src.attr,
+					desc        : src.desc,
+					addr        : src.addr,
+					hintContent : src.name + ' ' + src.desc,
+					img         : getImageBySize(src.img, 'small')[0],
+					img128      : getImageBySize(src.img, 'preview')[0],
 					frame       : frm,
-					link        : src.l,
-					name        : src.n,
+					link        : src.link,
+					name        : src.name,
 					ttl         : b.toString(),
-					images      : getImageBySize(src.i, 'small').join(" ")
+					images      : getImageBySize(src.img, 'small').join(" ")
 				};
-				fx[src.p]();
+				fx[src.type]();
 				if (mframes[frame] === undefined) {
 					mframes[frame] = new ymaps.GeoObjectArray();
 				}
@@ -1358,8 +1358,8 @@ function init() {
 
 	function setMapItem (data) {
 		var coords,
-			initCoord = data[0].coord,
-			pType     = geoType2IntId[data[0].type],
+			initCoord = data.coords,
+			pType     = geoType2IntId[data.type],
 			reverse   = $("#cRev").prop("checked"),
 			coordsFX  = {
 				1 : function (coords, reverse) {
@@ -1380,15 +1380,15 @@ function init() {
 			}
 		coords = coordsFX[pType](initCoord, reverse);
 		return {
-			frame : 1,
-			d     : data[1].d,
-			n     : data[1].n,
-			a     : data[2].attr,
-			p     : pType,
-			c     : coords,
-			b     : data[1].b,
-			l     : data[1].l,
-			i     : ['']
+			frame    : 1,
+			desc     : data.desc,
+			name     : data.name,
+			attr     : data.attr,
+			type     : pType,
+			coords   : coords,
+			addr     : data.addr,
+			link     : data.link,
+			img      : ['']
 		}
 	}
 

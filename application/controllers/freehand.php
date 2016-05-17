@@ -197,16 +197,16 @@ class Freehand extends CI_Controller {
 			foreach ($result->result() as $row) {
 				$locimages = (isset($images[$row->hash])) ? implode($images[$row->hash], "', '") : "" ;
 				$newobjects[$row->hash] = array(
-					"geometry" => $row->coord,
-					"type"     => $row->type,
-					"attr"     => $row->attributes,
-					"link"     => $row->link,
-					"desc"     => $row->description,
-					"address"  => $row->address,
-					"name"     => $row->name,
-					"images"   => "['".$locimages."']"
+					"coords" => $row->coord,
+					"type"   => $row->type,
+					"attr"   => $row->attributes,
+					"link"   => $row->link,
+					"desc"   => $row->description,
+					"addr"   => $row->address,
+					"name"   => $row->name,
+					"img"    => "['".$locimages."']"
 				);
-				$string = $row->hash.": { d: '".trim($row->description)."', n: '".trim($row->name)."', a: '".trim($row->attributes)."', p: ".trim($row->type).", c: '".trim($row->coord)."', b: '".trim($row->address)."', l: '".trim($row->link)."', i: ['".$locimages."'], src: 'db' }";
+				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".$locimages."'], src: 'db' }";
 				array_push($output, preg_replace("/\n/", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
@@ -219,7 +219,7 @@ class Freehand extends CI_Controller {
 		$output = array();
 		foreach ($this->session->userdata('objects') as $key=>$val ) {
 			$images = (isset($val['images']) && gettype($val['images']) === "array") ? "['".implode($val['images'], "', '")."']" : "['']";
-			$string = $key.": { d: '".trim($val['desc'])."', n: '".trim($val['name'])."', a: '".trim($val['attr'])."', p: ".trim($val['type']).", c: '".trim($val['geometry'])."', b: '".trim($val['address'])."', l: '".trim($val['link'])."', i: ".$images.", src: 'sess' }";
+			$string = $key.": { desc: '".trim($val['desc'])."', name: '".trim($val['name'])."', attr: '".trim($val['attr'])."', type: ".trim($val['type']).", coords: '".trim($val['coords'])."', addr: '".trim($val['addr'])."', link: '".trim($val['link'])."', img: ".$images.", src: 'sess' }";
 			array_push($output, preg_replace("/\n/", " ", $string));
 		}
 		return implode($output, ",\n");
@@ -279,7 +279,6 @@ class Freehand extends CI_Controller {
 			
 			if( $newMap ) {
 				//print "database";
-				
 				print $mapparam."usermap = { ".$this->getUserMap($uhash)."\n}";
 				return true;
 			}
@@ -416,7 +415,7 @@ class Freehand extends CI_Controller {
 					array_push($images, $img);
 				}
 			}
-			$string = $hash." : { d: '".$val['desc']."', n: '".$val['name']."', a: '".$val['attr']."', p: ".$val['type'].", c: '".$val['geometry']."', b: '".$val['address']."', l: '".$val['link']."', i: ['".implode($images, "', '")."'] }";
+			$string = $hash." : { desc: '".$val['desc']."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($images, "', '")."'] }";
 			array_push($output, $string);
 		}
 		$center = $data['center'];

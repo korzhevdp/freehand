@@ -10,25 +10,15 @@
 <!-- вырезать отсюда / cut from here -->
 	<style type="text/css">
 		.ymaps_balloon{
-			color: #000000;
-			width: 275px;
-			padding-bottom:15px;
-			font-size: 8pt;
-			font-family: tahoma;
-			line-height:14px;
+			color: #000000; width: 275px; padding-bottom:15px; font-size: 8pt; font-family: Tahoma; line-height:14px; 
 		}
 		#YMapsID {
-			width:100%;
-			height:600px;
-			border:1px solid #ffffff;
+			width: 100%; height: 600px; border : 1px solid #ffffff;
 		}
 		a {
-			color: #A6A6A6;
-			font-size: 12pt;
-			margin:auto
+			color: #A6A6A6; font-size: 12pt;
 		}
 	</style>
-
 
 	<div id="YMapsID"></div>
 
