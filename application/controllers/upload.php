@@ -68,7 +68,7 @@ class Upload extends CI_Controller {
 			print "Прислано 0 файлов. Это ошибка";
 			return false;
 		}
-		$filesDir   = $this->input->post('uploadDir');
+		//$filesDir   = $this->input->post('uploadDir');
 		$baseDir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' ;
 		if (!file_exists($baseDir)) {
 			mkdir($baseDir, 0775, true);
@@ -83,7 +83,7 @@ class Upload extends CI_Controller {
 				unlink($data['tmp_name']);
 				continue;
 			}
-			$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
+			//$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
 			$file = $this->recodeOriginalFile($data);
 			unlink($data['tmp_name']);
 			$this->resizeImage($file, $data,  32, 100);
