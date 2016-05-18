@@ -83,12 +83,12 @@ class Mapmanager extends CI_Controller {
 
 	public function listuserimages() {
 		$output    = array();
-		$login     = $this->input->post("uploadDir", true);
+		$filesDir  = $this->input->post("uploadDir", true);
 		if (!$this->session->userdata("name") || !strlen($this->session->userdata("name")) || $this->session->userdata("name") === "Гость"){
 			print "";
 			return false;
 		}
-		$directory = implode(array($_SERVER['DOCUMENT_ROOT'], 'storage', $login), DIRECTORY_SEPARATOR);
+		$directory = implode(array($_SERVER['DOCUMENT_ROOT'], 'storage', '128', $filesDir), DIRECTORY_SEPARATOR);
 		if (!file_exists($directory)) {
 			print "Каталога пользователя ещё не существует";
 			return false;
@@ -96,7 +96,7 @@ class Mapmanager extends CI_Controller {
 		$data      = scandir($directory);
 		foreach ($data as $val) {
 			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
-				$string = "{ login : '".$login."', file : '".$val."'}";
+				$string = "{ file : '".$filesDir."/".$val."' }";
 				array_push($output, $string);
 			}
 		}

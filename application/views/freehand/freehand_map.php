@@ -58,11 +58,10 @@
 			<div class="btn-group" style="margin-left: 5px;">
 				<a class="btn dropdown-toggle btn-small btn-info" style="margin-top:2px;" data-toggle="dropdown" href="#">Карта&nbsp;<span class="caret"></span></a>
 				<ul class="dropdown-menu">
+					<li><a href="#" id="mapReset" title="Очищает список объектов">Новая карта</a></li>
 					<li><a href="#" id="mapLoader" title="Показывает карту с указанным идентификатором">Загрузить</a></li>
 					<li><a href="#" id="mapSave" title="Запоминает внесённые изменения">Сохранить</a></li>
 					<li><a href="#" id="mapDelete" title="Удалить карту">Удалить</a></li>
-					<li class="divider"></li>
-					<li><a href="#" id="mapReset" title="Очищает список объектов">Новая карта</a></li>
 				</ul>
 			</div>
 			<div class="btn-group pull-right">
@@ -72,8 +71,9 @@
 					<li><a href="#" pr=2 title="Показывает ссылку на нередактируемую карту">Нередактируемая карта</a></li>
 					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">JS Скрипт</a></li>
 					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME</a></li>
-					<li><a href="#" pr=5 title="Формирует таблицу аннотаций для встраивания">Аннотационная карта</a></li>
-					<li><a href="#" pr=6 title="Импортирует типизированные объекты">Импорт</a></li>
+					<li class="divider"></li>
+					<li><a href="#" pr=5 title="Экспортирует объекты карты во внутреннем формате обмена">Экспорт</a></li>
+					<li><a href="#" pr=6 title="Импортирует объекты из внутреннего формата обмена">Импорт</a></li>
 				</ul>
 			</div>
 		</div>

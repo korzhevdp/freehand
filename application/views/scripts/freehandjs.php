@@ -19,6 +19,15 @@ var userstyles,
 	imageList        = [],
 	availableLayers  = {},
 	mp               = {},
+	sizesImg = {
+		small   : '32',
+		preview : '128',
+		full    : '600'
+	},
+	sizesNoImg  = {
+		small   : '<img src="' + apiURL + '/images/nophoto.gif">',
+		preview : '<img src="' + apiURL + '/images/nophoto.jpg">'
+	},
 	clipboard        = { name: '', description: '', address: '', preset: '', gtype: "Point" },
 	gIcons = {
 		1 : 'marker.png',
@@ -248,13 +257,13 @@ function init() {
 			if (ttl === item.properties.get('ttl')) {
 				item.properties.set({
 					name        : clipboard.name,
-					address     : clipboard.address,
-					description : clipboard.description,
-					hintContent : clipboard.name + ' ' + clipboard.address
+					addr        : clipboard.addr,
+					desc        : clipboard.desc,
+					hintContent : clipboard.name + ' ' + clipboard.addr
 				});
 				if (wst === 1 && item.geometry.getType() === clipboard.gtype) {
 					item.options.set(ymaps.option.presetStorage.get(normalizeStyle(clipboard.preset, clipboard.gtype)));
-					item.properties.set({ preset: clipboard.preset });
+					item.properties.set({ attr: clipboard.attr });
 				}
 			}
 		}
@@ -276,9 +285,9 @@ function init() {
 			if (ttl === item.properties.get('ttl')) {
 				clipboard = {
 					name        : item.properties.get('name'),
-					address     : item.properties.get('address'),
-					description : item.properties.get('description'),
-					preset      : item.properties.get('preset'),
+					addr        : item.properties.get('addr'),
+					desc        : item.properties.get('desc'),
+					attr        : item.properties.get('attr'),
 					gtype       : item.geometry.getType()
 				};
 			}
@@ -392,6 +401,7 @@ function init() {
 		if (mp.id !== undefined && mp.id === 'void') {
 			return false;
 		}
+		alert("SO")
 		$.ajax({
 			url          : '/' + mainController + "/save",
 			type         : "POST",
@@ -404,7 +414,7 @@ function init() {
 				address  : item.properties.get('address'),
 				link     : item.properties.get('link'),
 				name     : item.properties.get('name'),
-				images   : item.properties.get('imageList'),
+				img      : item.properties.get('imageList'),
 				frame    : parseInt($("#vp_frame").val(), 10)
 			},
 			success: function () {
@@ -558,17 +568,18 @@ function init() {
 			type        : 'POST',
 			data        : { uploadDir : mp.uhash },
 			dataType    : 'script',
-			success     : function(){
+			success     : function() {
 				var a;
 				$("#imageList").empty();
 				for ( a in imagesData) {
-					if (imageList.hasOwnProperty(a)) {
-						$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/' + mp.uhash + '/128/' + imagesData[a].file + '"></li>');
+					if (imagesData.hasOwnProperty(a)) {
+						$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/128/' + imagesData[a].file + '"></li>');
 					}
 				}
 				for ( a in imageList ) {
 					if (imageList.hasOwnProperty(a)) {
-						$('#imageList li[file="' + imageList[a].split("/")[1] + '"]').addClass("active");
+						
+						$('#imageList li[file="' + imageList[a] + '"]').addClass("active");
 					}
 				}
 				$("#imageList li").click(function(){
@@ -584,7 +595,7 @@ function init() {
 					$("#locationImages").empty();
 					$("#imageList li.active").each(function() {
 						imageList.push($(this).attr("file"));
-						$("#locationImages").append('<img src="/storage/' + mp.uhash + '/32/'+ $(this).attr("file") +'">');
+						$("#locationImages").append('<img src="/storage/32/' + $(this).attr("file") + '">');
 					});
 					//console.log(imageList.toSource());
 				});
@@ -603,11 +614,11 @@ function init() {
 	function tracePoint(object) {
 		var coords = object.geometry.getCoordinates(),
 			cstyle = object.properties.get("attr");
-
+		// по какой-то причине блокирует выдачу...
 		//if ($("#traceAddress").prop('checked')) {
-		insertGeoCodingProperty(object);
+			//insertGeoCodingProperty(object);
 		//}
-		sendObject(object);
+		//sendObject(object);
 		countObjects();
 		$("#m_lon").val(parseFloat(coords[0]).toFixed(precision));
 		$("#m_lat").val(parseFloat(coords[1]).toFixed(precision));
@@ -665,13 +676,15 @@ function init() {
 	function doEdit(src) {
 		var ttl = $(src).attr('ttl');
 		$("#location_id").val(ttl); // здесь строка
-		map.balloon.close();
+
 		aObjects.each(function (item) {
 			if (item.properties.get("ttl") === ttl) {
-				var type = geoType2IntId[item.geometry.getType()];		// получаем YM тип геометрии объекта
+				map.balloon.close();
 				eObjects.add(item);										// переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
-				imageList = ( usermap[ttl] === undefined || usermap[ttl].i === undefined ) ? [] : usermap[ttl].i;
+				var type = geoType2IntId[item.geometry.getType()];		// получаем YM тип геометрии объекта
+
+				imageList = ( usermap[ttl] === undefined || usermap[ttl].img === undefined ) ? [] : usermap[ttl].img;
 				// нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
 				disableMultiplePointCoordsInput();
 				if (type === 2 || type === 3) {
@@ -747,21 +760,18 @@ function init() {
 	function getImageBySize(image, size) {
 		var a,
 			pathComponents,
-			output = [],
-			sizes  = {
-				small   : '<img src="' + apiURL + '/images/nophoto.gif">',
-				preview : '<img src="' + apiURL + '/images/nophoto.jpg">'
-			};
+			output  = [];
 		if (!image.length) {
-			return [sizes[size]];
+			return [sizesNoImg[size]];
 		}
 		for ( a in image ) {
 			if (image.hasOwnProperty(a)) {
 				if (image[a].length) {
-					output.push('<img src="/storage/' + mp.uhash + '/' + size +'/' + image[a] +'">');
+					output.push('<img src="/storage/' + sizesImg[size] +'/' + image[a] +'">');
+					//alert('<img src="/storage/' + sizesImg[size] +'/' + image[a] +'">')
 				}
 				if (!image[a].length) {
-					output.push(sizes[size]);
+					output.push(sizesNoImg[size]);
 				}
 			}
 		}
@@ -780,7 +790,7 @@ function init() {
 			frm,
 			fx = {
 				1: function () {
-					geometry = src.coords.split(",");
+					geometry = [ parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1] ) ];
 					object   = new ymaps.Placemark(geometry, properties, options);
 				},
 				2: function () {
@@ -800,26 +810,29 @@ function init() {
 		for (b in source) {
 			if (source.hasOwnProperty(b)) {
 				src     = source[b];
-				options = ymaps.option.presetStorage.get(normalizeStyle(src.attr, src.type));
-				frame   = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
-				properties = {
-					attr        : src.attr,
-					desc        : src.desc,
-					addr        : src.addr,
-					hintContent : src.name + ' ' + src.desc,
-					img         : getImageBySize(src.img, 'small')[0],
-					img128      : getImageBySize(src.img, 'preview')[0],
-					frame       : frm,
-					link        : src.link,
-					name        : src.name,
-					ttl         : b.toString(),
-					images      : getImageBySize(src.img, 'small').join(" ")
-				};
-				fx[src.type]();
-				if (mframes[frame] === undefined) {
-					mframes[frame] = new ymaps.GeoObjectArray();
+				if (src.attr !== undefined) { //костыль. Причём непонятный
+					options = ymaps.option.presetStorage.get(normalizeStyle(src.attr, src.type));
+					frame   = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
+					properties = {
+						attr        : src.attr,
+						desc        : src.desc,
+						addr        : src.addr,
+						hintContent : src.name + ' ' + src.desc,
+						img         : getImageBySize(src.img, 'small')[0],
+						img128      : getImageBySize(src.img, 'preview')[0],
+						frame       : frm,
+						link        : src.link,
+						name        : src.name,
+						imageList   : src.img,
+						ttl         : b.toString(),
+						images      : getImageBySize(src.img, 'small').join(" ")
+					};
+					fx[src.type]();
+					if (mframes[frame] === undefined) {
+						mframes[frame] = new ymaps.GeoObjectArray();
+					}
+					mframes[frame].add(object);
 				}
-				mframes[frame].add(object);
 			}
 		}
 		if(!mframes.length){
@@ -903,9 +916,16 @@ function init() {
 			dataType : "script",
 			type     : "POST",
 			success  : function () {
+				if ($("#maphash").val().length === 16 && (mp.uhash !== $("#maphash").val() && mp.ehash !== $("#maphash").val())) {
+					loadmap($("#maphash").val());
+					return true;
+				}
 				placeFreehandObjects(usermap);
+				if(mp.nav[0] !== undefined ){
+					$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]);
+				}
 				$("#SContainer").removeClass("hide");
-				//css('top', mp.nav[0]).css('left', mp.nav[1])
+
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -930,7 +950,7 @@ function init() {
 	function applyPreset(src, style) {
 		src.options.set(ymaps.option.presetStorage.get(style)); // назначение стиля в опции.
 		src.properties.set({ attr: style }); // параллельная запись определения в свойства.
-		sendObject(src);
+		//sendObject(src);
 	}
 
 	function saveAll() {
@@ -1138,11 +1158,11 @@ function init() {
 				'<label for="a2232G">Фото:' +
 				'<span id="locationImages">' +
 				'$[properties.images|]' +
+				'</span>' +
 				'<div class="btn-group" style="float:right;margin-top: 4px;">' +
 				'<button class="btn" type="button" id="imgSelector" title="Выбрать изображения"><i class="icon-picture"></i></button>' +
 				'<button class="btn" type="button" id="imgUploader" title="Загрузить изображения"><i class="icon-upload"></i></button>' +
 				'</div>' +
-				'</span>' +
 				'</label>' +
 				'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.description|нет]</textarea></label>' +
 				'<div class="pull-right">' +
@@ -1279,12 +1299,12 @@ function init() {
 					return false;
 				}
 				eObjects.each(function (item) {
-					var auxGeometry
+					var auxGeometry,
 						type = geoType2IntId[item.geometry.getType()];
-					if (item.geometry.getType() === 2) {
+					if (type === 2) {
 						item.geometry.insert(item.geometry.getLength() + 1, object.geometry.getCoordinates());
 					}
-					if (item.geometry.getType() === 3) {
+					if (type === 3) {
 						auxGeometry = item.geometry.getCoordinates();
 						auxGeometry[0][auxGeometry[0].length - 1] = object.geometry.getCoordinates();
 						item.geometry.setCoordinates(auxGeometry);
@@ -1308,9 +1328,11 @@ function init() {
 			var a = map.controls.indexOf(searchControl);
 			if (a === (-1)) {
 				map.controls.add(searchControl);
+				$(this).css('opacity', 1);
 				return false
 			}
 			map.controls.remove(searchControl);
+			$(this).css('opacity', .5);
 		});
 
 		map.geoObjects.add(aObjects);
@@ -1322,9 +1344,6 @@ function init() {
 		styleAddToStorage(userstyles);
 		listStyles();
 		loadSessionData();
-		if ($("#maphash").val().length === 16 ) {
-			loadmap($("#maphash").val());
-		}
 		displayLocations();
 	}
 
@@ -1359,10 +1378,11 @@ function init() {
 	function setMapItem (data) {
 		var coords,
 			initCoord = data.coords,
-			pType     = geoType2IntId[data.type],
+			pType     = data.type,
 			reverse   = $("#cRev").prop("checked"),
 			coordsFX  = {
 				1 : function (coords, reverse) {
+					coords = coords.split(",");
 					return (reverse) ? coords.reverse().join(",") : coords.join(",");
 				},
 				2 : function (coords, reverse) {
@@ -1372,12 +1392,14 @@ function init() {
 					return coords;
 				},
 				4 : function (coords, reverse) {
+					coords = coords.split(",");
 					return ($("#cRev").prop("checked")) ? [ coords[1], coords[0], coords[2] ].join(",") : coords.join(",");
 				},
 				5 : function (coords, reverse) {
 					return coords;
 				}
 			}
+			//alert(typeof initCoord)
 		coords = coordsFX[pType](initCoord, reverse);
 		return {
 			frame    : 1,
@@ -1632,10 +1654,10 @@ function init() {
 		eObjects.each(function(item) {
 			if (item.properties.get("ttl") === target) {
 				item.properties.set({ imageList : imageList });
-				usermap[target].i = imageList;
-				//console.log(usermap[target].i);
+				usermap[target].img = imageList;
 			}
 		});
+		console.log(usermap[target].img);
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");
 	});

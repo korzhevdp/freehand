@@ -5,11 +5,18 @@ class Upload extends CI_Controller {
 	}
 
 	private function recodeOriginalFile($data) {
-		$filesDir    = $this->input->post('uploadDir');
+		$filesDir = $this->input->post('uploadDir');
+		//print $data['type']
 		$image    = $this->createimageByType($data, $data['tmp_name']);
 		$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
 		$filename = implode($filename, "");
-		imageJpeg ($image, $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $filesDir . DIRECTORY_SEPARATOR . $filename.".jpeg", 100);
+		$origDir  = implode( array($this->input->server('DOCUMENT_ROOT'), 'storage', "source", $filesDir), DIRECTORY_SEPARATOR);
+		if (!file_exists($origDir)) {
+			mkdir($origDir, 0775, true);
+		}
+		$outfile  = implode( array($this->input->server('DOCUMENT_ROOT'), 'storage', "source", $filesDir, $filename.".jpeg"), DIRECTORY_SEPARATOR); 
+		imageJpeg ($image, $outfile, 100);
+		return $outfile;
 	}
 
 	private function createimageByType ($data, $file) {
@@ -26,18 +33,17 @@ class Upload extends CI_Controller {
 	}
 
 	private function resizeImage($file, $data, $tmd = 600, $quality = 100){
-		$filesDir  = $this->input->post('uploadDir');
-		$uploaddir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $filesDir;
-		$basename  = basename($file);
-		$srcFile   = $uploaddir . DIRECTORY_SEPARATOR . $basename;
-		if (!file_exists($uploaddir . DIRECTORY_SEPARATOR . $tmd)) {
-			mkdir($uploaddir . DIRECTORY_SEPARATOR . $tmd, 0775, true);
-		}
 		$data['type'] = "image/jpeg";
-		$size         = GetImageSize($srcFile);
-		if ($size['1'] < $tmd && $size['0'] < $tmd) {
-			$new      = $this->createimageByType($data, $srcFile)
+		$basename  = basename($file);
+		$filesDir  = $this->input->post('uploadDir'); // хэш нередактируемой карты!
+		$uploaddir = implode( array( $this->input->server('DOCUMENT_ROOT'), 'storage', $tmd, $filesDir), DIRECTORY_SEPARATOR);
+		$srcFile   = implode( array( $this->input->server('DOCUMENT_ROOT'), 'storage', 'source', $filesDir, $basename), DIRECTORY_SEPARATOR);
+		$image     = $this->createimageByType($data, $srcFile);
+		if (!file_exists( $uploaddir )) {
+			mkdir( $uploaddir, 0775, true );
 		}
+		
+		$size = GetImageSize($srcFile);
 		if ($size['1'] > $tmd || $size['0'] > $tmd) {
 			if ($size['1'] < $size['0']) {
 				$hNew = round($tmd * $size['1'] / $size['0']);
@@ -51,7 +57,7 @@ class Upload extends CI_Controller {
 			}
 		}
 		//print $uploaddir."/".TMD."/".$filename.".jpg<br>";
-		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $tmd . DIRECTORY_SEPARATOR . $basename, $quality);
+		imageJpeg ($new, $uploaddir . DIRECTORY_SEPARATOR . $basename, $quality);
 		//header("content-type: image/jpeg");// активировать для отладки
 		//imageJpeg ($new, "", 100);//активировать для отладки
 		imageDestroy($new);
@@ -63,18 +69,13 @@ class Upload extends CI_Controller {
 			return false;
 		}
 		$filesDir   = $this->input->post('uploadDir');
-		/*
-		if ( gettype($filesDir) === "boolean" ) {
-			print "uploadresult = { status: 0 , error: 'Войдите на сайт, пожалуйста' };";
-			return false;
-		}
-		*/
 		$baseDir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' ;
 		if (!file_exists($baseDir)) {
 			mkdir($baseDir, 0775, true);
 		}
-		if (!file_exists($baseDir . DIRECTORY_SEPARATOR . $filesDir)) {
-			mkdir($baseDir . DIRECTORY_SEPARATOR . $filesDir, 0775, true);
+
+		if (!file_exists($baseDir . DIRECTORY_SEPARATOR . "source")) {
+			mkdir($baseDir . DIRECTORY_SEPARATOR . "source", 0775, true);
 		}
 		foreach ($_FILES as $data) {
 			//если загрузили что-то не то
@@ -83,8 +84,7 @@ class Upload extends CI_Controller {
 				continue;
 			}
 			$filename = array_slice(explode(".", basename($data['name'])), 0, -1);
-			$file     = $baseDir . DIRECTORY_SEPARATOR . $filesDir . DIRECTORY_SEPARATOR . implode($filename, "").".jpeg";
-			$this->recodeOriginalFile($data);
+			$file = $this->recodeOriginalFile($data);
 			unlink($data['tmp_name']);
 			$this->resizeImage($file, $data,  32, 100);
 			$this->resizeImage($file, $data, 128, 100);

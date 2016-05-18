@@ -89,7 +89,7 @@ address {
 	margin: 3px; padding: 2px; border: 1px solid rgb(102, 102, 102); height: 50px; line-height: 12px; overflow: hidden; cursor: pointer; background-color: rgb(255, 255, 255);
 }
 #YMapsID {
-	border: 1px solid rgb(214, 214, 214); width: 99%; height: 500px;
+	outline: 1px solid rgb(214, 214, 214); width: 100%; height: 500px;
 }
 .frame-switcher {
 	cursor: pointer;
@@ -203,5 +203,9 @@ address {
 .sw-finish,
 .sw-del {
 	margin-right: 8px;
+}
+
+#searchFormToggle {
+	opacity: 1
 }
 

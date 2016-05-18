@@ -125,4 +125,4 @@ $('#modal_pics').on('show', function () {
 });
 
 $("#YMapsID").height($(window).height() - 52 + 'px');
-$("#YMapsID").width($(window).width() - 4 + 'px');
+//$("#YMapsID").width($(window).width() - 4 + 'px');

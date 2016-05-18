@@ -7,10 +7,11 @@ class Mapmodel extends CI_Model {
 
 	public function makeTransferList($result, $newLine = "<br>") {
 		if ($result->num_rows()) {
+			$output = array();
 			foreach ($result->result_array() as $row) {
 				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
 				$row['link'] = str_replace('"', "'", $row['link']);
-				$constant   = "{ type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."', link: '".trim($row['link'])."', attr: '".$row['attr']."' }";
+				$constant   = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."', link: '".trim($row['link'])."', attr: '".$row['attr']."' }";
 				array_push($output, $constant);
 			}
 			return implode($output, ",\n\t\t\t\t");
@@ -30,7 +31,7 @@ class Mapmodel extends CI_Model {
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
 		}
-		print $this->load->view('freehand/frame', $objects, true);
+		//print $this->load->view('freehand/frame', $objects, true);
 	}
 
 	public function getMapData($hash) {

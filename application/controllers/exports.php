@@ -41,7 +41,7 @@ class Exports extends CI_Controller {
 			return false;
 		}
 		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, "<br>") : "Объектов для указанной карты не обнаружено";
+		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, " ") : "Объектов для указанной карты не обнаружено";
 		print $this->load->view('freehand/transfer', $objects, true);
 	}
 
