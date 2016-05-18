@@ -414,7 +414,11 @@ class Freehand extends CI_Controller {
 			array_push($output, $string);
 		}
 		$center = $data['center'];
-		print  "mp = { id: '".$data['id']."', nav: ['".$nav."'], maptype: '".$data['maptype']."', c: [".$center[1].",".$center[0]."], zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
+		if ($data['id'] !== $data['eid'] ) {
+			$data['mapid'] = 'void';
+			$data['eid']   = $data['mapid'];
+		}
+		print  "mp = { id: '".$data['mapid']."', nav: ['".$nav."'], maptype: '".$data['maptype']."', c: [".$center[1].",".$center[0]."], zoom: ".$data['zoom'].", uhash: '".$data['id']."', ehash: '".$data['eid']."', indb: ".$data['indb']." };"."\nusermap = { ".implode($output,",\n")."\n};";
 	}
 }
 

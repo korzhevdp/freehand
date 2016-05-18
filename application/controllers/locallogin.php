@@ -84,7 +84,7 @@ class Locallogin extends CI_Controller {
 			$this->session->set_userdata('name', $login);
 			$this->session->set_userdata('photo', '<i class="icon-user"></i>');
 			$this->session->set_userdata('supx', 1);
-			$baseDir = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $uidx;
+			$baseDir = $this->input->server('DOCUMENT_ROOT') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $uidx;
 			if(!file_exists($baseDir)){
 				mkdir($baseDir, 0775, true);
 				mkdir($baseDir . DIRECTORY_SEPARATOR . "32"  . DIRECTORY_SEPARATOR, 0775, true);

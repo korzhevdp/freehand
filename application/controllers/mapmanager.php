@@ -88,7 +88,7 @@ class Mapmanager extends CI_Controller {
 			print "";
 			return false;
 		}
-		$directory = implode(array($_SERVER['DOCUMENT_ROOT'], 'storage', '128', $filesDir), DIRECTORY_SEPARATOR);
+		$directory = implode(array($this->input->post('DOCUMENT_ROOT'), 'storage', '128', $filesDir), DIRECTORY_SEPARATOR);
 		if (!file_exists($directory)) {
 			print "Каталога пользователя ещё не существует";
 			return false;

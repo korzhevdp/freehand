@@ -26,7 +26,7 @@ class Mapmodel extends CI_Model {
 			return false;
 		}
 		$result  = $this->getMapObjectsList($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, $newLine = "<br>") : "";
+		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, "<br>") : "";
 		$this->load->helper("file");
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
@@ -92,22 +92,6 @@ class Mapmodel extends CI_Model {
 		}
 		return $output;
 	}
-
-	public function listuserimages () {
-		$output    = array();
-		$login     = $this->session->userdata("name");
-		$directory = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login;
-		$data      = scandir($directory);
-		foreach($data as $val){
-			if ( !in_array($val, array(".", "..")) && !is_dir($directory . DIRECTORY_SEPARATOR . $val) ) {
-				$name   = $val;
-				$string = '<option value="' . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . $login . DIRECTORY_SEPARATOR . $val.'">'.$val.'</option>';
-				array_push($output, $string);
-			}
-		}
-		return implode($output, "");
-	}
-
 }
 /* End of file mapmodel.php */
 /* Location: ./application/models/mapmodel.php */

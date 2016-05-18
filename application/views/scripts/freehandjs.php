@@ -401,7 +401,6 @@ function init() {
 		if (mp.id !== undefined && mp.id === 'void') {
 			return false;
 		}
-		alert("SO")
 		$.ajax({
 			url          : '/' + mainController + "/save",
 			type         : "POST",
@@ -578,7 +577,7 @@ function init() {
 				}
 				for ( a in imageList ) {
 					if (imageList.hasOwnProperty(a)) {
-						
+
 						$('#imageList li[file="' + imageList[a] + '"]').addClass("active");
 					}
 				}
@@ -768,7 +767,6 @@ function init() {
 			if (image.hasOwnProperty(a)) {
 				if (image[a].length) {
 					output.push('<img src="/storage/' + sizesImg[size] +'/' + image[a] +'">');
-					//alert('<img src="/storage/' + sizesImg[size] +'/' + image[a] +'">')
 				}
 				if (!image[a].length) {
 					output.push(sizesNoImg[size]);
@@ -916,9 +914,16 @@ function init() {
 			dataType : "script",
 			type     : "POST",
 			success  : function () {
+				var mapType;
 				if ($("#maphash").val().length === 16 && (mp.uhash !== $("#maphash").val() && mp.ehash !== $("#maphash").val())) {
 					loadmap($("#maphash").val());
 					return true;
+				}
+				if (mp !== undefined) {
+					$("#headTitle").html(mp.name);
+					setMapControls(mp.id);
+					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
+					map.setType(mapType).setZoom(mp.zoom).panTo(mp.c);
 				}
 				placeFreehandObjects(usermap);
 				if(mp.nav[0] !== undefined ){
@@ -1399,7 +1404,6 @@ function init() {
 					return coords;
 				}
 			}
-			//alert(typeof initCoord)
 		coords = coordsFX[pType](initCoord, reverse);
 		return {
 			frame    : 1,
@@ -1657,7 +1661,7 @@ function init() {
 				usermap[target].img = imageList;
 			}
 		});
-		console.log(usermap[target].img);
+		//console.log(usermap[target].img);
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");
 	});

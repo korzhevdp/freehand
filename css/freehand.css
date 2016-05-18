@@ -1,29 +1,29 @@
 #palette {
-	margin: 0px; padding: 0px; height: 14px; line-height: 12px; font-size: 12px;
+	margin:0; padding:0; height: 14px; line-height: 12px; font-size: 12px;
 }
 #manager {
-	margin: 0px; padding: 0px; height: 14px; line-height: 12px; font-size: 12px;
+	margin:0; padding:0; height: 14px; line-height: 12px; font-size: 12px;
 }
 #mainselector {
-	margin: 0px; padding: 0px; font-size: 10px;
+	margin:0; padding:0; font-size: 10px;
 }
 #results {
-	margin: 0px; padding: 0px; font-size: 10px;
+	margin:0; padding:0; font-size: 10px;
 }
 #navigator img {
-	border: currentColor; width: 16px; height: 16px;
+	border:0; width: 16px; height: 16px;
 }
 div.label-info {
 	margin: 5px; width: 150px;
 }
-div.input-prepend span.add-on {
-	margin: 0px; width: 50px;
+div.input-prepend .add-on {
+	margin:0; width: 50px;
 }
-input.circlecoord {
+.circlecoord {
 	width: 120px;
 }
 #SContainer {
-	padding: 0px; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 350px; position: absolute; z-index: 100; box-shadow: 0px 0px 10px rgba(0,0,0,0.7); background-color: rgb(238, 238, 238); -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); -moz-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+	padding:0; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 350px; position: absolute; z-index: 100; box-shadow:00 10px rgba(0,0,0,0.7); background-color: rgb(238, 238, 238); -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); -moz-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
 }
 #transferM {
 	padding: 10px; width: 680px;
@@ -41,13 +41,13 @@ input.circlecoord {
 	padding: 3px; border: 2px solid rgb(255, 255, 255); left: 360px; top: 54px; width: 400px; height: 30px; color: rgb(214, 214, 214); vertical-align: middle; position: absolute; z-index: 99; background-color: rgb(34, 34, 34);
 }
 .tab-content#navigator {
-	padding: 0px; width: 243px; height: 260px; overflow: auto; z-index: 101;
+	padding:0; width: 243px; height: 260px; overflow: auto; z-index: 101;
 }
 .navbar {
 	margin: 3px;
 }
 #YMHead {
-	margin: 0px; padding: 0px; width: 243px; height: 25px; color: rgb(255, 255, 204); font-size: 10pt; vertical-align: middle; cursor: move; background-color: rgb(51, 102, 204);
+	margin:0; padding:0; width: 243px; height: 25px; color: rgb(255, 255, 204); font-size: 10pt; vertical-align: middle; cursor: move; background-color: rgb(51, 102, 204);
 }
 #YMHead i {
 	vertical-align: -40%; cursor: pointer;
@@ -119,7 +119,7 @@ address {
 	margin-top: -2px;
 }
 .ymaps_balloonX input[type=text] {
-	width: 350px; margin-top: -2px; margin-bottom: 0px;
+	width: 350px; margin-top: -2px; margin-bottom:0;
 }
 .ymaps_balloonX textarea {
 	margin-top: 4px;
@@ -141,7 +141,7 @@ address {
 	margin-right: 2px;
 }
 .editx_label {
-	font-weight: bolder; margin-left: 0px;
+	font-weight: bolder; margin-left:0;
 }
 #uploadForm {
 	height: 301px; overflow: auto;
@@ -157,10 +157,10 @@ address {
 #modal_pics {
 	width:640px;
 }
-#modal_pics div.modal-header {
+#modal_pics .modal-header {
 	cursor: move; background-color: #d6d6d6
 }
-#modal_pics div.modal-body {
+#modal_pics .modal-body {
 	height:500px;
 	overflow:hidden;
 }
@@ -173,29 +173,28 @@ address {
 #imageList li {
 	list-style-type: none; padding: 4px; width: 136px; height: 128px; display: table-cell; float: left; text-align: center; border: 2px solid #F6F6F6; margin: 2px; cursor: pointer;
 }
-#imageList li.active {
+#imageList .active {
 	border: 2px solid #0000E6;
 }
 
 #l_photo {
 	margin-right  : 4px;
 	margin-bottom : 4px;
-	---border        : 1px solid red;
 	width         : 128px;
 	height        : 128px;
 	float         : left;
 }
 
-.ymaps_balloon div.propertyContainer {
+.ymaps_balloon .propertyContainer {
 	clear: right;
 	margin-top: 4px;
 }
 
-.ymaps_balloon div.property {
+.ymaps_balloon .property {
 	margin-right:10px; font-weight:bold; float:left;
 }
 
-.ymaps_balloon div.link {
+.ymaps_balloon .link {
 	clear: both;
 	margin-top: 6px;
 }
