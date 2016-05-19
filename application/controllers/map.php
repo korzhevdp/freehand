@@ -2,11 +2,9 @@
 class Map extends CI_Controller {
 	function __construct() {
 		parent::__construct();
-		if (!$this->session->userdata('objects')) {
-			$this->session->set_userdata('objects', array());
-		}
-		if (!$this->session->userdata('lang')) {
-			$this->session->set_userdata('lang', 'en');
+		$this->load->model("mapmodel");
+		if (!$this->session->userdata('map')) {
+			$this->mapmodel->makeDefaultMapConfig();
 		}
 		if (!$this->session->userdata('gcounter')) {
 			$this->session->set_userdata('gcounter', 1);
@@ -18,11 +16,10 @@ class Map extends CI_Controller {
 	}
 
 	public function map($hash = "") {
-		$data          = $this->session->userdata('map');
+		$data              = $this->session->userdata('map');
+		$data['state']     = "session";
 		if ($data['uid'] !== $hash && $data['eid'] !== $hash) {
 			$data['state'] = "database";
-		} else {
-			$data['state'] = "session";
 		}
 		$data["mapID"] = $hash;
 		$this->session->set_userdata('map', $data);
@@ -45,7 +42,6 @@ class Map extends CI_Controller {
 		);
 		$this->load->view('freehand/freehand_map', $act);
 	}
-
 }
 
 /* End of file map.php */

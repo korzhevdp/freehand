@@ -4,29 +4,8 @@ class Freehand extends CI_Controller {
 		parent::__construct();
 		$this->load->model('mapmodel');
 		if (!$this->session->userdata('map')) {
-			$this->mapInit();
+			$this->mapmodel->mapInit();
 		}
-	}
-
-	private function mapInit() {
-		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
-		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
-		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
-			$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
-			$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
-		}
-		$data = array(
-			'uid'		=> $hasha,
-			'eid'		=> $hashe,
-			'maptype'	=> 'yandex#satellite',
-			'nav'		=> $this->config->item('nav_position'),
-			'center'	=> $this->config->item('map_center'),
-			'zoom'		=> 15,
-			'state'		=> 'initial',
-			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0
-		);
-		$this->session->set_userdata('map', $data);
-		$this->session->set_userdata('objects', array());
 	}
 
 	private function updateMapDataWOverride($map) {
@@ -266,10 +245,11 @@ class Freehand extends CI_Controller {
 				if ($hash === $row->hash_e){
 					$mapdata['mode'] = 'edit';
 				}
-				$nav       = (gettype($mapdata['nav']) == "array") ? implode($mapdata['nav'], "','") : implode($this->config->item("nav_position"), "','");
+				$nav       = (gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
 				$data = array(
 					"uid"		=> $hasha,
 					"eid"		=> $hashe,
+					"name"		=> $row->name,
 					"maptype"	=> $row->maptype,
 					"center"	=> array($row->center_lon, $row->center_lat),
 					"zoom"		=> $row->zoom,
@@ -278,26 +258,17 @@ class Freehand extends CI_Controller {
 					"author"	=> $row->author,
 					"mode"		=> $mapdata['mode']
 				);
-				
-				//print implode(array($hash, $uhash, $ehash, $newMap), " - ");
 				$this->session->set_userdata('map', $data);
-				$mapparam = "mp = {
-					nav     : ['".$data['nav']."'],
-					name    : '".$row->name."',
-					maptype : '".$row->maptype."',
-					center  : [".implode($data['center'], ",")."],
-					zoom    : ".$row->zoom.",
-					uhash   : '".$data['uid']."',
-					ehash   : '".$data['eid']."',
-					state   : '".$data['state']."',
-					mode    : '".$data['mode']."'
-				};\n";
+				$mapparam = $this->mapmodel->makeMapParametersObject($data);
 				print $mapparam."usermap = { ".$this->getUserMap($data['uid'])."\n}";
 				return true;
 			}
 		}
-		print "usermap = { error: 'Карты с таким идентификатором не найдено.' }";
+		$mapparam = $this->mapmodel->makeMapParametersObject($this->session->userdata('map'));
+		print $mapparam."usermap = {}";
 	}
+
+
 
 	public function savemap() {
 		$data = $this->session->userdata('map');
@@ -310,46 +281,48 @@ class Freehand extends CI_Controller {
 	}
 
 	public function resetsession() {
-		$this->mapInit();
-		$this->session->set_userdata('objects',array());
+		$this->session->unset_userdata('map');
+		$this->session->unset_userdata('objects');
+		$this->mapmodel->mapInit();
 		$data = $this->session->userdata("map");
-		print 'usermap = []; mp = { id: "'.$data['eid'].'", maptype:"yandex#map", c: ['.$this->config->item('map_center').'], zoom: '.$this->config->item('map_zoom').', ehash:"'.$data['eid'].'", uhash: "'.$data['id'].'", indb: 0 }';
+		$mapparam = $this->mapmodel->makeMapParametersObject($data);
+		print $mapparam."usermap = { }";
 	}
 
 	public function savedb() {
-		$map = $this->session->userdata('map');
-		if ($map['mode'] === 'view') {
+		$data = $this->session->userdata('map');
+		if ($data['mode'] === 'view') {
 			return false;
 		}
-		$map['lat'] = $map['center'][0];
-		$map['lon'] = $map['center'][1];
+		$data['lat'] = $data['center'][0];
+		$data['lon'] = $data['center'][1];
 		$result = $this->db->query("SELECT
 		`usermaps`.id
 		FROM
 		`usermaps`
-		WHERE `usermaps`.hash_a = ?", array($map['uid']));
+		WHERE `usermaps`.hash_a = ?", array($data['uid']));
 		if ($result->num_rows()) {
-			if (!$map['author'] || $map['author'] == $this->session->userdata("uidx")) {
-				$this->updateMapDataWOverride($map);
+			if (!$data['author'] || $data['author'] == $this->session->userdata("uidx")) {
+				$this->updateMapDataWOverride($data);
 			} 
-			if ($map['author']) {
-				$this->updateMapData($map);
+			if ($data['author']) {
+				$this->updateMapData($data);
 			}
 		}
 		if (!$result->num_rows()) {
-			$map = $this->insertNotInDBUserMap($map);
+			$data = $this->insertNotInDBUserMap($data);
 		}
-		$map['state'] = 'database';
-		$this->session->set_userdata('map', $map);
+		$data['state'] = 'database';
+		$this->session->set_userdata('map', $data);
 
-		$objects = $this->packSessionData($map, $this->session->userdata('objects'));
-		$output  = $this->getUserMap($map['uid']);
-		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($map['uid']));
+		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
+		$output  = $this->getUserMap($data['uid']);
+		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($data['uid']));
 		$this->insertUserMapObjects($objects['locations']);
 		$this->insertUserMapImages($objects['images']);
-		$this->mapmodel->createframe($map['uid']);
-		
-		print "mp = { ehash: '".$map['eid']."', uhash: '".$map['uid']."', state: '".$map['state']."' }; usermap = { ".$output." }"; 
+		$this->mapmodel->createframe($data['uid']);
+		$mapparam = $this->mapmodel->makeMapParametersObject($data);
+		print $mapparam."usermap = { ".$output."\n}";
 	}
 
 	public function save() {
@@ -417,7 +390,7 @@ class Freehand extends CI_Controller {
 			$this->loadmap($data['mapID']);
 			return false;
 		}
-		$nav     = (isset($data['nav']) && is_array($data['nav'])) ? implode($data['nav'], "','") : implode($this->config->item("nav_position"), "','") ;
+		$data['nav'] = (is_array($data['nav'])) ? $data['nav'] : $this->config->item("nav_position");
 		$output  = array();
 		if ($data['state'] === "session") {
 			$objects = $this->session->userdata('objects');
@@ -428,16 +401,8 @@ class Freehand extends CI_Controller {
 			}
 		}
 		//$data['eid'] = ($data['mode'] === 'view') ? $data['uid'] : $data['eid'];
-		print "mp = { 
-			nav     : ['".$nav."'],
-			maptype : '".$data['maptype']."',
-			center  : [".implode($data['center'], ",")."],
-			zoom    : ".$data['zoom'].",
-			uhash   : '".$data['uid']."',
-			ehash   : '".$data['eid']."',
-			state   : '".$data['state']."',
-			mode    : '".$data['mode']."',
-		};"."\nusermap = { ".implode($output, ",\n")."\n};";
+		$mapparam = $this->mapmodel->makeMapParametersObject($data);
+		print $mapparam."usermap = { ".implode($output, ",\n")."\n}";
 	}
 }
 

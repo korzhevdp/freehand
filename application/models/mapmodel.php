@@ -92,6 +92,49 @@ class Mapmodel extends CI_Model {
 		}
 		return $output;
 	}
+
+	public function mapInit() {
+		$this->makeDefaultMapConfig();
+		$this->session->set_userdata('objects', array());
+	}
+
+	public function makeDefaultMapConfig() {
+		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
+		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
+		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
+			$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
+			$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
+		}
+		$data = array(
+			'mapID'		=> $hasha,
+			'uid'		=> $hasha,
+			'eid'		=> $hashe,
+			'name'		=> 'MiniGis Freehand',
+			'maptype'	=> 'yandex#map',
+			'nav'		=> $this->config->item('nav_position'),
+			'center'	=> $this->config->item('map_center'),
+			'zoom'		=> $this->config->item('map_zoom'),
+			'state'		=> 'initial',
+			'mode'		=> 'edit',
+			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0
+		);
+		$this->session->set_userdata('map', $data);
+	}
+
+	public function makeMapParametersObject($data) {
+		return "mp = {
+			nav     : ['".implode($data['nav'], "','")."'],
+			name    : '".$data['name']."',
+			maptype : '".$data['maptype']."',
+			center  : [".implode($data['center'], ",")."],
+			zoom    :  ".$data['zoom'].",
+			uhash   : '".$data['uid']."',
+			ehash   : '".$data['eid']."',
+			state   : '".$data['state']."',
+			mode    : '".$data['mode']."'
+		};\n";
+	}
+
 }
 /* End of file mapmodel.php */
 /* Location: ./application/models/mapmodel.php */

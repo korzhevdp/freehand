@@ -1107,12 +1107,12 @@ function init() {
 	}
 
 	function getLongitude() {
-		var lon = (isNaN(ymaps.geolocation.longitude)) ? parseFloat($("#mapCenter").val().split(",")[0]) : ymaps.geolocation.longitude;
+		var lon = (isNaN(ymaps.geolocation.longitude)) ? mp.center[0] : ymaps.geolocation.longitude;
 		return lon;
 	}
 
 	function getLatitude() {
-		var lat = (isNaN(ymaps.geolocation.latitude))  ? parseFloat($("#mapCenter").val().split(",")[1]) : ymaps.geolocation.latitude;
+		var lat = (isNaN(ymaps.geolocation.latitude))  ? mp.center[1] : ymaps.geolocation.latitude;
 		return lat;
 	}
 
@@ -1134,8 +1134,8 @@ function init() {
 				'$[properties.img128|<img src="' + apiURL + '/images/nophoto.jpg">]' +
 				'</div>' +
 				'<div class="propertyContainer"><div class="property">Название:</div>&nbsp;$[properties.name|без имени]</div>' +
-				'<div class="propertyContainer"><div class="property">Адрес:</div>&nbsp;$[properties.address|нет]</div>' +
-				'<div class="propertyContainer"><div class="property">Описание:</div>&nbsp;$[properties.description|без описания]</div>' +
+				'<div class="propertyContainer"><div class="property">Адрес:</div>&nbsp;$[properties.addr|нет]</div>' +
+				'<div class="propertyContainer"><div class="property">Описание:</div>&nbsp;$[properties.desc|без описания]</div>' +
 				'<div class="link"><a href="$[properties.link|#]" class="btn btn-block" target="_blank">Подробности здесь</a></div>' +
 				'<div class="pull-right" style="margin-top:20px;">' +
 				'<button type="button" class="btn btn-mini btn-primary sw-edit" ttl="$[properties.ttl|0]" style="margin-right:8px;">Редактировать </button>' +
@@ -1156,7 +1156,7 @@ function init() {
 				'<div class="ymaps_balloonX">' +
 				'<div id="mainForm" class="">' +
 				'<label>Название:<input type="text" id="bal_name" value="$[properties.name|без имени]"></label>' +
-				'<label>Адрес:<input type="text" id="bal_addr" placeholder="Правый щелчок по карте добавит адрес места" value="$[properties.address|нет]"></label>' +
+				'<label>Адрес:<input type="text" id="bal_addr" placeholder="Правый щелчок по карте добавит адрес места" value="$[properties.addr|нет]"></label>' +
 				'<label>Ссылка:' +
 				'<input type="text" id="bal_link" placeholder="Ссылка на web-страницу или изображение" value="$[properties.link|#]">' +
 				'</label>' +
@@ -1169,7 +1169,7 @@ function init() {
 				'<button class="btn" type="button" id="imgUploader" title="Загрузить изображения"><i class="icon-upload"></i></button>' +
 				'</div>' +
 				'</label>' +
-				'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.description|нет]</textarea></label>' +
+				'<label><textarea placeholder="Описание..." id="bal_desc" rows="6" cols="6">$[properties.desc|нет]</textarea></label>' +
 				'<div class="pull-right">' +
 				'<button type="button" class="btn btn-mini btn-primary sw-finish" ttl="$[properties.ttl|0]">Готово</button>' +
 				'<button type="button" class="btn btn-mini btn-danger sw-del" ttl="$[properties.ttl|0]">Удалить</button>' +
@@ -1445,8 +1445,7 @@ function init() {
 				eObjects.removeAll();
 				$("#mapSave, #ehashID, #SContainer, #mapDelete").removeClass("hide");
 				$("#mapSave, #mapDelete").parent().removeClass("hide");
-				map.setZoom(mp.zoom);
-				map.setType(mp.maptype);
+				map.setType(mp.maptype).setZoom(mp.zoom).panTo(mp.center);
 				$("#mapName").val(mp.ehash);
 				history.pushState("", "", "/map/" + mp.ehash);
 				counter = 0;
