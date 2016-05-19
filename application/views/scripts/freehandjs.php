@@ -374,6 +374,7 @@ function init() {
 			},
 			type: "POST",
 			success: function () {
+				aObjects.options.set({ hasBalloon: 1 });
 				console.log("The object is to be believed deleted");
 			},
 			error: function (data, stat, err) {
@@ -448,6 +449,7 @@ function init() {
 		if (eObjects.getLength() === 1) {
 			$(".pointcoord, .circlecoord").removeAttr('disabled');
 		}
+		aObjects.options.set({ hasBalloon: 1 });
 	}
 
 	function nullTracers() {
@@ -688,6 +690,7 @@ function init() {
 				disableMultiplePointCoordsInput();
 				if (type === 2 || type === 3) {
 					item.editor.startEditing();
+					aObjects.options.set({ hasBalloon: 0 });
 				}
 				item.options.set(optionEdit);
 				// открываем требуемую панель редактора
@@ -1087,6 +1090,7 @@ function init() {
 		eObjects.add(object);
 		if (prType === "2" || prType === "3") {
 			object.editor.startDrawing();
+			aObjects.options.set({ hasBalloon: 0 });
 		}
 		counter += 1;
 		$('#location_id').val(objectGID);
@@ -1215,7 +1219,7 @@ function init() {
 			center               : [lon, lat],//(mapCenter.length) ? [ parseFloat(mapCenter.split(",")[1]), parseFloat(mapCenter.split(",")[0]) ] : [lon, lat],
 			zoom                 : currentZoom,
 			//type                 : currentType,
-			type                 : 'yandex#satellite',
+			type                 : 'yandex#map',
 			behaviors            : ["scrollZoom", "drag", "dblClickZoom", "multiTouch"]
 		},
 		{

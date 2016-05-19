@@ -18,7 +18,7 @@ class Map extends CI_Controller {
 	public function map($hash = "") {
 		$data              = $this->session->userdata('map');
 		$data['state']     = "session";
-		if ($data['uid'] !== $hash && $data['eid'] !== $hash) {
+		if ($data['uid'] !== $hash && $data['eid'] !== $hash && $hash !== 'index') {
 			$data['state'] = "database";
 		}
 		$data["mapID"] = $hash;
