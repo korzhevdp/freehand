@@ -193,21 +193,6 @@ class Freehand extends CI_Controller {
 		return "error: 'Содержимого для карты с таким идентификатором не найдено.'";
 	}
 
-	private function getUserMapFromSession() {
-		$output = array();
-		foreach ($this->session->userdata('objects') as $key=>$val ) {
-			//print_r($this->session->userdata('objects'));
-			//return false;
-			//print_r($val);
-			$images = (isset($val['img']) && gettype($val['img']) === "array") ? $val['img'] : array();
-			$string = $key.": { desc: '".trim($val['desc'])."', name: '".trim($val['name'])."', attr: '".trim($val['attr'])."', type: ".trim($val['type']).", coords: '".trim($val['coords'])."', addr: '".trim($val['addr'])."', link: '".trim($val['link'])."', img: ['".implode($images, "','")."'] }";
-			array_push($output, preg_replace("/\n/", " ", $string));
-			
-		}
-		//return false;
-		return implode($output, ",\n");
-	}
-
 	public function deleteobject() {
 		$node = $this->input->post("ttl");
 		$objects = $this->session->userdata('objects');

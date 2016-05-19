@@ -23,7 +23,7 @@
 	width: 120px;
 }
 #SContainer {
-	padding:0; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 335px; position: absolute; z-index: 100; /*box-shadow:00 10px rgba(0,0,0,.15); */background-color: rgb(238, 238, 238); -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); -moz-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+	padding:0; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 335px; position: absolute; z-index: 100; background-color: rgb(238, 238, 238);
 }
 #transferM {
 	padding: 10px; width: 680px;
@@ -33,9 +33,6 @@
 }
 .carousel_annot {
 	height: 40px; color: rgb(255, 255, 255); margin-top: -60px; opacity: 0.6; background-color: rgb(34, 34, 34);
-}
-.carousel_annot h4 {
-	margin-left: 20px;
 }
 .map_name {
 	padding: 3px; border: 2px solid rgb(255, 255, 255); left: 360px; top: 54px; width: 400px; height: 30px; color: rgb(214, 214, 214); vertical-align: middle; position: absolute; z-index: 99; background-color: rgb(34, 34, 34);

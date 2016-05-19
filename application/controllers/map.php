@@ -12,10 +12,10 @@ class Map extends CI_Controller {
 	}
 
 	public function _remap($hash = "") {
-		$this->map($hash);
+		$this->mapX($hash);
 	}
 
-	public function map($hash = "") {
+	public function mapX($hash = "") {
 		$data              = $this->session->userdata('map');
 		$data['state']     = "session";
 		if ($data['uid'] !== $hash && $data['eid'] !== $hash && $hash !== 'index') {
