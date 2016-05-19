@@ -78,7 +78,7 @@ class Mapmanager extends CI_Controller {
 				$this->input->post('uhash')
 			));
 		}
-		print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
+		//print implode(array($this->input->post('name'), $this->input->post('pub'), $this->input->post('uhash')), ", ");
 	}
 
 	public function listuserimages() {
@@ -112,7 +112,7 @@ class Mapmanager extends CI_Controller {
 		(usermaps.`hash_a` = ?)", array($this->input->post('hash')));
 		if ($result->num_rows()) {
 			$row = $result->row(0);
-			if ($this->session->userdata("uidx") == $row->author) {
+			if ($this->session->userdata("uidx") === $row->author) {
 				$this->db->query("UPDATE
 				usermaps
 				SET

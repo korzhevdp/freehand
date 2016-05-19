@@ -18,7 +18,14 @@ class Map extends CI_Controller {
 	}
 
 	public function map($hash = "") {
-		$data = $this->session->userdata('map');
+		$data          = $this->session->userdata('map');
+		if ($data['uid'] !== $hash && $data['eid'] !== $hash) {
+			$data['state'] = "database";
+		} else {
+			$data['state'] = "session";
+		}
+		$data["mapID"] = $hash;
+		$this->session->set_userdata('map', $data);
 		$act = array(
 			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',
 			'maptype'		=> $data['maptype'],
@@ -38,8 +45,6 @@ class Map extends CI_Controller {
 		);
 		$this->load->view('freehand/freehand_map', $act);
 	}
-
-
 
 }
 

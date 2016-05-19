@@ -398,7 +398,7 @@ function init() {
 		/* отправка объекта на сервер */
 		var type     = geoType2IntId[item.geometry.getType()],
 			geometry = returnPreparedGeometry(item);
-		if (mp.id !== undefined && mp.id === 'void') {
+		if (mp.mode !== undefined && mp.mode === 'view') {
 			return false;
 		}
 		$.ajax({
@@ -466,7 +466,7 @@ function init() {
 			map.balloon.close();
 		});
 
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 			$(".sw-edit").addClass("hide");
 			return false;
 		}
@@ -856,7 +856,8 @@ function init() {
 	}
 
 	function setMapControls(state) {
-		if (state === "void") {
+		
+		if (state === "view") {
 			$("#mapSave, #ehashID, #SContainer").addClass("hide");
 			$("#mapSave, #mapDelete").parent().addClass("hide");
 			lockCenter();
@@ -884,9 +885,9 @@ function init() {
 				var mapType;
 				if (mp !== undefined) {
 					$("#headTitle").html(mp.name);
-					setMapControls(mp.id);
+					setMapControls(mp.mode);
 					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
-					map.setType(mapType).setZoom(mp.zoom).panTo(mp.c);
+					map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
 				}
 				if (usermap.error !== undefined) {
 					console.log(usermap.error);
@@ -915,21 +916,20 @@ function init() {
 			type     : "POST",
 			success  : function () {
 				var mapType;
-				if ($("#maphash").val().length === 16 && (mp.uhash !== $("#maphash").val() && mp.ehash !== $("#maphash").val())) {
+				if (mp.state === "database") {
 					loadmap($("#maphash").val());
 					return true;
 				}
 				if (mp !== undefined) {
 					$("#headTitle").html(mp.name);
-					setMapControls(mp.id);
+					setMapControls(mp.mode);
 					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
-					map.setType(mapType).setZoom(mp.zoom).panTo(mp.c);
+					map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
+					if(mp.nav[0] !== undefined ){
+						$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]);
+					}
 				}
 				placeFreehandObjects(usermap);
-				if(mp.nav[0] !== undefined ){
-					$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]);
-				}
-				$("#SContainer").removeClass("hide");
 
 			},
 			error: function (data, stat, err) {
@@ -981,7 +981,7 @@ function init() {
 	}
 
 	function sendMap() {
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 			return false;
 		}
 		$.ajax({
@@ -989,7 +989,7 @@ function init() {
 			type    : "POST",
 			data    : {
 				maptype : map.getType(),
-				center  : [ $("#vp_lat").val(), $("#vp_lon").val() ],
+				center  : [ $("#vp_lon").val(), $("#vp_lat").val() ],
 				zoom    : map.getZoom(),
 				nav     : mp.nav
 			},
@@ -1004,7 +1004,7 @@ function init() {
 	}
 
 	function detectErrors(mp, prType, counter) {
-		if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 			console.log("Рисование запрещено");
 			return true;
 		}
@@ -1287,9 +1287,10 @@ function init() {
 				showAddress(event);
 			});
 		}
+
 		function setBackgroundEvents() {
 			aObjects.events.add('contextmenu', function (e) {
-				if (mp !== undefined && mp.id !== undefined && mp.id === 'void') {
+				if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 					return false;
 				}
 				object = e.get('target');
@@ -1318,12 +1319,14 @@ function init() {
 				map.balloon.close();
 			});
 		}
+
 		function setActiveEvents() {
 			eObjects.events.add('dragend', function (e) {
 				var object = e.get('target');
 				traceNode(object);
 			});
 		}
+
 		setActiveEvents();
 		setMapEvents();
 		setBackgroundEvents();

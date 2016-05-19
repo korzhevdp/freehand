@@ -13,17 +13,17 @@
 #navigator img {
 	border:0; width: 16px; height: 16px;
 }
-div.label-info {
+.label-info {
 	margin: 5px; width: 150px;
 }
-div.input-prepend .add-on {
+.input-prepend .add-on {
 	margin:0; width: 50px;
 }
 .circlecoord {
 	width: 120px;
 }
 #SContainer {
-	padding:0; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 350px; position: absolute; z-index: 100; box-shadow:00 10px rgba(0,0,0,0.7); background-color: rgb(238, 238, 238); -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); -moz-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+	padding:0; border: 2px solid black; left: 95px; top: 120px; width: 245px; height: 335px; position: absolute; z-index: 100; /*box-shadow:00 10px rgba(0,0,0,.15); */background-color: rgb(238, 238, 238); -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); -moz-box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
 }
 #transferM {
 	padding: 10px; width: 680px;
@@ -122,8 +122,7 @@ address {
 	width: 350px; margin-top: -2px; margin-bottom:0;
 }
 .ymaps_balloonX textarea {
-	margin-top: 4px;
-	width: 435px;
+	margin-top: 4px; width: 435px;
 }
 #bal_name {
 	margin-left: 20px;
@@ -161,49 +160,35 @@ address {
 	cursor: move; background-color: #d6d6d6
 }
 #modal_pics .modal-body {
-	height:500px;
-	overflow:hidden;
+	height:500px; overflow:hidden;
 }
 
 #imageList {
-	height: 400px;
-	display: table;
-	vertical-align: middle;
+	height: 400px; display: table; vertical-align: middle;
 }
 #imageList li {
-	list-style-type: none; padding: 4px; width: 136px; height: 128px; display: table-cell; float: left; text-align: center; border: 2px solid #F6F6F6; margin: 2px; cursor: pointer;
+	list-style-type: none; padding: 4px; width: 136px; height: 128px; float: left; text-align: center; border: 2px solid #F6F6F6; margin: 2px; cursor: pointer;
 }
 #imageList .active {
 	border: 2px solid #0000E6;
 }
-
 #l_photo {
-	margin-right  : 4px;
-	margin-bottom : 4px;
-	width         : 128px;
-	height        : 128px;
-	float         : left;
+	margin-right: 4px; margin-bottom: 4px; width: 128px; height: 128px; float: left;
 }
-
 .ymaps_balloon .propertyContainer {
-	clear: right;
-	margin-top: 4px;
+	clear: right; margin-top: 4px;
 }
-
 .ymaps_balloon .property {
 	margin-right:10px; font-weight:bold; float:left;
 }
-
 .ymaps_balloon .link {
-	clear: both;
-	margin-top: 6px;
+	clear: both; margin-top: 6px;
 }
 .sw_edit,
 .sw-finish,
 .sw-del {
 	margin-right: 8px;
 }
-
 #searchFormToggle {
 	opacity: 1
 }

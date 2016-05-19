@@ -14,11 +14,11 @@
 	<div class="tab-content" id="navigator">
 		<div id="mainselector" class="tab-pane active row-fluid">
 			<div class="btn-group btn-small btn-block" data-toggle="buttons-radio" style="left:5px;margin-bottom:5px;width:98%">
-				<button class="btn btn-info obj_sw" pr=0 title="Карта"><img src="<?=$this->config->item('api');?>/images/map.png" alt="map"></button>
-				<button class="btn btn-info obj_sw active" pr=1 title="Простой маркер"><img src="<?=$this->config->item('api');?>/images/marker.png" alt="point"></button>
-				<button class="btn btn-info obj_sw" pr=2 title="Ломаная"><img src="<?=$this->config->item('api');?>/images/layer-shape-polyline.png" alt="line"></button>
-				<button class="btn btn-info obj_sw" pr=3 title="Участок"><img src="<?=$this->config->item('api');?>/images/layer-shape-polygon.png" alt="polygon"></button>
-				<button class="btn btn-info obj_sw" pr=4 title="Круг"><img src="<?=$this->config->item('api');?>/images/layer-shape-ellipse.png" alt="circle"></button>
+				<button class="btn btn-info obj_sw" pr=0 title="Карта"><img src="/images/map.png" alt="map"></button>
+				<button class="btn btn-info obj_sw active" pr=1 title="Простой маркер"><img src="/images/marker.png" alt="point"></button>
+				<button class="btn btn-info obj_sw" pr=2 title="Ломаная"><img src="/images/layer-shape-polyline.png" alt="line"></button>
+				<button class="btn btn-info obj_sw" pr=3 title="Участок"><img src="/images/layer-shape-polygon.png" alt="polygon"></button>
+				<button class="btn btn-info obj_sw" pr=4 title="Круг"><img src="/images/layer-shape-ellipse.png" alt="circle"></button>
 			</div>
 			<div id="navigator-pane0" class="row-fluid navigator-pane hide">
 				<div class="input-prepend" style="margin:2px 5px;">
