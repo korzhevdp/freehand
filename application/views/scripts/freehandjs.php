@@ -435,8 +435,8 @@ function init() {
 		eObjects.each(function (item) {
 			if (item.properties.get("ttl") === ttl) {
 				item.properties.set({
-					description : desc,
-					address     : addr,
+					desc        : desc,
+					addr        : addr,
 					name        : name,
 					link        : link,
 					hintContent : name + ' ' + addr
@@ -821,7 +821,7 @@ function init() {
 						hintContent : src.name + ' ' + src.desc,
 						img         : getImageBySize(src.img, 'small')[0],
 						img128      : getImageBySize(src.img, 'preview')[0],
-						frame       : frm,
+						frame       : frame,
 						link        : src.link,
 						name        : src.name,
 						imageList   : src.img,

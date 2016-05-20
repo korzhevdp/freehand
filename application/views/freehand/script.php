@@ -36,10 +36,10 @@
 					'<a href="$[properties.link|#]">Подробнее здесь</a><br>' +
 					'</div>'
 				),
-				objects = [
+				objects = {
 					<?=$mapobjects;?>
 				
-				],
+				},
 				fx  = {
 					1: function(item) {
 						var coords     = item.coords.split(",");

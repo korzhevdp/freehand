@@ -69,7 +69,7 @@
 				<ul id="linkFactory" class="dropdown-menu">
 					<li id="ehashID"><a href="#" pr=1 title="Показывает ссылку на редактируемую карту">Редактируемая карта</a></li>
 					<li><a href="#" pr=2 title="Показывает ссылку на нередактируемую карту">Нередактируемая карта</a></li>
-					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">JS Скрипт</a></li>
+					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">Сохранить в HTML</a></li>
 					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME</a></li>
 					<li class="divider"></li>
 					<li><a href="#" pr=5 title="Экспортирует объекты карты во внутреннем формате обмена">Экспорт</a></li>
@@ -83,8 +83,6 @@
 	<div id="YMapsID"><!-- сам текст -->
 		<?=$navigator?>
 	</div>
-
-<?=$this->load->view('freehand/freehand_modal_pic', array(), true);?>
 
 <div class="modal hide" id="myMapsM" style="width:640px;">
 	<div class="modal-header">

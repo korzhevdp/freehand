@@ -32,10 +32,10 @@
 <script type="text/javascript">
 	var api_url = '<?=$this->config->item("api");?>';
 	function display_locations() {
-		var	objects = [
+		var	objects = {
 				<?=$mapobjects;?>
 	
-			],
+		},
 			fx  = {
 				1: function(item) {
 					var coords     = item.coords.split(",");

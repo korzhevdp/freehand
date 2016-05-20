@@ -123,6 +123,7 @@ class Mapmodel extends CI_Model {
 
 	public function makeMapParametersObject($data) {
 		return "mp = {
+			mapID   : '".$data['mapID']."',
 			nav     : ['".implode($data['nav'], "','")."'],
 			name    : '".$data['name']."',
 			maptype : '".$data['maptype']."',

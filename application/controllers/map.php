@@ -4,6 +4,7 @@ class Map extends CI_Controller {
 		parent::__construct();
 		$this->load->model("mapmodel");
 		if (!$this->session->userdata('map')) {
+			print 2222222;
 			$this->mapmodel->makeDefaultMapConfig();
 		}
 		if (!$this->session->userdata('gcounter')) {
@@ -18,11 +19,12 @@ class Map extends CI_Controller {
 	public function mapX($hash = "") {
 		$data              = $this->session->userdata('map');
 		$data['state']     = "session";
-		if ($data['uid'] !== $hash && $data['eid'] !== $hash && $hash !== 'index') {
+		$data["mapID"]     = $hash;
+		if ($data['uid'] !== $data["mapID"] && $data['eid'] !== $data["mapID"] && $data["mapID"] !== 'index') {
 			$data['state'] = "database";
 		}
-		$data["mapID"] = $hash;
 		$this->session->set_userdata('map', $data);
+		//$this->output->enable_profiler(TRUE);
 		$act = array(
 			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',
 			'maptype'		=> $data['maptype'],

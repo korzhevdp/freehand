@@ -232,6 +232,7 @@ class Freehand extends CI_Controller {
 				}
 				$nav       = (gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
 				$data = array(
+					"mapID"		=> $hash,
 					"uid"		=> $hasha,
 					"eid"		=> $hashe,
 					"name"		=> $row->name,
