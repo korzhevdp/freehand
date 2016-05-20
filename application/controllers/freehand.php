@@ -280,8 +280,8 @@ class Freehand extends CI_Controller {
 		if ($data['mode'] === 'view') {
 			return false;
 		}
-		$data['lat'] = $data['center'][0];
-		$data['lon'] = $data['center'][1];
+		$data['lon'] = $data['center'][0];
+		$data['lat'] = $data['center'][1];
 		$result = $this->db->query("SELECT
 		`usermaps`.id
 		FROM

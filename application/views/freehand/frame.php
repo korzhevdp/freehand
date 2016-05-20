@@ -1,8 +1,11 @@
 <!-- вырезать отсюда / cut from here -->
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <style type="text/css">
+	body {
+		margin: 0; padding: 0;
+	}
 	#YMapsID {
-		width:100%;height:98%;border:1px solid #FFFFFF;margin:0px;
+		width:100%;height:100%;outline:1px solid #FFFFFF;margin:0px;
 	}
 	#l_photo {
 		margin-right: 4px; margin-bottom: 4px; width: 128px; height: 128px; float: left;
