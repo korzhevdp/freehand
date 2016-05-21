@@ -333,7 +333,7 @@ class Freehand extends CI_Controller {
 			"link"		=> $this->input->post('link'),
 			"addr"		=> $this->input->post('addr'),
 			"name"		=> $this->input->post('name'),
-			"img"		=> ($this->input->post('images')) ? $this->input->post('images') : array()
+			"img"		=> ($this->input->post('img')) ? $this->input->post('img') : array()
 		);
 		$this->session->set_userdata("objects", $data);
 	}
@@ -367,7 +367,7 @@ class Freehand extends CI_Controller {
 			print "logindata = { name: '".$this->session->userdata('name')."', photo: '".$this->session->userdata('photo')."', title: '".$title."'}";
 			return true;
 		}
-		print "logindata = { name: 'Гость', photo: '', uid: 0, title: 'После авторизации Вы можете загружать фото' }";
+		print "logindata = { name: 'Гость', photo: '', title: 'После авторизации Вы можете загружать фото' }";
 	}
 
 	public function getsession() {

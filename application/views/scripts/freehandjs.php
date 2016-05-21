@@ -788,23 +788,23 @@ function init() {
 			frame,
 			frm,
 			fx = {
-				1: function (properties, options) {
+				1: function () {
 					geometry = [ parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1] ) ];
 					object   = new ymaps.Placemark(geometry, properties, options);
 				},
-				2: function (properties, options) {
+				2: function () {
 					geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.coords);
 					object   = new ymaps.Polyline(geometry, properties, options);
 				},
-				3: function (properties, options) {
+				3: function () {
 					geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.coords);
 					object   = new ymaps.Polygon(geometry, properties, options);
 				},
-				4: function (properties, options) {
+				4: function () {
 					geometry = new ymaps.geometry.Circle([parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1])], parseFloat(src.coords.split(",")[2]));
 					object   = new ymaps.Circle(geometry, properties, options);
 				},
-				5: function (properties, options) {}
+				5: function () {}
 			};
 		for (b in source) {
 			if (source.hasOwnProperty(b)) {
@@ -826,7 +826,7 @@ function init() {
 						ttl         : b.toString(),
 						images      : getImageBySize(src.img, 'small').join(" ")
 					};
-					fx[src.type](properties, options);
+					fx[src.type]();
 					if (mframes[frame] === undefined) {
 						mframes[frame] = new ymaps.GeoObjectArray();
 					}
