@@ -4,7 +4,6 @@ class Map extends CI_Controller {
 		parent::__construct();
 		$this->load->model("mapmodel");
 		if (!$this->session->userdata('map')) {
-			print 2222222;
 			$this->mapmodel->makeDefaultMapConfig();
 		}
 		if (!$this->session->userdata('gcounter')) {

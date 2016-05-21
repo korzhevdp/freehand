@@ -331,7 +331,7 @@ class Freehand extends CI_Controller {
 			"attr"		=> $this->input->post('attr'),
 			"desc"		=> $this->input->post('desc'),
 			"link"		=> $this->input->post('link'),
-			"addr"		=> $this->input->post('address'),
+			"addr"		=> $this->input->post('addr'),
 			"name"		=> $this->input->post('name'),
 			"img"		=> ($this->input->post('images')) ? $this->input->post('images') : array()
 		);
@@ -380,10 +380,12 @@ class Freehand extends CI_Controller {
 		$output  = array();
 		if ($data['state'] === "session") {
 			$objects = $this->session->userdata('objects');
-			foreach ($objects as $hash => $val) {
-				$val['img'] = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
-				$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($val['img'], "','")."']}";
-				array_push($output, $string);
+			if ($objects && sizeof($objects)) {
+				foreach ($objects as $hash => $val) {
+					$val['img'] = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
+					$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($val['img'], "','")."']}";
+					array_push($output, $string);
+				}
 			}
 		}
 		//$data['eid'] = ($data['mode'] === 'view') ? $data['uid'] : $data['eid'];
