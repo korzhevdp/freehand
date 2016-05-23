@@ -300,14 +300,13 @@ class Freehand extends CI_Controller {
 		}
 		$data['state'] = 'database';
 		$this->session->set_userdata('map', $data);
-
-		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
-		$output  = $this->getUserMap($data['uid']);
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($data['uid']));
+		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
 		$this->insertUserMapImages($objects['images']);
 		$this->mapmodel->createframe($data['uid']);
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
+		$output   = $this->getUserMap($data['uid']);
 		print $mapparam."usermap = { ".$output."\n}";
 	}
 
