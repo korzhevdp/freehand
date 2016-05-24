@@ -16,6 +16,7 @@ var userstyles,
 	expController    = 'exports',
 	objectGID        = parseInt($("#gCounter").val(), 10),
 	forIFrame        = 0,
+	traceAllowed     = false,
 	imageList        = [],
 	availableLayers  = {},
 	mp               = {},
@@ -466,6 +467,11 @@ function init() {
 	}
 
 	function eventListenersAdd() {
+
+		$(".balloonClose").unbind().click(function () {
+			map.balloon.close();
+		});
+
 		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 			$(".sw-edit").addClass("hide");
 			return false;
@@ -485,17 +491,17 @@ function init() {
 			doFinish(this);
 			stopEdit();
 		});
+
 		$(".sw-del").unbind().click(function () {
 			doDelete(this);
 			stopEdit();
 		});
-		$(".balloonClose").unbind().click(function () {
-			map.balloon.close();
-		});
+
 
 		$("#imgUploader").unbind().click(function () {
 			$("#uploadForm").removeClass("hide");
 			$("#mainForm").addClass("hide");
+			$("#uploadDir").val(mp.uhash);
 		});
 
 		$("#toMain").unbind().click(function () {
@@ -606,7 +612,7 @@ function init() {
 		var coords = object.geometry.getCoordinates();
 		runGeoCoding(coords).then(function(decAddr) {
 			object.properties.set({ addr: decAddr, hintContent: decAddr });
-			eventListenersAdd();
+			//eventListenersAdd();
 		});
 	}
 
@@ -676,10 +682,8 @@ function init() {
 		aObjects.each(function (item) {
 			if (item.properties.get("ttl") === ttl) {
 				var type = geoType2IntId[item.geometry.getType()];		// получаем YM тип геометрии объекта
-				//alert("close");
 				//map.balloon.close();
 				eObjects.add(item);										// переводим объект в группу редактируемых
-				//alert("open");
 				item.balloon.open(item.geometry.getCoordinates());
 
 				imageList = ( usermap[ttl] === undefined || usermap[ttl].img === undefined ) ? [] : usermap[ttl].img;
@@ -693,7 +697,6 @@ function init() {
 				// открываем требуемую панель редактора
 				openEditPane(type);
 				traceNode(item);
-				//alert("listeners add");
 			}
 		});
 		clipboardInit();
@@ -774,6 +777,7 @@ function init() {
 				}
 			}
 		}
+		//alert(output.toSource());
 		return output;
 	}
 
@@ -857,7 +861,6 @@ function init() {
 	}
 
 	function setMapControls(state) {
-
 		if (state === "view") {
 			$("#mapSave, #ehashID, #SContainer").addClass("hide");
 			$("#mapSave, #mapDelete").parent().addClass("hide");
@@ -875,6 +878,7 @@ function init() {
 			setTimeout(function(){ $("#mapName").val("").css('color', 'black') }, 2000);
 			return false;
 		}
+		traceAllowed = false;
 		$.ajax({
 			url      : '/' + mainController + "/loadmap",
 			type     : "POST",
@@ -911,6 +915,7 @@ function init() {
 		/*
 		загрузка данных сессии
 		*/
+		traceAllowed = false;
 		$.ajax({
 			url      : '/' + mainController + "/getsession",
 			dataType : "script",
@@ -931,7 +936,11 @@ function init() {
 					}
 				}
 				placeFreehandObjects(usermap);
-
+				/*
+				адский костыль на отключение первичных отправок карты на сервер. :) 
+				включение отправки после задержки в 2 секунды после загрузки сессии.
+				*/
+				setTimeout(function() { traceAllowed = true }, 2000); 
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -982,7 +991,7 @@ function init() {
 	}
 
 	function sendMap() {
-		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
+		if ((mp !== undefined && mp.mode !== undefined && mp.mode === 'view')) {
 			return false;
 		}
 		$.ajax({
@@ -1257,7 +1266,6 @@ function init() {
 		// ##### события #####
 		function setMapEvents() {
 			map.events.add('balloonopen', function () {
-				//$('#upload_location').val($('#l_photo').attr('picref'));
 				eventListenersAdd();
 			});
 			/*
@@ -1266,7 +1274,7 @@ function init() {
 			});
 			*/
 			map.events.add('boundschange', function (event) {
-				if (isCenterFixed) {
+				if (isCenterFixed || !traceAllowed) {
 					return false;
 				}
 				$("#vp_lon").val(event.get('newCenter')[0].toFixed(precision)); // сохраняем в поле новое значение центра карты
@@ -1657,13 +1665,19 @@ function init() {
 
 	$("#submitSelection").click(function () {
 		var target = $("#location_id").val(),
-			a;
+			a,
+			image128 = getImageBySize(imageList, 'preview')[0],
+			images32 = getImageBySize(imageList, 'small').join(" ");
 		eObjects.each(function(item) {
 			if (item.properties.get("ttl") === target) {
 				item.properties.set({ imageList : imageList });
+				item.properties.set({ img128    : image128 });
+				item.properties.set({ 'images'  : images32 });
 				usermap[target].img = imageList;
+				return true;
 			}
 		});
+		eventListenersAdd();
 		//console.log(usermap[target].img);
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");

@@ -42,8 +42,10 @@ class Upload extends CI_Controller {
 		if (!file_exists( $uploaddir )) {
 			mkdir( $uploaddir, 0775, true );
 		}
-		
+
+
 		$size = GetImageSize($srcFile);
+		$new  = ImageCreateTrueColor ($size['1'], $size['0']);
 		if ($size['1'] > $tmd || $size['0'] > $tmd) {
 			if ($size['1'] < $size['0']) {
 				$hNew = round($tmd * $size['1'] / $size['0']);

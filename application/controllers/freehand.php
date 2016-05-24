@@ -79,9 +79,9 @@ class Freehand extends CI_Controller {
 		return $output;
 	}
 
-	private function insertUserMapImages($images) {
-		//return false;
+	private function insertUserMapImages($images, $hash) {
 		if (sizeof($images)) {
+			$this->db->query("DELETE FROM userimages WHERE userimages.mapID = ?", array($hash));
 			$this->db->query("INSERT INTO
 			`userimages`(
 				`userimages`.filename,
@@ -134,7 +134,7 @@ class Freehand extends CI_Controller {
 		return $map;
 	}
 
-	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
+	private function getUserMapImages($hash) {
 		$images = array();
 		$result = $this->db->query("SELECT
 		`userimages`.filename,
@@ -151,7 +151,11 @@ class Freehand extends CI_Controller {
 				array_push($images[$row->superhash], $row->filename);
 			}
 		}
+		return $images;
+	}
 
+	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
+		$images = $this->getUserMapImages($hash);
 		$result = $this->db->query("SELECT 
 		userobjects.name,
 		userobjects.description,
@@ -173,7 +177,7 @@ class Freehand extends CI_Controller {
 		if ($result->num_rows()) {
 			$newobjects = array();
 			foreach ($result->result() as $row) {
-				$images = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
+				$locImages = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
 				$newobjects[$row->hash] = array(
 					"coords" => $row->coord,
 					"type"   => $row->type,
@@ -182,9 +186,9 @@ class Freehand extends CI_Controller {
 					"desc"   => $row->description,
 					"addr"   => $row->address,
 					"name"   => $row->name,
-					"img"    => $images
+					"img"    => $locImages
 				);
-				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($images, "','")."'] }";
+				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
 				array_push($output, str_replace("\n", " ", $string));
 			}
 			$this->session->set_userdata('objects', $newobjects);
@@ -303,7 +307,7 @@ class Freehand extends CI_Controller {
 		$this->db->query("DELETE FROM userobjects WHERE userobjects.map_id = ?", array($data['uid']));
 		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
-		$this->insertUserMapImages($objects['images']);
+		$this->insertUserMapImages($objects['images'], $data['uid']);
 		$this->mapmodel->createframe($data['uid']);
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
 		$output   = $this->getUserMap($data['uid']);
@@ -334,6 +338,7 @@ class Freehand extends CI_Controller {
 			"name"		=> $this->input->post('name'),
 			"img"		=> ($this->input->post('img')) ? $this->input->post('img') : array()
 		);
+		//print_r($data[$this->input->post('id')]);
 		$this->session->set_userdata("objects", $data);
 	}
 
@@ -381,9 +386,14 @@ class Freehand extends CI_Controller {
 			$objects = $this->session->userdata('objects');
 			if ($objects && sizeof($objects)) {
 				foreach ($objects as $hash => $val) {
-					$val['img'] = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
-					$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($val['img'], "','")."']}";
+					//print_r($val);
+					
+					$images = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
+					//print_r($images);
+					//return false;
+					$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($images, "','")."']}";
 					array_push($output, $string);
+
 				}
 			}
 		}
