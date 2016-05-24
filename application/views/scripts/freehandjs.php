@@ -1672,7 +1672,7 @@ function init() {
 			if (item.properties.get("ttl") === target) {
 				item.properties.set({ imageList : imageList });
 				item.properties.set({ img128    : image128 });
-				item.properties.set({ 'images'  : images32 });
+				item.properties.set({ images    : images32 });
 				usermap[target].img = imageList;
 				return true;
 			}

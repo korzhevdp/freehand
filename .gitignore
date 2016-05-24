@@ -20,6 +20,7 @@ scripts/*
 application/views/cache/*
 application/trashbin/*
 uploads/*
+images/*
 freehandcache/*
 captcha/*
 storage/*

@@ -19,13 +19,13 @@
 		<div class="navbar-inner">
 			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
 			<ul class="nav pull-right">
-				<li id="prevFrame" class="hide">
+				<li id="prevFrame" class="">
 					<a href="#"><i class="icon-chevron-left"></i></a>
 				</li>
-				<li id="frameNum" class="hide">
+				<li id="frameNum" class="">
 					<input type="text" id="frameNum" value="1" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
 				</li>
-				<li id="nextFrame" class="hide">
+				<li id="nextFrame" class="">
 					<a href="#"><i class="icon-chevron-right"></i></a>
 				</li>
 
