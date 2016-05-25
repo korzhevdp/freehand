@@ -5,13 +5,16 @@ class Mapmodel extends CI_Model {
 		parent::__construct();
 	}
 
-	public function makeTransferList($result, $newLine = "<br>") {
+	public function makeTransferList($result, $images, $newLine = "<br>") {
 		if ($result->num_rows()) {
 			$output = array();
 			foreach ($result->result_array() as $row) {
+				$locImages   = (isset($images[$row['hash']]) && is_array($images[$row['hash']])) ? implode($images[$row['hash']], "','") : "";
+				$img128      = (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0])) ? $this->config->item("base_url")."storage/128/".$images[$row['hash']][0] : "";
+				$link = (trim($row['link']) !== "#") ? "link: '".trim($row['link'])."'," : "";
 				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
 				$row['link'] = str_replace('"', "'", $row['link']);
-				$constant   = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."', link: '".trim($row['link'])."', attr: '".$row['attr']."' }";
+				$constant    = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."'], img128: '".$img128."' }";
 				array_push($output, $constant);
 			}
 			return implode($output, ",\n\t\t\t\t");
@@ -26,7 +29,8 @@ class Mapmodel extends CI_Model {
 			return false;
 		}
 		$result  = $this->getMapObjectsList($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, "<br>") : "";
+		$images  = $this->getImagesForTransfer($objects['hash_a']);
+		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, $images, "<br>") : "";
 		$this->load->helper("file");
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
@@ -85,7 +89,7 @@ class Mapmodel extends CI_Model {
 		if ($result->num_rows()) {
 			foreach($result->result() as $row) {
 				if (!isset($output[$row->superhash])) {
-					$row->superhash = array();
+					$output[$row->superhash] = array();
 				}
 				array_push($output[$row->superhash], $row->filename);
 			}
