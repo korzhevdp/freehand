@@ -19,6 +19,7 @@ var userstyles,
 	traceAllowed     = false,
 	imageList        = [],
 	availableLayers  = {},
+	timeWarp,
 	mp               = {},
 	sizesImg = {
 		small   : '32',
@@ -472,6 +473,46 @@ function init() {
 			map.balloon.close();
 		});
 
+		$("#l_photo").click(function() {
+			var ref = $(this).attr("picref"),
+				imageSet = usermap[ref].img,
+				i = 0;
+			function coalesceLocImages(filename){
+				if (filename.length) {
+					$("#locImg").attr("src", "/storage/600/" + filename);
+				}
+				if (!filename.length) {
+					$("#locImg").attr("src", "http://api.arhcity.ru/images/nophoto.jpg");
+				}
+			}
+			coalesceLocImages(imageSet[i]);
+			if (imageSet.length) {
+				i = 1;
+				/*
+				function cycleImages(){
+					i += 1;
+					if (i >= imageSet.length) {
+						i = 0;
+					}
+					timeWarp = setInterval(cycleImages, 5000);
+				}
+				cycleImages();
+				*/
+
+				$(".imgNavigator").click(function() {
+					if (i >= imageSet.length) {
+						i = 0;
+					}
+					if (i < 0) {
+						i = imageSet.length - 1;
+					}
+					coalesceLocImages(imageSet[i]);
+					i += parseInt($(this).val(), 10);
+				});
+			}
+			$("#viewerM").modal("show");
+		});
+
 		if (mp !== undefined && mp.mode !== undefined && mp.mode === 'view') {
 			$(".sw-edit").addClass("hide");
 			return false;
@@ -573,16 +614,20 @@ function init() {
 			data        : { uploadDir : mp.uhash },
 			dataType    : 'script',
 			success     : function() {
-				var a;
+				var a,
+					filename;
 				$("#imageList").empty();
+				if (imagesData === undefined) {
+					return false;
+				}
 				for ( a in imagesData) {
 					if (imagesData.hasOwnProperty(a)) {
-						$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/128/' + imagesData[a].file + '"></li>');
+						filename = imagesData[a].file.split("/")[1];
+						$("#imageList").append('<li file="' + imagesData[a].file + '"><img title="' + imagesData[a].file + '" src="/storage/128/' + imagesData[a].file + '"><div>' + filename + '</div></li>');
 					}
 				}
 				for ( a in imageList ) {
 					if (imageList.hasOwnProperty(a)) {
-
 						$('#imageList li[file="' + imageList[a] + '"]').addClass("active");
 					}
 				}
@@ -937,10 +982,10 @@ function init() {
 				}
 				placeFreehandObjects(usermap);
 				/*
-				адский костыль на отключение первичных отправок карты на сервер. :) 
+				адский костыль на отключение первичных отправок карты на сервер. :)
 				включение отправки после задержки в 2 секунды после загрузки сессии.
 				*/
-				setTimeout(function() { traceAllowed = true }, 2000); 
+				setTimeout(function() { traceAllowed = true }, 2000);
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);

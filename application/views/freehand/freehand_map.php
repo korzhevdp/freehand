@@ -19,13 +19,13 @@
 		<div class="navbar-inner">
 			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
 			<ul class="nav pull-right">
-				<li id="prevFrame" class="">
+				<li id="prevFrame" class="hide">
 					<a href="#"><i class="icon-chevron-left"></i></a>
 				</li>
-				<li id="frameNum" class="">
+				<li id="frameNum" class="hide">
 					<input type="text" id="frameNum" value="1" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
 				</li>
-				<li id="nextFrame" class="">
+				<li id="nextFrame" class="hide">
 					<a href="#"><i class="icon-chevron-right"></i></a>
 				</li>
 
@@ -167,6 +167,21 @@
 	</div>
 </div>
 
+<div class="modal hide" id="viewerM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Фотографии объекта</h4>
+	</div>
+	<div class="modal-body">
+		<img src="/images/nophoto.jpg" id="locImg" border="0" alt="">
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="imgNavigator btn pull-left" value="-1" title="Предыдущее фото"><i class="icon-chevron-left"></i></button>
+		<button type="button" class="imgNavigator btn pull-left" value="1" title="Следующее фото"><i class="icon-chevron-right"></i></button>
+		<button type="button" class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Закрыть</button>
+	</div>
+</div>
+
 <div class="well hide container-fluid" id="mapLinkContainer" style="height:28px;padding:5px;position:absolute;top:45%; left:30%; width:580px;">
 	<input type="text" name="mapLink" id="mapLink" value="" style="width:480px;" class="pull-left">
 	<button type="button" class="btn btn-small btn-primary pull-right" id="linkClose" style="margin-top:2px;">Закрыть</button>
@@ -182,12 +197,7 @@
 	<input type="hidden" name="location_id"  id="location_id"  value="">
 </div>
 <!-- API 2.0 -->
-<script src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&amp;load=package.full&amp;lang=ru-RU" type="text/javascript"></script>
-<script type="text/javascript" src="/scripts/styles"></script>
-<script type="text/javascript" src="/jscript/yandex_styles.js"></script>
-<script type="text/javascript" src="/scripts/freehand"></script>
-<script type="text/javascript" src="/scripts/login"></script>
-<script type="text/javascript" src="/scripts/uijs"></script>
+<?=$this->config->item("api_set");?>;
 <!-- EOT API 2.0 -->
 <!-- <script src="//loginza.ru/js/widget.js" type="text/javascript"></script> -->
 <!-- latest version available at WWW.KORZHEVDP.COM -->

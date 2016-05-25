@@ -164,13 +164,16 @@ address {
 	height: 400px; display: table; vertical-align: middle;
 }
 #imageList li {
-	list-style-type: none; padding: 4px; width: 136px; height: 128px; float: left; text-align: center; border: 2px solid #F6F6F6; margin: 2px; cursor: pointer;
+	border: 2px solid #f6f6f6; cursor: pointer; float: left; height: 128px; list-style-type: none; margin: 2px; padding: 0; text-align: center; width: 132px; padding-top: 2px;
+}
+#imageList li div {
+	background-color: #000; bottom: 0; color: #ffffcc; font-size: 10px; font-weight: bold; height: 16px; margin-left: 2px; margin-right: -4px; margin-top: -24px; opacity: 0.6; overflow: hidden; padding: 4px; position: relative; text-align: right; width: 120px;
 }
 #imageList .active {
 	border: 2px solid #0000E6;
 }
 #l_photo {
-	margin-right: 4px; margin-bottom: 4px; width: 128px; height: 128px; float: left;
+	margin-right: 4px; margin-bottom: 4px; width: 128px; height: 128px; float: left; cursor:pointer;
 }
 .ymaps_balloon .propertyContainer {
 	clear: right; margin-top: 4px;
@@ -192,4 +195,16 @@ address {
 #imageM .modal-body{
 	overflow:auto
 }
-
+#viewerM {
+	width:630px !important;
+}
+#viewerM .modal-body{
+	display: table-cell;
+	text-align:center;
+	vertical-align:middle;
+	width:600px;
+	height:500px;
+}
+#viewerM .modal-body img{
+	display: inline;
+}

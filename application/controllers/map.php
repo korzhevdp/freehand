@@ -21,7 +21,8 @@ class Map extends CI_Controller {
 		if ($data['uid'] !== $hash && $data['eid'] !== $hash && $hash !== 'index') {
 			$data['state'] = "database";
 		}
-		if ($data['eid'] === $hash) {
+		$data['mode'] = "view";
+		if ($data['eid'] === $hash && $data['uid'] !== $data['eid']) {
 			$data['mode'] = "edit";
 		}
 		$data["mapID"]     = $hash;
