@@ -21,7 +21,8 @@ class Exports extends CI_Controller {
 			return false;
 		}
 		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, "<br>") : "Объектов для указанной карты не обнаружено";
+		$images  = $this->mapmodel->getImagesForTransfer($objects['hash_a']);
+		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, $images, "<br>") : "Объектов для указанной карты не обнаружено";
 		$this->writeIncrementedMapCounter();
 		$this->load->helper('download');
 		force_download("Export of ".$objects['name'].".html", $this->load->view('freehand/script', $objects, true)); 

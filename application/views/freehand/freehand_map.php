@@ -197,7 +197,7 @@
 	<input type="hidden" name="location_id"  id="location_id"  value="">
 </div>
 <!-- API 2.0 -->
-<?=$this->config->item("api_set");?>;
+<?=$this->config->item("api_set");?>
 <!-- EOT API 2.0 -->
 <!-- <script src="//loginza.ru/js/widget.js" type="text/javascript"></script> -->
 <!-- latest version available at WWW.KORZHEVDP.COM -->

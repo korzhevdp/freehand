@@ -10,11 +10,11 @@ class Mapmodel extends CI_Model {
 			$output = array();
 			foreach ($result->result_array() as $row) {
 				$locImages   = (isset($images[$row['hash']]) && is_array($images[$row['hash']])) ? implode($images[$row['hash']], "','") : "";
-				$img128      = (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0])) ? $this->config->item("base_url")."storage/128/".$images[$row['hash']][0] : "";
+				$img128      = (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0])) ? ', img128: "'.$this->config->item("base_url")."storage/128/".$images[$row['hash']][0].'"' : "";
 				$link = (trim($row['link']) !== "#") ? "link: '".trim($row['link'])."'," : "";
 				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
 				$row['link'] = str_replace('"', "'", $row['link']);
-				$constant    = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."'], img128: '".$img128."' }";
+				$constant    = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."']".$img128." }";
 				array_push($output, $constant);
 			}
 			return implode($output, ",\n\t\t\t\t");

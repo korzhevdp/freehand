@@ -25,13 +25,21 @@
 	#l_photo{
 		cursor: pointer;
 	}
+	#viewerM {
+		width:630px !important;
+	}
+	#viewerM .modal-body{
+		display: table-cell; text-align:center; vertical-align:middle; width:600px; height:500px; 
+	}
+	#viewerM .modal-body img{
+		display: inline;
+	}
 </style>
 <link href="<?=$this->config->item('api');?>/bootstrap/css/bootstrap.css" rel="stylesheet" />
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/jquery.js"></script>
 <script type="text/javascript" src="<?=$this->config->item('api');?>/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="http://api-maps.yandex.ru/2.0/?coordorder=longlat&load=package.full&lang=ru-RU" ></script>
-<script type="text/javascript" src="<?=$this->config->item("base_url");?>scripts/styles"></script>
-
+<script type="text/javascript" src="<?=$this->config->item('base_url').$this->config->item('userStylesPath');?>"></script>
 
 <div id="YMapsID"></div>
 
@@ -57,7 +65,7 @@
 		var objects = {
 				<?=$mapobjects;?>
 	
-		},
+			},
 			fx  = {
 				1: function(item) {
 					var coords     = item.coords.split(",");
@@ -91,7 +99,7 @@
 				center    : [<?=$maplon;?>,<?=$maplat;?>],
 				zoom      : <?=$mapzoom;?>,
 				type      : '<?=$maptype;?>',
-				behaviors : ["scrollZoom", "drag", "dblClickZoom"]
+				behaviors : ["scrollZoom", "drag", "dblClickZoom", "multiTouch"]
 			},
 			{
 				maxZoom              : 19,
@@ -129,11 +137,10 @@
 					i = 0;
 				function coalesceLocImages(filename){
 					if (filename.length) {
-						$("#locImg").attr("src", "/storage/600/" + filename);
+						$("#locImg").attr("src", '<?=$this->config->item("base_url");?>storage/600/' + filename);
+						return true;
 					}
-					if (!filename.length) {
-						$("#locImg").attr("src", "http://api.arhcity.ru/images/nophoto.jpg");
-					}
+					$("#locImg").attr("src", "http://api.arhcity.ru/images/nophoto.jpg");
 				}
 				coalesceLocImages(imageSet[i]);
 				if (imageSet.length) {
