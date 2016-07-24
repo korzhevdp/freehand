@@ -46,6 +46,7 @@ var userstyles,
 		"Rectangle"  : 5 //not used
 	},
 	mframes          = [],
+	frame            = 1,
 	precision        = 8,
 	metricPrecision  = 2,
 	isCenterFixed    = 0,
@@ -417,7 +418,7 @@ function init() {
 				link     : item.properties.get('link'),
 				name     : item.properties.get('name'),
 				img      : item.properties.get('imageList'),
-				frame    : parseInt($("#vp_frame").val(), 10)
+				frame    : frame
 			},
 			success: function () {
 				console.log("The object is to be believed sent");
@@ -475,7 +476,7 @@ function init() {
 
 		$("#l_photo").click(function() {
 			var ref = $(this).attr("picref"),
-				imageSet = usermap[ref].img,
+				imageSet = usermap[frame].objects[ref].img,
 				i = 0;
 			function coalesceLocImages(filename){
 				if (filename.length) {
@@ -731,7 +732,7 @@ function init() {
 				eObjects.add(item);										// переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
 
-				imageList = ( usermap[ttl] === undefined || usermap[ttl].img === undefined ) ? [] : usermap[ttl].img;
+				imageList = ( usermap[frame].objects.ttl === undefined || usermap[frame].objects.ttl.img === undefined ) ? [] : usermap[frame].objects.ttl.img;
 				// нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
 				disableMultiplePointCoordsInput();
 				if (type === 2 || type === 3) {
@@ -826,15 +827,27 @@ function init() {
 		return output;
 	}
 
-	function placeFreehandObjects(source) {
-		var src,
+	function processFrames(source){
+		var frm;
+		if (!mframes.length) {
+			mframes[1] = new ymaps.GeoObjectArray();
+		}
+		for (frm in source) {
+			if (source.hasOwnProperty(frm)) {
+				processFrame(frm, source[frm].objects);
+			}
+		}
+	}
+
+	function processFrame(frameID, source) {
+		var a,
+			src,
 			object,
 			geometry,
 			options,
 			properties,
-			b,
-			a,
-			frame,
+			localframe,
+			entity,
 			frm,
 			fx = {
 				1: function () {
@@ -855,38 +868,44 @@ function init() {
 				},
 				5: function () {}
 			};
-		for (b in source) {
-			if (source.hasOwnProperty(b)) {
-				src     = source[b];
+		for (entity in source) {
+			if (source.hasOwnProperty(entity)) {
+				src     = source[entity];
 				if (src.attr !== undefined) { //костыль. Причём непонятный
 					options = ymaps.option.presetStorage.get(normalizeStyle(src.attr, src.type));
-					frame   = (src.frame === undefined) ? 1 : parseInt(src.frame, 10);
-					properties = {
-						attr        : src.attr,
-						desc        : src.desc,
-						addr        : src.addr,
-						hintContent : src.name + ' ' + src.desc,
-						img         : getImageBySize(src.img, 'small')[0],
-						img128      : getImageBySize(src.img, 'preview')[0],
-						frame       : frame,
-						link        : src.link,
-						name        : src.name,
-						imageList   : src.img,
-						ttl         : b.toString(),
-						images      : getImageBySize(src.img, 'small').join(" ")
-					};
-					fx[src.type]();
-					if (mframes[frame] === undefined) {
-						mframes[frame] = new ymaps.GeoObjectArray();
-					}
-					mframes[frame].add(object);
 				}
+				properties = {
+					attr        : src.attr,
+					desc        : src.desc,
+					addr        : src.addr,
+					hintContent : src.name + ' ' + src.desc,
+					img         : getImageBySize(src.img, 'small')[0],
+					img128      : getImageBySize(src.img, 'preview')[0],
+					frame       : frameID,
+					link        : src.link,
+					name        : src.name,
+					imageList   : src.img,
+					ttl         : entity.toString(),
+					images      : getImageBySize(src.img, 'small').join(" ")
+				};
+				fx[src.type]();
+				//console.log(mframes.toSource());
+				if (mframes[frameID] === undefined) {
+					mframes[frameID] = new ymaps.GeoObjectArray();
+				}
+				mframes[frameID].add(object);
 			}
 		}
-		if(!mframes.length){
-			mframes[1] = new ymaps.GeoObjectArray();
+		for (a in usermap ) {
+			if (usermap.hasOwnProperty(a) && mframes[a] === undefined) {
+				mframes[a] = new ymaps.GeoObjectArray();
+			}
 		}
-		showFrame(mframes[1]);
+	}
+
+	function placeFreehandObjects(source) {
+		processFrames(source);
+		showFrame(frame);
 		countObjects();
 	}
 
@@ -983,9 +1002,9 @@ function init() {
 				placeFreehandObjects(usermap);
 				/*
 				адский костыль на отключение первичных отправок карты на сервер. :)
-				включение отправки после задержки в 2 секунды после загрузки сессии.
+				включение отправки после задержки в 5 секунд с момента загрузки сессии.
 				*/
-				setTimeout(function() { traceAllowed = true }, 2000);
+				setTimeout(function() { traceAllowed = true }, 5000);
 			},
 			error: function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -1010,7 +1029,7 @@ function init() {
 	function applyPreset(src, style) {
 		src.options.set(ymaps.option.presetStorage.get(style)); // назначение стиля в опции.
 		src.properties.set({ attr: style }); // параллельная запись определения в свойства.
-		//sendObject(src);
+		sendObject(src);
 	}
 
 	function saveAll() {
@@ -1097,6 +1116,7 @@ function init() {
 					geometry = { type: "Point", coordinates: click.get('coordPosition') };
 					object   = new ymaps.Placemark(geometry, properties, options);
 					traceNode(object);
+					sendObject(object);
 				},
 				2: function (click) {
 					geometry = { type: 'LineString', coordinates: [click.get('coordPosition')] };
@@ -1112,13 +1132,14 @@ function init() {
 					geometry = [click.get('coordPosition'), $("#cir_radius").val()];
 					object   = new ymaps.Circle(geometry, properties, options);
 					traceNode(object);
+					sendObject(object);
 				},
 				5: function(){}
 			},
 			properties = {
 				preset      : realStyle,
 				attr        : realStyle,
-				frame       : parseInt($('#vp_frame').val(), 10),
+				frame       : frame,
 				ttl         : (objectGID += 1).toString(),
 				name        : "",
 				img         : "nophoto.gif",
@@ -1150,7 +1171,7 @@ function init() {
 	}
 
 	function fillMapForms() {
-		$("#vp_frame").val(1);
+		$("#frameNum").val(frame);
 		$("#vp_lon").val(map.getCenter()[0].toFixed(precision));
 		$("#vp_lat").val(map.getCenter()[1].toFixed(precision));
 		$("#current_obj_type").val(1);
@@ -1311,7 +1332,7 @@ function init() {
 		// ##### события #####
 		function setMapEvents() {
 			map.events.add('balloonopen', function () {
-				eventListenersAdd();
+				setTimeout(eventListenersAdd, 200); // костыль
 			});
 			/*
 			map.events.add('balloonclose', function () {
@@ -1414,6 +1435,9 @@ function init() {
 		функция переключения фрейма
 		фреймы пока упразднены, с их наследием надо разобраться
 		*/
+		if (mframes[frame] === undefined) {
+			return false;
+		}
 		mframes[frame].removeAll();
 		while (aObjects.get(0)) {
 			mframes[frame].add(aObjects.get(0));
@@ -1427,9 +1451,88 @@ function init() {
 		/*
 		функция отображения фрейма
 		*/
-		while (frame.get(0)) {
-			aObjects.add(frame.get(0));
+		while (mframes[frame].get(0)) {
+			aObjects.add(mframes[frame].get(0));
 		}
+		console.log(frame, usermap[frame].name, aObjects.get(0).properties.get('attr'))
+		$("#frameActionM").modal('hide');
+		$("#frameNum").val(frame);
+	}
+
+	function showFrameActionSelector() {
+		$("#frameActionM").modal('show');
+	}
+
+	$("#submitFrameAction").click(function(){
+		var mode = $("#frameActionSelector input[type=radio]:checked").val();
+		$.ajax({
+			url      : '/mapmanager/writenewframe',
+			data     : {
+				name : $("#newFrameName").val(),
+				frame: frame
+			},
+			dataType : "script",
+			type     : "POST",
+			success  : function () {
+				if (mode === "newFrameEmpty") {
+					createFrameEmpty();
+					return true;
+				}
+				if (mode === "newFrameClone") {
+					createFrameClone(frame);
+					return true;
+				}
+			},
+			error    : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	});
+
+	function createFrameEmpty() {
+		mframes[frame] = new ymaps.GeoObjectArray();
+		showFrame(frame);
+	}
+
+	function createFrameClone(){
+		var source = (frame - 1);
+		mframes[frame] = mframes[source];
+		showFrame(frame);
+		return true;
+		// server-side cloning
+		//или другой вариант - отослать команду на сервер и перезагрузить уже клонированный фрейм...
+		$.ajax({
+			url      : '/' + mainController + "/cloneframe",
+			data     : {
+				prev : frame -= 1,
+				next : frame
+			},
+			dataType : "script",
+			type     : "POST",
+			success  : function () {
+				placeFreehandObjects(usermap);
+				showFrame(frame);
+			},
+			error    : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	}
+
+	function switchFrame(referer) {
+		hideFrame(frame);
+		frame += parseInt(referer, 10);
+		frame = (frame > 1) ? frame : 1;
+		if (mframes[frame] === undefined) {
+			if (mp.mode === "view") {
+				frame -= 1;
+				showFrame(frame);
+				return false;
+			}
+			showFrameActionSelector();
+			return false;
+		}
+		showFrame(frame);
 	}
 
 	function openLink(linkhash) {
@@ -1463,7 +1566,7 @@ function init() {
 			}
 		coords = coordsFX[pType](initCoord, reverse);
 		return {
-			frame    : 1,
+			frame    : frame,
 			desc     : data.desc,
 			name     : data.name,
 			attr     : data.attr,
@@ -1526,11 +1629,21 @@ function init() {
 		});
 	}
 
+	$("#cancelNewFrame").click(function(){
+		frame -= 1;
+		showFrame(frame);
+		console.log(frame)
+	});
+
 	$("#m_style, #line_style, #polygon_style, #circle_style").change(function () {
 		var val = $(this).val();
 		eObjects.each(function (item) {
 			applyPreset(item, val);
 		});
+	});
+
+	$(".frameSwitcher").click(function() {
+		switchFrame($(this).attr("ref"));
 	});
 
 	$("#mapLoader").click(function () {
@@ -1566,41 +1679,6 @@ function init() {
 	$("#coordSetter").click(function () {
 		setPointCoordinates();
 	});
-	/*
-	$(".frame-switcher").click(function () {
-		var pfrm = parseInt($("#vp_frame").val(), 10),
-			nfrm = 0;
-		if (pfrm >= 1) {
-			nfrm = ($(this).attr("id") === 'vp_fw') ? (pfrm + 1) : (pfrm > 1) ? (pfrm - 1) : pfrm;
-		} else {
-			nfrm = 1;
-		}
-		hideFrame(pfrm);
-		if (mframes[nfrm] === undefined) {
-			mframes[nfrm] = new ymaps.GeoObjectArray();
-			if (confirm("Вы создаёте новый фрейм. Следует ли скопировать содержимое предыдущего фрейма в новый?")) {
-				//или другой вариант - отослать команду на сервер и перезагрузить уже клонированный фрейм...
-				$.ajax({
-					url      : '/' + mainController + "/cloneframe",
-					data     : {
-						prev : pfrm,
-						next : nfrm
-					},
-					dataType : "script",
-					type     : "POST",
-					success  : function () {
-						placeFreehandObjects(usermap);
-					},
-					error    : function (data, stat, err) {
-						console.log([ data, stat, err ]);
-					}
-				});
-			}
-		}
-		showFrame(nfrm);
-		$("#vp_frame").val(nfrm);
-	});
-	*/
 
 	$(".mapcoord").blur(function () {
 		setMapCoordinates();
@@ -1674,7 +1752,7 @@ function init() {
 						eval($("#importCode").val());
 						for (a in exportedMapObjects) {
 							if (exportedMapObjects.hasOwnProperty(a)) {
-								usermap[a] = setMapItem(exportedMapObjects[a]);
+								usermap[frame].objects[a] = setMapItem(exportedMapObjects[a]);
 							}
 						}
 						placeFreehandObjects(usermap);
@@ -1696,8 +1774,72 @@ function init() {
 		*/
 	});
 
+	$("#mapNew").click(function (){
+		$("#newMapM").modal('show');
+	});
+
+	$("#mapRearrange").click(function (){
+		var a,
+			x,
+			out = {},
+			arr = $(".sortable").sortable("toArray", { attribute: 'framenum' });
+		for ( a in arr ) {
+			if (arr.hasOwnProperty(a)) {
+				x = parseInt(arr[a], 10);
+				out[x] = { name: usermap[x].name, order: (parseInt(a, 10) + 1) };
+			}
+		}
+		$.ajax({
+			url      : "/mapmanager/rearrangeframes",
+			data     : {
+				order : out,
+			},
+			dataType : "text",
+			type     : "POST",
+			success  : function (data) {
+				window.location.reload();
+				$("#mapPropertiesM").modal("hide");
+			},
+			error    : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	});
+
+
+	$("#propertiesShow").click(function (){
+		$.ajax({
+			url      : "/mapmanager/getproperties",
+			data     : {
+				hash : mp.uhash
+			},
+			dataType : "script",
+			type     : "POST",
+			success  : function () {
+				$( "#frameList" ).html(data.frameList);
+				$( "#mapNameProperty" ).val(data.mapNameProperty);
+				$("#frameName").val('');
+				$( ".sortable" ).sortable();
+				$( ".sortable" ).disableSelection();
+				$(".frameHeader").unbind().click(function() {
+					var frameV = $(this).parent().attr("framenum");
+					$("#frameName").val($(this).html());
+					$("#frameName").unbind().keyup(function() {
+						$("#fh" + frameV).html($(this).val());
+						usermap[frameV].name = $(this).val();
+					});
+				});
+				$("#mapPropertiesM").modal('show');
+			},
+			error    : function (data, stat, err) {
+				console.log([ data, stat, err ]);
+			}
+		});
+	});
+
 	$("#mapReset").click(function () {
 		resetSession();
+		$("#newMapM").modal('hide');
 	});
 
 	$("#mapDelete").click(function () {
@@ -1718,7 +1860,7 @@ function init() {
 				item.properties.set({ imageList : imageList });
 				item.properties.set({ img128    : image128 });
 				item.properties.set({ images    : images32 });
-				usermap[target].img = imageList;
+				usermap[frame].objects[target].img = imageList;
 				return true;
 			}
 		});

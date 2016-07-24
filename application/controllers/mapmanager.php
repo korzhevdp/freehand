@@ -16,16 +16,16 @@ class Mapmanager extends CI_Controller {
 	public function getmaps() {
 		$author = ($this->session->userdata('uidx')) ? $this->session->userdata('uidx') : "m12121m";
 		$result = $this->db->query("SELECT
-		`usermaps`.author,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.public,
-		`usermaps`.name
+		`freehand_maps`.author,
+		`freehand_maps`.hash_a,
+		`freehand_maps`.hash_e,
+		`freehand_maps`.public,
+		`freehand_maps`.name
 		FROM
-		`usermaps`
-		WHERE (`usermaps`.active)
-		AND ((`usermaps`.`author` = ?) OR (`usermaps`.public))
-		ORDER BY usermaps.id DESC", array($author));
+		`freehand_maps`
+		WHERE (`freehand_maps`.active)
+		AND ((`freehand_maps`.`author` = ?) OR (`freehand_maps`.public))
+		ORDER BY freehand_maps.id DESC", array($author));
 		if ($result->num_rows()) {
 			$output = array();
 			foreach ($result->result_array() as $row) {
@@ -47,12 +47,12 @@ class Mapmanager extends CI_Controller {
 			$public = (isset($val[1])) ? 1 : 0;
 			if ($this->session->userdata('uidx') && strlen($this->session->userdata('uidx')) && strlen($hashA) && $hashA != 0 ) {
 				$this->db->query("UPDATE
-				usermaps
+				freehand_maps
 				SET
-				usermaps.name   = if (usermaps.author = ?, ?, usermaps.name),
-				usermaps.public = if (usermaps.author = ?, ?, usermaps.public)
+				freehand_maps.name   = if (freehand_maps.author = ?, ?, freehand_maps.name),
+				freehand_maps.public = if (freehand_maps.author = ?, ?, freehand_maps.public)
 				WHERE
-				(usermaps.`hash_a` = ?)", array(
+				(freehand_maps.`hash_a` = ?)", array(
 					$this->session->userdata('uidx'),
 					$name,
 					$this->session->userdata('uidx'),
@@ -68,11 +68,11 @@ class Mapmanager extends CI_Controller {
 	public function savemapname() {
 		if ($this->input->post('uhash')) {
 			$this->db->query("UPDATE
-			`usermaps`
+			`freehand_maps`
 			SET
-			`usermaps`.name = ?,
-			`usermaps`.public = ?
-			WHERE `usermaps`.`hash_a` = ?", array(
+			`freehand_maps`.name = ?,
+			`freehand_maps`.public = ?
+			WHERE `freehand_maps`.`hash_a` = ?", array(
 				$this->input->post('name'),
 				$this->input->post('pub'),
 				$this->input->post('uhash')
@@ -105,22 +105,109 @@ class Mapmanager extends CI_Controller {
 
 	public function deletemap() {
 		$result = $this->db->query("SELECT 
-		usermaps.author
+		freehand_maps.author
 		FROM
-		usermaps
+		freehand_maps
 		WHERE
-		(usermaps.`hash_a` = ?)", array($this->input->post('hash')));
+		(freehand_maps.`hash_a` = ?)", array($this->input->post('hash')));
 		if ($result->num_rows()) {
 			$row = $result->row(0);
 			if ($this->session->userdata("uidx") === $row->author) {
 				$this->db->query("UPDATE
-				usermaps
+				freehand_maps
 				SET
-				usermaps.active = 0
+				freehand_maps.active = 0
 				WHERE
-				usermaps.hash_a = ?", array($this->input->post('hash')));
+				freehand_maps.hash_a = ?", array($this->input->post('hash')));
 			}
 		}
+	}
+
+	public function writenewframe() {
+		$map = $this->session->userdata("map");
+		$result = $this->db->query("SELECT
+		IF(ISNULL(MAX(`freehand_frames`.`order`)), 1, MAX(`freehand_frames`.`order`) + 1) AS `order`
+		FROM
+		`freehand_frames`
+		WHERE
+		`freehand_frames`.mapID = ?", array(
+			$map['uid']
+		));
+		if ($result->num_rows()) {
+			$order = $result->row(0);
+		}
+		$this->db->query("INSERT INTO
+		`freehand_frames` (
+			`freehand_frames`.mapID,
+			`freehand_frames`.name,
+			`freehand_frames`.frame,
+			`freehand_frames`.`order`
+		) VALUES ( ?, ?, ?, ? )", array(
+			$map['uid'],
+			$this->input->post("name"),
+			$this->input->post("frame"),
+			$order->order
+		));
+	}
+
+	public function getproperties() {
+		$mapname = "Новая карта";
+		$result = $this->db->query("SELECT 
+		`freehand_maps`.name
+		FROM
+		`freehand_maps`
+		WHERE
+		`freehand_maps`.`hash_a` = ?
+		LIMIT 1", array($this->input->post("hash")));
+		if ($result->num_rows()) {
+			$row = $result->row(0);
+			$mapname = $row->name;
+		}
+		$output = array();
+		$result = $this->db->query("SELECT
+		`freehand_frames`.name,
+		`freehand_frames`.frame,
+		`freehand_frames`.`order`
+		FROM
+		`freehand_frames`
+		WHERE
+		`freehand_frames`.`mapID` = ?
+		ORDER BY 
+		`freehand_frames`.`order`", array($this->input->post("hash")));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = '<li framenum="'.$row->order.'"><span class="frameHeader" id="fh'.$row->frame.'">'.$row->name.'</span><i class="pull-right icon-remove"></i></li>';
+				array_push($output, $string);
+			}
+		}
+
+		print "data = { 
+			frameList       : '".implode($output, " ")."',
+			mapNameProperty : '".$mapname."'
+		}";
+	}
+
+	public function rearrangeframes() {
+		//print_r($this->session->userdata('objects'));
+		$mapdata = $this->session->userdata('map');
+		//$objects = $this->session->userdata('objects');
+		//$targetobjects = array();
+		foreach ($this->input->post('order') as $frame=>$options) {
+			$this->db->query("UPDATE
+			freehand_frames
+			SET
+			freehand_frames.name = ?,
+			freehand_frames.`order` = ?
+			WHERE
+			(freehand_frames.mapID = ?)
+			AND (freehand_frames.frame = ?)", array(
+				$options['name'],
+				$options['order'],
+				$mapdata['uid'],
+				$frame
+			));
+		}
+		//$this->session->set_userdata('objects', $targetobjects);
 	}
 }
 

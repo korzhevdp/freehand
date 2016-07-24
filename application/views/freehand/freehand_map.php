@@ -19,13 +19,18 @@
 		<div class="navbar-inner">
 			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
 			<ul class="nav pull-right">
-				<li id="prevFrame" class="hide">
+				
+				<li id="propertiesShow">
+					<a href="#" title="Свойства карты"><i class="icon-list-alt"></i></a>
+				</li>
+
+				<li id="prevFrame" class="frameSwitcher" ref="-1">
 					<a href="#"><i class="icon-chevron-left"></i></a>
 				</li>
-				<li id="frameNum" class="hide">
-					<input type="text" id="frameNum" value="1" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
+				<li class="">
+					<input type="text" id="frameNum" value="1" readonly="readonly" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
 				</li>
-				<li id="nextFrame" class="hide">
+				<li id="nextFrame" class="frameSwitcher" ref="1">
 					<a href="#"><i class="icon-chevron-right"></i></a>
 				</li>
 
@@ -58,7 +63,7 @@
 			<div class="btn-group" style="margin-left: 5px;">
 				<a class="btn dropdown-toggle btn-small btn-info" style="margin-top:2px;" data-toggle="dropdown" href="#">Карта&nbsp;<span class="caret"></span></a>
 				<ul class="dropdown-menu">
-					<li><a href="#" id="mapReset" title="Очищает список объектов">Новая карта</a></li>
+					<li><a href="#" id="mapNew" title="Очищает список объектов и создаёт новую карту">Новая карта</a></li>
 					<li><a href="#" id="mapLoader" title="Показывает карту с указанным идентификатором">Загрузить</a></li>
 					<li><a href="#" id="mapSave" title="Запоминает внесённые изменения">Сохранить</a></li>
 					<li><a href="#" id="mapDelete" title="Удалить карту">Удалить</a></li>
@@ -179,6 +184,56 @@
 		<button type="button" class="imgNavigator btn pull-left" value="-1" title="Предыдущее фото"><i class="icon-chevron-left"></i></button>
 		<button type="button" class="imgNavigator btn pull-left" value="1" title="Следующее фото"><i class="icon-chevron-right"></i></button>
 		<button type="button" class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Закрыть</button>
+	</div>
+</div>
+
+<div class="modal hide" id="frameActionM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Действия c новым фреймом</h4>
+	</div>
+	<div class="modal-body" id="frameActionSelector">
+		<label><input type="text" id="newFrameName" placeholder="Новое имя"> Имя нового фрейма</label>
+		Нужно:<br>
+		<label><input type="radio" name="frameAction" value="newFrameEmpty"> Создать новый пустой фрейм</label>
+		<label><input type="radio" name="frameAction" value="newFrameClone"> Создать фрейм и скопировать в него объекты из предыдущего</label>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn" id="cancelNewFrame" data-dismiss="modal" aria-hidden="true">Отмена</button>
+		<button type="button" class="btn btn-primary" id="submitFrameAction">Готово</button>
+	</div>
+</div>
+
+<div class="modal hide" id="newMapM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Новая карта</h4>
+	</div>
+	<div class="modal-body">
+		<label><input type="text" id="newMapName" placeholder="Новое имя"> Название карты</label>
+		Свойства:<br>
+		<label><input type="text" id="firstFrameName" placeholder="Новое имя"> Имя первого фрейма</label>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Отмена</button>
+		<button type="button" class="btn btn-primary" id="mapReset">Готово</button>
+	</div>
+</div>
+
+<div class="modal hide" id="mapPropertiesM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Свойства карты</h4>
+	</div>
+	<div class="modal-body">
+		<label><input type="text" id="mapNameProperty" placeholder="Новое имя"> Название карты</label>
+		<hr>
+		<label><input type="text" id="frameName" placeholder="Новое имя"> Имя фрейма</label>
+		<ul id="frameList" class="sortable"></ul>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Отмена</button>
+		<button type="button" class="btn btn-primary" id="mapRearrange">Готово</button>
 	</div>
 </div>
 

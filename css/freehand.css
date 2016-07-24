@@ -199,12 +199,33 @@ address {
 	width:630px !important;
 }
 #viewerM .modal-body{
-	display: table-cell;
-	text-align:center;
-	vertical-align:middle;
-	width:600px;
-	height:500px;
-}
+	display: table-cell; text-align:center; vertical-align:middle; width:600px; height:500px; }
 #viewerM .modal-body img{
 	display: inline;
 }
+#frameActionSelector input[type=radio] {
+	margin-top:-4px;
+}
+
+#newFrameName{
+	margin-top:6px;
+}
+#frameListContainer {
+	width: 100%; height:200px;padding:4px;overflow:auto;border-top:1px solid #D6D6D6;
+}
+#frameList {
+	list-style-type:none;
+}
+
+#newMapName,
+#firstFrameName {
+	margin-top:6px;
+}
+.mapTypeSelector {
+	margin-top: -4px !important;
+}
+.sortable { list-style-type: none; margin: 0; padding: 0; width: 90%; }
+.sortable li { cursor: move; margin: 6px 3px 3px 3px; outline: 1px solid #D6D6D6; font-size: 12px; padding: 0; padding-left: 1em; height: 24px; }
+.sortable li i { cursor: pointer !important; margin: 4px 3px 0 0 }
+.frameHeader { cursor: pointer !important; padding: 6px 6px 6px 6px; }
+.frameHeader:hover { color: #006699 }

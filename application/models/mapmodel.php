@@ -62,30 +62,30 @@ class Mapmodel extends CI_Model {
 
 	public function getMapObjectsList($hash) {
 		return $this->db->query("SELECT 
-		userobjects.name,
-		userobjects.description AS `desc`,
-		userobjects.coord,
-		userobjects.attributes AS `attr`,
-		userobjects.address AS `addr`,
-		userobjects.`type`,
-		userobjects.`hash`,
-		userobjects.`link`
+		freehand_objects.name,
+		freehand_objects.description AS `desc`,
+		freehand_objects.coord,
+		freehand_objects.attributes AS `attr`,
+		freehand_objects.address AS `addr`,
+		freehand_objects.`type`,
+		freehand_objects.`hash`,
+		freehand_objects.`link`
 		FROM
-		userobjects
+		freehand_objects
 		WHERE
-		`userobjects`.`map_id` = ?
-		ORDER BY userobjects.timestamp", array($hash));
+		`freehand_objects`.`map_id` = ?
+		ORDER BY freehand_objects.timestamp", array($hash));
 	}
 
 	public function getImagesForTransfer($maphash) {
 		$output = array();
 		$result = $this->db->query("SELECT
-		userimages.filename,
-		userimages.superhash
+		freehand_images.filename,
+		freehand_images.superhash
 		FROM
-		userimages
+		freehand_images
 		WHERE
-		(userimages.mapID = ?)", array($maphash));
+		(freehand_images.mapID = ?)", array($maphash));
 		if ($result->num_rows()) {
 			foreach($result->result() as $row) {
 				if (!isset($output[$row->superhash])) {
