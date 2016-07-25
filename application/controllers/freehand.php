@@ -27,6 +27,7 @@ class Freehand extends CI_Controller {
 			$map['uid'],
 			$map['uid']
 		));
+		$this->mapmodel->insert_audit("Обновлены данные карты #".$map['uid'].". Изменён владелец карты.", "MAP_UPD_w_override");
 	}
 
 	private function updateMapData($map) {
@@ -45,6 +46,7 @@ class Freehand extends CI_Controller {
 			$map['uid'],
 			$map['uid']
 		));
+		$this->mapmodel->insert_audit("Обновлены данные карты #".$map['uid'].".", "MAP_UPD");
 	}
 
 	private function packSessionData($map, $data) {
@@ -96,6 +98,7 @@ class Freehand extends CI_Controller {
 				`freehand_images`.`owner`
 			) VALUES ". implode($images, ",\n"));
 		}
+		$this->mapmodel->insert_audit("Изменён набор изображений для карты #".$hash.".", "MAP_IMG_MOD");
 	}
 
 	private function insertUserMapObjects($objects) {
@@ -236,7 +239,7 @@ class Freehand extends CI_Controller {
 	private function outputFramesToJS ($input, $framedata) {
 		$output = array();
 		if (!sizeof($framedata)) {
-			array_push($output, "\n\t1 : { \n\t\tname: 'Фрейм 1',\n\t\tframe: 1,\n\t\tobjects: {\n\t\t\t".implode($input[1], ",\n\t\t\t"). "\n\t\t}\n\t}");
+			array_push($output, "\n\t1 : { \n\t\tname: 'Фрейм 1',\n\t\tframe: 1,\n\t\tobjects: {\n\t\t\t".(isset($input[1]) ? implode($input[1], ",\n\t\t\t") : ""). "\n\t\t}\n\t}");
 		}
 		if (sizeof($framedata)) {
 			foreach ($input as $key=>$val) {
@@ -356,6 +359,7 @@ class Freehand extends CI_Controller {
 		$this->db->query("DELETE FROM freehand_objects WHERE freehand_objects.map_id = ?", array($data['uid']));
 		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
+		$this->mapmodel->insert_audit("Сохранён набор объектов #".$data['uid'].".", "MAP_LOC_SAVE");
 		$this->insertUserMapImages($objects['images'], $data['uid']);
 		$this->mapmodel->createframe($data['uid']);
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
@@ -388,6 +392,7 @@ class Freehand extends CI_Controller {
 			"name"		=> $this->input->post('name'),
 			"img"		=> ($this->input->post('img')) ? $this->input->post('img') : array()
 		);
+		$this->mapmodel->insert_audit("Изменено описание объекта #".$this->input->post('id')." в сессии", "LOC_MOD");
 		//print_r($data[$this->input->post('id')]);
 		$this->session->set_userdata("objects", $data);
 	}

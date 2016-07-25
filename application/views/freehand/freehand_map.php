@@ -18,6 +18,10 @@
 	<div class="navbar">
 		<div class="navbar-inner">
 			<a class="brand" href="<?=$this->config->item("base_url");?>"><?=$this->config->item("brand");?></a>
+			<ul class="nav">
+				<li><a href="#" id="uiFrameName"></a></li>
+			</ul>
+
 			<ul class="nav pull-right">
 				
 				<li id="propertiesShow">
@@ -134,7 +138,7 @@
 	<div class="alert alert-info" id="logAlert">Введите имя пользователя и пароль. Если при проверке реквизитов пользователь не будет найден, вам будет предложено зарегистрироваться</div>
 	Пользователь: <input type="text" id="login"><br>
 	<div class="alert alert-info hide" id="regWelcome">Пользователь не найден. Вы можете зарегистрироваться, введя новые имя пользователя и пароль.<button type="button" class="btn btn-info btn-block" id="doNotReg">Спасибо, но я попробую ввести пароль ещё раз</button></div>
-	Пароль:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="password" id="password"><br>
+	Пароль:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="password" id="password">&nbsp;&nbsp;<small style="color:red"><span class="hide" id="wrongPass"></span></small><br>
 	<span class="hide" id="password2span">Пароль ещё раз: <input type="password" id="password2"></span>
 	</div>
 	<div class="modal-footer">

@@ -21,6 +21,11 @@ $("#tryLogIn").click(function(){
 			if (parseInt(logresult.status, 10) === 0) {
 				$("#password2span, #regWelcome, #tryRegIn").removeClass("hide");
 				$("#tryLogIn, #logAlert").addClass("hide");
+				$("#wrongPass").empty().html(logresult.error).dequeue().fadeIn(50).delay(4000).fadeOut(500);
+				return false;
+			}
+			if (parseInt(logresult.status, 10) === 2) {
+				$("#wrongPass").empty().html(logresult.error).dequeue().fadeIn(50).delay(4000).fadeOut(500);
 				return false;
 			}
 			$("#userP").html(logresult.login + '&nbsp;&nbsp;<i class="icon-user"></i>');

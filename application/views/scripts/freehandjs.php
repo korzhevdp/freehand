@@ -1451,10 +1451,15 @@ function init() {
 		/*
 		функция отображения фрейма
 		*/
-		while (mframes[frame].get(0)) {
-			aObjects.add(mframes[frame].get(0));
+		if ( mframes[frame] !== undefined) {
+			while (mframes[frame].get(0)) {
+				aObjects.add(mframes[frame].get(0));
+			}
 		}
-		console.log(frame, usermap[frame].name, aObjects.get(0).properties.get('attr'))
+		//console.log(frame, usermap[frame].name, aObjects.get(0).properties.get('attr'))
+		if ( usermap !== undefined && usermap[frame] !== undefined && usermap[frame].name !== undefined ) {
+			$("#uiFrameName").empty().html(usermap[frame].name);
+		}
 		$("#frameActionM").modal('hide');
 		$("#frameNum").val(frame);
 	}

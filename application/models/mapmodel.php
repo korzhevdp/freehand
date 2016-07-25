@@ -17,6 +17,7 @@ class Mapmodel extends CI_Model {
 				$constant    = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."']".$img128." }";
 				array_push($output, $constant);
 			}
+			$this->insert_audit("Подготовлены данные трансфера для карты #".$row['hash'], "MAP_CACHE_SAVE");
 			return implode($output, ",\n\t\t\t\t");
 		}
 		return false;
@@ -34,24 +35,25 @@ class Mapmodel extends CI_Model {
 		$this->load->helper("file");
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
+			$this->insert_audit("Сохранён кэш для карты #".$hash, "MAP_CACHE_SAVE");
 		}
 		//print $this->load->view('freehand/frame', $objects, true);
 	}
 
 	public function getMapData($hash) {
 		$result = $this->db->query("SELECT 
-		`usermaps`.center_lon as `maplon`,
-		`usermaps`.center_lat as `maplat`,
-		`usermaps`.hash_a,
-		`usermaps`.hash_e,
-		`usermaps`.zoom as `mapzoom`,
-		`usermaps`.maptype,
-		`usermaps`.name
+		`freehand_maps`.center_lon as `maplon`,
+		`freehand_maps`.center_lat as `maplat`,
+		`freehand_maps`.hash_a,
+		`freehand_maps`.hash_e,
+		`freehand_maps`.zoom as `mapzoom`,
+		`freehand_maps`.maptype,
+		`freehand_maps`.name
 		FROM
-		`usermaps`
+		`freehand_maps`
 		WHERE
-		`usermaps`.`hash_a` = ?
-		OR `usermaps`.`hash_e` = ?", array($hash, $hash));
+		`freehand_maps`.`hash_a` = ?
+		OR `freehand_maps`.`hash_e` = ?", array($hash, $hash));
 		if ($result->num_rows()) {
 			$objects = $result->row_array();
 			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
@@ -105,7 +107,7 @@ class Mapmodel extends CI_Model {
 	public function makeDefaultMapConfig() {
 		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
 		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
-		while($this->db->query("SELECT usermaps.id FROM usermaps WHERE usermaps.hash_a = ? OR usermaps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
+		while($this->db->query("SELECT freehand_maps.id FROM freehand_maps WHERE freehand_maps.hash_a = ? OR freehand_maps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
 			$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
 			$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
 		}
@@ -123,6 +125,7 @@ class Mapmodel extends CI_Model {
 			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0
 		);
 		$this->session->set_userdata('map', $data);
+		$this->insert_audit("Инициализирована карта #".$data['uid'], "MAP_INIT");
 	}
 
 	public function makeMapParametersObject($data) {
@@ -138,6 +141,21 @@ class Mapmodel extends CI_Model {
 			state   : '".$data['state']."',
 			mode    : '".$data['mode']."'
 		};\n";
+	}
+
+	public function insert_audit($desc="Операции не дано описания", $event_code="NoCode") {
+		$this->db->query("INSERT INTO
+		freehand_audit (
+			freehand_audit.user,
+			freehand_audit.query,
+			freehand_audit.desc,
+			freehand_audit.event_code
+		) VALUES ( ?, ?, ?, ?)", array (
+			$this->session->userdata('name'),
+			$this->db->last_query(),
+			$desc,
+			$event_code
+		));
 	}
 
 }
