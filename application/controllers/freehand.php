@@ -6,7 +6,6 @@ class Freehand extends CI_Controller {
 		if (!$this->session->userdata('map')) {
 			$this->mapmodel->mapInit();
 		}
-
 	}
 
 	private function updateMapDataWOverride($map) {
@@ -57,8 +56,12 @@ class Freehand extends CI_Controller {
 		if (!sizeof($data)) {
 			return $output;
 		}
+
 		foreach ($data as $key => $val) {
-			$superhash = ( strpos($key, "_") ) ? $key : $map['uid']."_".substr(md5(date("U").rand(0, 9999).rand(0, 9999)), 0, 8);
+			$superhash = ( strpos($val['superhash'], "_") ) ? $val['superhash'] : $map['uid']."_".substr(md5(date("U").rand(0, 9999).rand(0, 9999)), 0, 8);
+			if(!isset($val['frame'])) {
+				$val['frame'] = 1;
+			}
 			$string = "(
 				'".$this->db->escape_str($val['frame'])."',
 				'".$this->db->escape_str($val['coords'])."',
@@ -163,27 +166,9 @@ class Freehand extends CI_Controller {
 		return $images;
 	}
 
-	private function getMapFrames($hash) {
-		$output = array();
-		$result = $this->db->query("SELECT 
-		freehand_frames.frame,
-		freehand_frames.name,
-		freehand_frames.order
-		FROM
-		freehand_frames
-		WHERE `freehand_frames`.`mapID` = ?
-		ORDER BY `freehand_frames`.`order`", array($hash));
-		if ($result->num_rows()) {
-			foreach($result->result() as $row) {
-				$output[$row->frame] = array('name' => $row->name, 'order' => $row->order);
-			}
-		}
-		return $output;
-	}
-
 	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
 		$images    = $this->getUserMapImages($hash);
-		$framedata = $this->getMapFrames($hash);
+		$framedata = $this->mapmodel->getMapFrames($hash);
 		$result    = $this->db->query("SELECT 
 		freehand_objects.name,
 		freehand_objects.description,
@@ -215,16 +200,17 @@ class Freehand extends CI_Controller {
 					$input[$frame] = array(); // на случай нецелостной симметризации
 				}
 				$locImages = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
-				$newobjects[$row->hash] = array(
-					"coords" => $row->coord,
-					"type"   => $row->type,
-					"attr"   => $row->attributes,
-					"link"   => $row->link,
-					"desc"   => $row->description,
-					"addr"   => $row->address,
-					"name"   => $row->name,
-					"frame"  => $frame,
-					"img"    => $locImages
+				$newobjects[$row->hash."_".$frame] = array(
+					"superhash" => $row->hash,
+					"coords"    => $row->coord,
+					"type"      => $row->type,
+					"attr"      => $row->attributes,
+					"link"      => $row->link,
+					"desc"      => $row->description,
+					"addr"      => $row->address,
+					"name"      => $row->name,
+					"frame"     => $frame,
+					"img"       => $locImages
 				);
 				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
 				array_push($input[$frame], str_replace("\n", " ", $string));
@@ -359,12 +345,76 @@ class Freehand extends CI_Controller {
 		$this->db->query("DELETE FROM freehand_objects WHERE freehand_objects.map_id = ?", array($data['uid']));
 		$objects = $this->packSessionData($data, $this->session->userdata('objects'));
 		$this->insertUserMapObjects($objects['locations']);
-		$this->mapmodel->insert_audit("Сохранён набор объектов #".$data['uid'].".", "MAP_LOC_SAVE");
 		$this->insertUserMapImages($objects['images'], $data['uid']);
 		$this->mapmodel->createframe($data['uid']);
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
 		$output   = $this->getUserMap($data['uid']);
-		print $mapparam."usermap = { ".$output."\n}";
+		print $mapparam."usermap = { ".$output."\n};lengthZ = ".sizeof($this->session->userdata('objects')).";";
+		$this->mapmodel->insert_audit("Сохранён набор объектов #".$data['uid'].".", "MAP_LOC_SAVE");
+	}
+	
+	public function cloneframe() {
+		$mapdata         = $this->session->userdata('map');
+		$newFrameContent = array();
+		$frame  = 1;
+		$result = $this->db->query("SELECT
+		`freehand_frames`.`frame`
+		FROM `freehand_frames`
+		WHERE `freehand_frames`.`mapID` = ?
+		AND `freehand_frames`.`order` = ?
+		LIMIT 1", array( $mapdata['uid'], $this->input->post("source") ));
+		if ($result->num_rows()) {
+			$row = $result->row(0);
+			$frame = $row->frame;
+		}
+		$result = $this->db->query("SELECT
+		`freehand_objects`.map_id,
+		`freehand_objects`.hash,
+		`freehand_objects`.name,
+		`freehand_objects`.description,
+		`freehand_objects`.coord,
+		`freehand_objects`.attributes,
+		`freehand_objects`.address,
+		`freehand_objects`.`type`,
+		`freehand_objects`.ip,
+		`freehand_objects`.uagent,
+		`freehand_objects`.link,
+		(SELECT
+			MAX(`freehand_frames`.`frame`) + 1
+			FROM `freehand_frames`
+			WHERE `freehand_frames`.`mapID` = ?
+		) AS frame
+		FROM
+			`freehand_objects`
+		WHERE `freehand_objects`.`map_id` = ?
+		AND   `freehand_objects`.`frame`  = ?", array(
+			$mapdata['uid'],
+			$mapdata['uid'],
+			$frame
+		));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = "( '".$row->map_id."', '".$row->hash."', '".$row->name."', '".$row->description."', '".$row->coord."', '".$row->attributes."', '".$row->address."', '".$row->type."', '".$row->ip."', '".$row->uagent."', '".$row->link."', '".$row->frame."' )";
+				array_push($newFrameContent, $string);
+			}
+		}
+		if ( sizeof($newFrameContent) ) {
+			$this->db->query("INSERT INTO `freehand_objects` (
+				`freehand_objects`.map_id,
+				`freehand_objects`.hash,
+				`freehand_objects`.name,
+				`freehand_objects`.description,
+				`freehand_objects`.coord,
+				`freehand_objects`.attributes,
+				`freehand_objects`.address,
+				`freehand_objects`.`type`,
+				`freehand_objects`.ip,
+				`freehand_objects`.uagent,
+				`freehand_objects`.link,
+				`freehand_objects`.`frame`
+			) VALUES " . implode($newFrameContent, ",\n"));
+		}
+		print "usermap = { ".$this->getUserMap($mapdata['uid'])."\n};";
 	}
 
 	public function save() {
@@ -381,7 +431,8 @@ class Freehand extends CI_Controller {
 		if ($this->input->post('type') == 4) {
 			$geometry = implode($geometry[0], ",").",".$geometry[1];
 		}
-		$data[$this->input->post('id')] = array(
+		$data[$this->input->post('id')."_".$this->input->post('frame')] = array(
+			"superhash" => $this->input->post('id'),
 			"coords"	=> $geometry,
 			"frame"		=> $this->input->post('frame'),
 			"type"		=> $this->input->post('type'),
@@ -392,9 +443,9 @@ class Freehand extends CI_Controller {
 			"name"		=> $this->input->post('name'),
 			"img"		=> ($this->input->post('img')) ? $this->input->post('img') : array()
 		);
+		$this->session->set_userdata("objects", $data);
 		$this->mapmodel->insert_audit("Изменено описание объекта #".$this->input->post('id')." в сессии", "LOC_MOD");
 		//print_r($data[$this->input->post('id')]);
-		$this->session->set_userdata("objects", $data);
 	}
 
 	public function synctosession() {
@@ -438,7 +489,7 @@ class Freehand extends CI_Controller {
 		$output      = array();
 		$input       = array();
 		$data['nav'] = (is_array($data['nav'])) ? $data['nav'] : $this->config->item("nav_position");
-		$framedata   = $this->getMapFrames($data['uid']);
+		$framedata   = $this->mapmodel->getMapFrames($data['uid']);
 		foreach ($framedata as $key=>$val) {
 			$input[$val['order']] = array();		// симметризация с количеством фреймов
 		}

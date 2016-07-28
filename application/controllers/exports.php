@@ -20,9 +20,12 @@ class Exports extends CI_Controller {
 			Вернитесь в <a href="/freehand">РЕДАКТОР КАРТ</a>, выберите в меню <strong>Карта</strong> -> <strong>Обработать</strong> и попробуйте ещё раз';
 			return false;
 		}
-		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
-		$images  = $this->mapmodel->getImagesForTransfer($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, $images, "<br>") : "Объектов для указанной карты не обнаружено";
+		$framedata       = $this->mapmodel->getMapFrames($hash);
+		$result          = $this->mapmodel->getMapObjectsList($objects['hash_a']);
+		$images          = $this->mapmodel->getImagesForTransfer($objects['hash_a']);
+		$objects['mapobjects'] = ($result) 
+			? $this->mapmodel->makeTransferList($result, $images, "<br>", $framedata)
+			: "Объектов для указанной карты не обнаружено";
 		$this->writeIncrementedMapCounter();
 		$this->load->helper('download');
 		force_download("Export of ".$objects['name'].".html", $this->load->view('freehand/script', $objects, true)); 
@@ -41,8 +44,10 @@ class Exports extends CI_Controller {
 			print "Сопоставленная карта не обнаружена";
 			return false;
 		}
+		$framedata       = $this->mapmodel->getMapFrames($objects['hash_a']);
+		$images  = $this->mapmodel->getImagesForTransfer($objects['hash_a']);
 		$result = $this->mapmodel->getMapObjectsList($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, " ") : "Объектов для указанной карты не обнаружено";
+		$objects['mapobjects'] = ($result) ? $this->mapmodel->makeTransferList($result, $images, " ", $framedata) : "Объектов для указанной карты не обнаружено";
 		print $this->load->view('freehand/transfer', $objects, true);
 	}
 

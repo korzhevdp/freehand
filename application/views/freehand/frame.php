@@ -31,9 +31,19 @@
 	#viewerM .modal-body{
 		display: table-cell; text-align:center; vertical-align:middle; width:600px; height:500px; 
 	}
-	#viewerM .modal-body img{
+	#viewerM .modal-body img {
 		display: inline;
 	}
+	.controls {
+		padding: 3px; border: 2px solid rgb(255, 255, 255); left: 360px; top: 14px; width: 400px; height: 26px; color: rgb(214, 214, 214); vertical-align: middle; position: absolute; z-index: 99; background-color: #c8c8c8;
+	}
+	#uiFrameName {
+		width: 280px; overflow:hidden; color: black; font-size: 18px; font-weight:bold; padding-top:2px;
+	}
+	#frameNum {
+		width:25px;height:25px;margin-bottom:1px;padding:0;
+	}
+
 </style>
 <link href="<?=$this->config->item('api');?>/bootstrap/css/bootstrap.css" rel="stylesheet" />
 <script type="text/javascript" src="<?=$this->config->item('api');?>/jscript/jquery.js"></script>
@@ -42,6 +52,17 @@
 <script type="text/javascript" src="<?=$this->config->item('base_url').$this->config->item('userStylesPath');?>"></script>
 
 <div id="YMapsID"></div>
+
+<div class="controls">
+	<div class="pull-left" id="uiFrameName">
+		
+	</div>
+	<div class="pull-right">
+		<a class="btn frameSwitcher" id="prevFrame" ref="-1" href="#"><i class="icon-chevron-left"></i></a>
+		<input type="text" id="frameNum" value="1" readonly="readonly" maxlength=3>
+		<a class="btn frameSwitcher" id="nextFrame" ref="1" href="#"><i class="icon-chevron-right"></i></a>
+	</div>
+</div>
 
 <div class="modal hide" id="viewerM">
 	<div class="modal-header">
@@ -60,7 +81,8 @@
 
 
 <script type="text/javascript">
-	var api_url = '<?=$this->config->item("api");?>';
+	var api_url = '<?=$this->config->item("api");?>',
+		frame   = 1; 
 	function display_locations() {
 		var objects = {
 				<?=$mapobjects;?>
@@ -107,7 +129,8 @@
 				suppressMapOpenBlock : true,
 				yandexMapAutoSwitch  : false
 			}),
-			ms = new ymaps.GeoObjectArray(),
+			ms             = {},
+			aObjects       = new ymaps.GeoObjectArray(),
 			genericBalloon = ymaps.templateLayoutFactory.createClass(
 				'<div class="ymaps_balloon">' +
 					'<div id="l_photo" data-toggle="modal" picref="$[properties.ttl|0]">' +
@@ -120,7 +143,7 @@
 			);
 		map.controls.add('mapTools').add('zoomControl');
 		ymaps.layout.storage.add('generic#balloonLayout', genericBalloon);
-		ms.options.set({
+		aObjects.options.set({
 			balloonContentBodyLayout: 'generic#balloonLayout',
 			balloonWidth: 370// Максимальная ширина балуна в пикселах
 		});
@@ -128,7 +151,7 @@
 			ymaps.option.presetStorage.add(a, userstyles[a]);
 		}
 		
-		map.geoObjects.add(ms);
+		map.geoObjects.add(aObjects);
 
 		map.events.add("balloonopen", function(){
 			$("#l_photo").unbind().click(function() {
@@ -160,13 +183,68 @@
 			});
 		});
 
-		for (a in objects ) {
+		for ( a in objects ) {
 			if (objects.hasOwnProperty(a)) {
-				item = objects[a];
-				ms.add(fx[item.type](item));
+				ms[a] = new ymaps.GeoObjectArray();
 			}
 		}
+
+		for (a in objects ) {
+			if (objects.hasOwnProperty(a)) {
+				cFrame = objects[a].objects
+				for ( b in cFrame ) {
+					item = cFrame[b];
+					ms[a].add(fx[item.type](item));
+				}
+			}
+		}
+
+		function switchFrame(referer) {
+			hideFrame(frame);
+			frame += parseInt(referer, 10);
+			frame = (frame > 1) ? frame : 1;
+			if (ms[frame] === undefined) {
+				frame -= 1;
+				showFrame(frame);
+				return false;
+			}
+			showFrame(frame);
+		}
+
+		function hideFrame(frame) {
+			if (ms[frame] === undefined) {
+				return false;
+			}
+			ms[frame].removeAll();
+			while (aObjects.get(0)) {
+				ms[frame].add(aObjects.get(0));
+			}
+		}
+
+		function showFrame(frame) {
+			/*
+			функция отображения фрейма
+			*/
+			if ( ms[frame] !== undefined) {
+				while (ms[frame].get(0)) {
+					aObjects.add(ms[frame].get(0));
+				}
+			}
+			//console.log(frame, usermap[frame].name, aObjects.get(0).properties.get('attr'))
+			if ( objects !== undefined && objects[frame] !== undefined && objects[frame].name !== undefined ) {
+				$("#uiFrameName").empty().html(objects[frame].name);
+			}
+			$("#frameActionM").modal('hide');
+			$("#frameNum").val(frame);
+		}
+
+		$(".frameSwitcher").click(function() {
+			switchFrame($(this).attr("ref"));
+		});
+
+		showFrame(frame);
 	}
+
 	$(".modal").modal("hide");
 	ymaps.ready(display_locations);
 </script>

@@ -5,17 +5,37 @@ class Mapmodel extends CI_Model {
 		parent::__construct();
 	}
 
-	public function makeTransferList($result, $images, $newLine = "<br>") {
+	public function makeTransferList($result, $images, $newLine = "<br>", $framedata) {
 		if ($result->num_rows()) {
-			$output = array();
+			$input           = array();
+			$output          = array();
+			$counts          = 0;
+			
 			foreach ($result->result_array() as $row) {
-				$locImages   = (isset($images[$row['hash']]) && is_array($images[$row['hash']])) ? implode($images[$row['hash']], "','") : "";
-				$img128      = (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0])) ? ', img128: "'.$this->config->item("base_url")."storage/128/".$images[$row['hash']][0].'"' : "";
-				$link = (trim($row['link']) !== "#") ? "link: '".trim($row['link'])."'," : "";
+
+				$locImages   = (isset($images[$row['hash']]) && is_array($images[$row['hash']])) 
+					? implode($images[$row['hash']], "','") 
+					: "";
+				$img128      = (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0]))
+					? ', img128: "'.$this->config->item("base_url")."storage/128/".$images[$row['hash']][0].'"' 
+					: "";
+				$link        = (trim($row['link']) === "#") ? "" : "link: '".trim($row['link'])."',";
 				$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
 				$row['link'] = str_replace('"', "'", $row['link']);
-				$constant    = sizeof($output).": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."']".$img128." }";
-				array_push($output, $constant);
+				$constant    = $counts.": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."']".$img128." }";
+				if ( !isset($input[$row['frame']]) ){
+					$input[$row['frame']] = array();
+				}
+				array_push($input[$row['frame']], $constant);
+				$counts++;
+			}
+			foreach ($input as $key=>$val) {
+				$string = $framedata[$key]['order'].": {
+					frame   : ".$key.",
+					name    : '".$framedata[$key]['name']."',
+					objects : {\n\t\t\t\t\t\t".implode($val, ",\n\t\t\t\t\t\t")."}
+				}";
+				array_push($output, $string);
 			}
 			$this->insert_audit("Подготовлены данные трансфера для карты #".$row['hash'], "MAP_CACHE_SAVE");
 			return implode($output, ",\n\t\t\t\t");
@@ -29,9 +49,10 @@ class Mapmodel extends CI_Model {
 			print "createFrame = { status: 0, error: 'Карта ещё не была обработана' };";
 			return false;
 		}
-		$result  = $this->getMapObjectsList($objects['hash_a']);
-		$images  = $this->getImagesForTransfer($objects['hash_a']);
-		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, $images, "<br>") : "";
+		$framedata = $this->getMapFrames($hash);
+		$result    = $this->getMapObjectsList($objects['hash_a']);
+		$images    = $this->getImagesForTransfer($objects['hash_a']);
+		$objects['mapobjects'] = ($result) ? $this->makeTransferList($result, $images, "<br>", $framedata) : "";
 		$this->load->helper("file");
 		if (write_file('freehandcache/'.$objects['hash_a'], $this->load->view('freehand/frame', $objects, true), 'w')) {
 			//print "createFrame = { status: 1, error: 'Код IFrame создан в хранилище кэша карт' };";
@@ -41,7 +62,7 @@ class Mapmodel extends CI_Model {
 	}
 
 	public function getMapData($hash) {
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		`freehand_maps`.center_lon as `maplon`,
 		`freehand_maps`.center_lat as `maplat`,
 		`freehand_maps`.hash_a,
@@ -62,6 +83,26 @@ class Mapmodel extends CI_Model {
 		return false;
 	}
 
+	public function getMapFrames($hash) {
+		$output = array();
+		$result = $this->db->query("SELECT 
+		freehand_frames.frame,
+		freehand_frames.name,
+		freehand_frames.order
+		FROM
+		freehand_frames
+		WHERE `freehand_frames`.`mapID` = ?
+		ORDER BY `freehand_frames`.`order`", array($hash));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$output[$row->frame] = array('name' => $row->name, 'order' => $row->order);
+			}
+			return $output;
+		}
+		$this->db->query("INSERT INTO freehand_frames( frame, `order`, name, mapID ) VALUES ( 1, 1, 'Фрейм 1', ? )", array($hash));
+		return array( 1 => array( 'name' => 'Фрейм 1', 'order' => 1 ));
+	}
+
 	public function getMapObjectsList($hash) {
 		return $this->db->query("SELECT 
 		freehand_objects.name,
@@ -71,12 +112,13 @@ class Mapmodel extends CI_Model {
 		freehand_objects.address AS `addr`,
 		freehand_objects.`type`,
 		freehand_objects.`hash`,
-		freehand_objects.`link`
+		freehand_objects.`link`,
+		freehand_objects.`frame`
 		FROM
 		freehand_objects
 		WHERE
 		`freehand_objects`.`map_id` = ?
-		ORDER BY freehand_objects.timestamp", array($hash));
+		ORDER BY freehand_objects.frame, freehand_objects.timestamp", array($hash));
 	}
 
 	public function getImagesForTransfer($maphash) {

@@ -38,7 +38,7 @@
 	padding: 3px; border: 2px solid rgb(255, 255, 255); left: 360px; top: 54px; width: 400px; height: 30px; color: rgb(214, 214, 214); vertical-align: middle; position: absolute; z-index: 99; background-color: rgb(34, 34, 34);
 }
 .tab-content#navigator {
-	padding:0; width: 243px; height: 260px; overflow: auto; z-index: 101;
+	padding:0; width: 243px; height: 245px; overflow: auto; z-index: 101;
 }
 .navbar {
 	margin: 3px;
@@ -71,12 +71,14 @@ address {
 	display: block;
 }
 .mg-btn-list {
-	width: 200px; height: 55px; text-align: left; line-height: 10px; overflow: hidden; margin-left: 5px;
+	width: 200px; height: 55px; text-align: left; line-height: 10px; overflow: hidden; margin-left: 25px;
 }
 .mg-btn-list img {
-	margin: 3px; width: 16px; height: 16px; float: right;
+	margin: 3px; width: 16px; height: 16px; float: left;
 }
-.mg-btn-list button:first-child {
+
+
+#ResultBody .btn-group:first-child {
 	margin-left: 5px;
 }
 .foundlist {

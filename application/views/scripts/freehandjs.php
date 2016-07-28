@@ -199,12 +199,12 @@ function init() {
 	function genListItem(item) {
 		var ttl     = item.properties.get('ttl'),
 			name    = item.properties.get('name'),
-			address = item.properties.get('address'),
+			addr = item.properties.get('addr'),
 			pic     = gIcons[geoType2IntId[item.geometry.getType()]];
 		return '<div class="btn-group">' +
 			'<button class="btn btn-mini mg-btn-list" ttl=' + ttl + '>' +
 			'<img src="' + apiURL + '/images/' + pic + '" alt="">Название: ' + name + '<br>' +
-			'Адрес: ' + address +
+			'Адрес: ' + addr +
 			'</button>' +
 			'<button class="btn dropdown-toggle" data-toggle="dropdown" style="height:55px;">' +
 			'<span class="caret"></span>' +
@@ -850,6 +850,7 @@ function init() {
 			entity,
 			frm,
 			fx = {
+				0: function () {},
 				1: function () {
 					geometry = [ parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1] ) ];
 					object   = new ymaps.Placemark(geometry, properties, options);
@@ -1460,6 +1461,7 @@ function init() {
 		if ( usermap !== undefined && usermap[frame] !== undefined && usermap[frame].name !== undefined ) {
 			$("#uiFrameName").empty().html(usermap[frame].name);
 		}
+		countObjects();
 		$("#frameActionM").modal('hide');
 		$("#frameNum").val(frame);
 	}
@@ -1470,6 +1472,11 @@ function init() {
 
 	$("#submitFrameAction").click(function(){
 		var mode = $("#frameActionSelector input[type=radio]:checked").val();
+		usermap[frame] = {
+			name    : $("#newFrameName").val(),
+			frame   : frame,
+			objects : {}
+		};
 		$.ajax({
 			url      : '/mapmanager/writenewframe',
 			data     : {
@@ -1502,21 +1509,21 @@ function init() {
 	function createFrameClone(){
 		var source = (frame - 1);
 		mframes[frame] = mframes[source];
-		showFrame(frame);
-		return true;
+		//syncToSession(usermap);
+		//showFrame(frame);
+		//return true;
 		// server-side cloning
 		//или другой вариант - отослать команду на сервер и перезагрузить уже клонированный фрейм...
 		$.ajax({
 			url      : '/' + mainController + "/cloneframe",
 			data     : {
-				prev : frame -= 1,
-				next : frame
+				source : source
 			},
 			dataType : "script",
 			type     : "POST",
 			success  : function () {
 				placeFreehandObjects(usermap);
-				showFrame(frame);
+				//showFrame(frame);
 			},
 			error    : function (data, stat, err) {
 				console.log([ data, stat, err ]);
