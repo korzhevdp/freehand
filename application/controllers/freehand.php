@@ -146,97 +146,6 @@ class Freehand extends CI_Controller {
 		return $map;
 	}
 
-	private function getUserMapImages($hash) {
-		$images = array();
-		$result = $this->db->query("SELECT
-		`freehand_images`.filename,
-		`freehand_images`.superhash
-		FROM
-		`freehand_images`
-		WHERE `freehand_images`.`mapID` = ?
-		ORDER BY `freehand_images`.`order` ASC", array($hash));
-		if ($result->num_rows()) {
-			foreach($result->result() as $row) {
-				if (!isset($images[$row->superhash])) {
-					$images[$row->superhash] = array();
-				}
-				array_push($images[$row->superhash], $row->filename);
-			}
-		}
-		return $images;
-	}
-
-	private function getUserMap($hash = "NmIzZjczYWRlOTg5") {
-		$images    = $this->getUserMapImages($hash);
-		$framedata = $this->mapmodel->getMapFrames($hash);
-		$result    = $this->db->query("SELECT 
-		freehand_objects.name,
-		freehand_objects.description,
-		freehand_objects.coord,
-		freehand_objects.attributes,
-		freehand_objects.address,
-		freehand_objects.`type`,
-		freehand_objects.hash,
-		freehand_objects.link,
-		freehand_objects.frame,
-		freehand_maps.hash_a,
-		freehand_maps.hash_e
-		FROM
-		freehand_objects
-		INNER JOIN `freehand_maps` ON (freehand_objects.map_id = `freehand_maps`.hash_a)
-		WHERE
-		`freehand_maps`.active
-		AND ( `freehand_maps`.hash_a = ? OR `freehand_maps`.hash_e = ? )", array($hash, $hash));
-		$input  = array();
-		$output = array();
-		$newobjects = array();
-		foreach ($framedata as $key=>$val) {
-			$input[$val['order']] = array();		// симметризация с количеством фреймов
-		}
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$frame = ($row->frame < 1) ? 1 : $row->frame;
-				if (!isset($input[$frame])) {
-					$input[$frame] = array(); // на случай нецелостной симметризации
-				}
-				$locImages = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
-				$newobjects[$row->hash."_".$frame] = array(
-					"superhash" => $row->hash,
-					"coords"    => $row->coord,
-					"type"      => $row->type,
-					"attr"      => $row->attributes,
-					"link"      => $row->link,
-					"desc"      => $row->description,
-					"addr"      => $row->address,
-					"name"      => $row->name,
-					"frame"     => $frame,
-					"img"       => $locImages
-				);
-				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
-				array_push($input[$frame], str_replace("\n", " ", $string));
-			}
-			$this->session->set_userdata('objects', $newobjects);
-			return $this->outputFramesToJS($input, $framedata);
-		}
-		$this->session->set_userdata('objects', $newobjects);
-		return "error: 'Содержимого для карты с таким идентификатором не найдено.'";
-	}
-
-	private function outputFramesToJS ($input, $framedata) {
-		$output = array();
-		if (!sizeof($framedata)) {
-			array_push($output, "\n\t1 : { \n\t\tname: 'Фрейм 1',\n\t\tframe: 1,\n\t\tobjects: {\n\t\t\t".(isset($input[1]) ? implode($input[1], ",\n\t\t\t") : ""). "\n\t\t}\n\t}");
-		}
-		if (sizeof($framedata)) {
-			foreach ($input as $key=>$val) {
-				if (isset($framedata[$key])) {
-					array_push($output, "\n\t".$framedata[$key]['order'].": { \n\t\tname: '".$framedata[$key]['name']."',\n\t\tframe: ".$key.",\n\t\tobjects: {\n\t\t\t".implode($val, ",\n\t\t\t"). "\n\t\t}\n\t}");
-				}
-			}
-		}
-		return implode($output, ",\n");
-	}
-
 	public function deleteobject() {
 		$node = $this->input->post("ttl");
 		$objects = $this->session->userdata('objects');
@@ -245,57 +154,7 @@ class Freehand extends CI_Controller {
 	}
 
 	public function loadmap($hash = "") {
-		$hash   =  (strlen($hash)) ? $hash : $this->input->post('name');
-		if (strlen($hash)){
-			$result = $this->db->query("SELECT 
-			`freehand_maps`.center_lon,
-			`freehand_maps`.center_lat,
-			`freehand_maps`.name,
-			`freehand_maps`.hash_a,
-			`freehand_maps`.hash_e,
-			`freehand_maps`.zoom,
-			`freehand_maps`.maptype,
-			`freehand_maps`.name,
-			`freehand_maps`.author
-			FROM
-			`freehand_maps`
-			WHERE
-			`freehand_maps`.`hash_a` = ? 
-			OR `freehand_maps`.`hash_e` = ?", array( $hash, $hash ));
-			if ($result->num_rows()) {
-				$row       = $result->row();
-				$hashe     = $row->hash_e;
-				$hasha     = $row->hash_a;
-				$mapdata   = $this->session->userdata('map');
-				if ($hash === $row->hash_a){
-					$hashe = $hasha;
-					$mapdata['mode'] = 'view';
-				}
-				if ($hash === $row->hash_e){
-					$mapdata['mode'] = 'edit';
-				}
-				$nav       = (gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
-				$data = array(
-					"mapID"		=> $hash,
-					"uid"		=> $hasha,
-					"eid"		=> $hashe,
-					"name"		=> $row->name,
-					"maptype"	=> $row->maptype,
-					"center"	=> array($row->center_lon, $row->center_lat),
-					"zoom"		=> $row->zoom,
-					"state"		=> "session",
-					"nav"		=> $nav,
-					"author"	=> $row->author,
-					"mode"		=> $mapdata['mode']
-				);
-				$this->session->set_userdata('map', $data);
-				$mapparam = $this->mapmodel->makeMapParametersObject($data);
-				print $mapparam."usermap = { ".$this->getUserMap($data['uid'])."\n}";
-				return true;
-			}
-		}
-		$mapparam = $this->mapmodel->makeMapParametersObject($this->session->userdata('map'));
-		print $mapparam."usermap = {}";
+		$this->mapmodel->loadmap($hash);
 	}
 
 	public function savemap() {
@@ -348,75 +207,11 @@ class Freehand extends CI_Controller {
 		$this->insertUserMapImages($objects['images'], $data['uid']);
 		$this->mapmodel->createframe($data['uid']);
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
-		$output   = $this->getUserMap($data['uid']);
-		print $mapparam."usermap = { ".$output."\n};lengthZ = ".sizeof($this->session->userdata('objects')).";";
+		$output   = $this->mapmodel->getUserMap($data['uid']);
+		print $mapparam."usermap = { ".$output."\n}";
 		$this->mapmodel->insert_audit("Сохранён набор объектов #".$data['uid'].".", "MAP_LOC_SAVE");
 	}
 	
-	public function cloneframe() {
-		$mapdata         = $this->session->userdata('map');
-		$newFrameContent = array();
-		$frame  = 1;
-		$result = $this->db->query("SELECT
-		`freehand_frames`.`frame`
-		FROM `freehand_frames`
-		WHERE `freehand_frames`.`mapID` = ?
-		AND `freehand_frames`.`order` = ?
-		LIMIT 1", array( $mapdata['uid'], $this->input->post("source") ));
-		if ($result->num_rows()) {
-			$row = $result->row(0);
-			$frame = $row->frame;
-		}
-		$result = $this->db->query("SELECT
-		`freehand_objects`.map_id,
-		`freehand_objects`.hash,
-		`freehand_objects`.name,
-		`freehand_objects`.description,
-		`freehand_objects`.coord,
-		`freehand_objects`.attributes,
-		`freehand_objects`.address,
-		`freehand_objects`.`type`,
-		`freehand_objects`.ip,
-		`freehand_objects`.uagent,
-		`freehand_objects`.link,
-		(SELECT
-			MAX(`freehand_frames`.`frame`) + 1
-			FROM `freehand_frames`
-			WHERE `freehand_frames`.`mapID` = ?
-		) AS frame
-		FROM
-			`freehand_objects`
-		WHERE `freehand_objects`.`map_id` = ?
-		AND   `freehand_objects`.`frame`  = ?", array(
-			$mapdata['uid'],
-			$mapdata['uid'],
-			$frame
-		));
-		if ($result->num_rows()) {
-			foreach($result->result() as $row) {
-				$string = "( '".$row->map_id."', '".$row->hash."', '".$row->name."', '".$row->description."', '".$row->coord."', '".$row->attributes."', '".$row->address."', '".$row->type."', '".$row->ip."', '".$row->uagent."', '".$row->link."', '".$row->frame."' )";
-				array_push($newFrameContent, $string);
-			}
-		}
-		if ( sizeof($newFrameContent) ) {
-			$this->db->query("INSERT INTO `freehand_objects` (
-				`freehand_objects`.map_id,
-				`freehand_objects`.hash,
-				`freehand_objects`.name,
-				`freehand_objects`.description,
-				`freehand_objects`.coord,
-				`freehand_objects`.attributes,
-				`freehand_objects`.address,
-				`freehand_objects`.`type`,
-				`freehand_objects`.ip,
-				`freehand_objects`.uagent,
-				`freehand_objects`.link,
-				`freehand_objects`.`frame`
-			) VALUES " . implode($newFrameContent, ",\n"));
-		}
-		print "usermap = { ".$this->getUserMap($mapdata['uid'])."\n};";
-	}
-
 	public function save() {
 		$counter      = $this->session->userdata('gcounter');
 		$data         = $this->session->userdata('objects');
@@ -483,7 +278,7 @@ class Freehand extends CI_Controller {
 	public function getsession() {
 		$data = $this->session->userdata('map');
 		if ( $data['state']  === 'database') {
-			$this->loadmap($data['mapID']);
+			$this->mapmodel->loadmap($data['mapID']);
 			return false;
 		}
 		$output      = array();
@@ -504,11 +299,95 @@ class Freehand extends CI_Controller {
 					$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($images, "','")."']}";
 					array_push($input[$val['frame']], $string);
 				}
-				$output = $this->outputFramesToJS($input, $framedata);
+				$output = $this->mapmodel->outputFramesToJS($input, $framedata);
 			}
 		}
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
 		print $mapparam."usermap = { ".$output."\n}";
+	}
+
+	public function writenewframe() {
+		$mapdata  = $this->session->userdata("map");
+		$clone    = $this->input->post("clone");
+		$srcFrame = $this->input->post("frame");
+		$order    = 1;
+		$result   = $this->db->query("SELECT
+		IF(ISNULL(MAX(`freehand_frames`.`order`)), 1, MAX(`freehand_frames`.`order`) + 1) AS `order`,
+		IF(ISNULL(MAX(`freehand_frames`.`frame`)), 1, MAX(`freehand_frames`.`frame`) + 1) AS `frame`
+		FROM
+		`freehand_frames`
+		WHERE
+		`freehand_frames`.mapID = ?", array(
+			$mapdata['uid']
+		));
+		if ($result->num_rows()) {
+			$row = $result->row(0);
+			$order = $row->order;
+			$targetFrame = $row->frame;
+		}
+		$this->db->query("INSERT INTO
+		`freehand_frames` (
+			`freehand_frames`.mapID,
+			`freehand_frames`.name,
+			`freehand_frames`.frame,
+			`freehand_frames`.`order`
+		) VALUES ( ?, ?, ?, ? )", array(
+			$mapdata['uid'],
+			( strlen($this->input->post("name")) ) ? $this->input->post("name") : "Без имени",
+			$targetFrame,
+			$order
+		));
+		if ( $clone ) {
+			$this->cloneframe($mapdata, $srcFrame, $targetFrame);
+		}
+		$this->mapmodel->loadmap($mapdata['uid']);
+	}
+
+	private function cloneframe($mapdata, $srcFrame, $targetFrame) {
+		$frame  = 1;
+		$result = $this->db->query("SELECT
+		`freehand_objects`.map_id,
+		`freehand_objects`.hash,
+		`freehand_objects`.name,
+		`freehand_objects`.description,
+		`freehand_objects`.coord,
+		`freehand_objects`.attributes,
+		`freehand_objects`.address,
+		`freehand_objects`.`type`,
+		`freehand_objects`.ip,
+		`freehand_objects`.uagent,
+		`freehand_objects`.link
+		FROM
+			`freehand_objects`
+		WHERE `freehand_objects`.`map_id` = ?
+		AND   `freehand_objects`.`frame`  = ?", array(
+			$mapdata['uid'],
+			$srcFrame
+		));
+		$newFrameContent = array();
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = "( '".$row->map_id."', '".$row->hash."', '".$row->name."', '".$row->description."', '".$row->coord."', '".$row->attributes."', '".$row->address."', '".$row->type."', '".$row->ip."', '".$row->uagent."', '".$row->link."', ".$targetFrame." )";
+				array_push($newFrameContent, $string);
+			}
+		}
+		if ( sizeof($newFrameContent) ) {
+			$this->db->query("INSERT INTO `freehand_objects` (
+				`freehand_objects`.map_id,
+				`freehand_objects`.hash,
+				`freehand_objects`.name,
+				`freehand_objects`.description,
+				`freehand_objects`.coord,
+				`freehand_objects`.attributes,
+				`freehand_objects`.address,
+				`freehand_objects`.`type`,
+				`freehand_objects`.ip,
+				`freehand_objects`.uagent,
+				`freehand_objects`.link,
+				`freehand_objects`.`frame`
+			) VALUES " . implode($newFrameContent, ",\n"));
+		}
+		//print "usermap = { ".$this->mapmodel->getUserMap($mapdata['uid'])."\n};";
 	}
 }
 

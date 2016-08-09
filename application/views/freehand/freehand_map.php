@@ -199,8 +199,9 @@
 	<div class="modal-body" id="frameActionSelector">
 		<label><input type="text" id="newFrameName" placeholder="Новое имя"> Имя нового фрейма</label>
 		Нужно:<br>
-		<label><input type="radio" name="frameAction" value="newFrameEmpty"> Создать новый пустой фрейм</label>
-		<label><input type="radio" name="frameAction" value="newFrameClone"> Создать фрейм и скопировать в него объекты из предыдущего</label>
+		<label><input type="radio" name="frameAction" class="frameAction" value="0"> Создать новый пустой фрейм</label>
+		<label><input type="radio" name="frameAction" class="frameAction" value="1"> Создать фрейм, скопировав объекты из 
+		<select id="frameSelectorList"></select></label>
 	</div>
 	<div class="modal-footer">
 		<button type="button" class="btn" id="cancelNewFrame" data-dismiss="modal" aria-hidden="true">Отмена</button>

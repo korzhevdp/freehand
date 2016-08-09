@@ -123,33 +123,6 @@ class Mapmanager extends CI_Controller {
 		}
 	}
 
-	public function writenewframe() {
-		$map = $this->session->userdata("map");
-		$result = $this->db->query("SELECT
-		IF(ISNULL(MAX(`freehand_frames`.`order`)), 1, MAX(`freehand_frames`.`order`) + 1) AS `order`
-		FROM
-		`freehand_frames`
-		WHERE
-		`freehand_frames`.mapID = ?", array(
-			$map['uid']
-		));
-		if ($result->num_rows()) {
-			$order = $result->row(0);
-		}
-		$this->db->query("INSERT INTO
-		`freehand_frames` (
-			`freehand_frames`.mapID,
-			`freehand_frames`.name,
-			`freehand_frames`.frame,
-			`freehand_frames`.`order`
-		) VALUES ( ?, ?, ?, ? )", array(
-			$map['uid'],
-			$this->input->post("name"),
-			$this->input->post("frame"),
-			$order->order
-		));
-	}
-
 	public function getproperties() {
 		$mapname = "Новая карта";
 		$result = $this->db->query("SELECT 
@@ -176,7 +149,7 @@ class Mapmanager extends CI_Controller {
 		`freehand_frames`.`order`", array($this->input->post("hash")));
 		if ($result->num_rows()) {
 			foreach($result->result() as $row) {
-				$string = '<li framenum="'.$row->order.'"><span class="frameHeader" id="fh'.$row->frame.'">'.$row->name.'</span><i class="pull-right icon-remove"></i></li>';
+				$string = '<li framenum="'.$row->order.'"><span class="frameHeader" id="fh'.$row->frame.'">'.$row->name.'</span><i class="pull-right icon-remove frameRemover" ref="'.$row->frame.'"></i></li>';
 				array_push($output, $string);
 			}
 		}
@@ -185,6 +158,64 @@ class Mapmanager extends CI_Controller {
 			frameList       : '".implode($output, " ")."',
 			mapNameProperty : '".$mapname."'
 		}";
+	}
+
+	public function removeframe() {
+		$mapdata = $this->session->userdata('map');
+		if ($mapdata['mode'] !== 'edit'){
+			return false;
+		}
+		$this->db->query("DELETE FROM `freehand_objects` WHERE (`freehand_objects`.map_id = ?) AND (`freehand_objects`.frame = ?)", array( 
+			$mapdata['uid'],
+			$this->input->post("frame")
+		));
+		
+		$result = $this->db->query("SELECT
+		freehand_frames.`order`,
+		CONCAT(', ', freehand_frames.frame, ', \'', freehand_frames.name, '\', \'', freehand_frames.mapID, '\')') as statement
+		FROM
+		freehand_frames
+		WHERE
+		(freehand_frames.mapID = ?)
+		AND freehand_frames.frame <> ?
+		ORDER BY `freehand_frames`.`order`", array( $mapdata['uid'], $this->input->post("frame") ));
+		if ($result->num_rows()) {
+			$input = array();
+			foreach ($result->result() as $row) {
+				$input[$row->order] = $row->statement;
+			}
+		}
+		$input = $this->restoreCountings($input);
+		$insertQuery = array();
+		foreach ($input as $key=>$val) {
+			array_push( $insertQuery, "(".$key.$val );
+		}
+
+		//print implode($insertQuery, ",\n");
+
+		if (sizeof($insertQuery)) {
+			$this->db->query("DELETE FROM freehand_frames WHERE (freehand_frames.mapID = ?)", array( $mapdata['uid'] ));
+			$this->db->query("INSERT INTO
+			`freehand_frames` (
+				`freehand_frames`.`order`,
+				`freehand_frames`.frame,
+				`freehand_frames`.name,
+				`freehand_frames`.mapID
+			) VALUES ".implode($insertQuery, ",\n"));
+		}
+
+	}
+
+	private function restoreCountings($input){
+		$last    = 0;
+		$output  = array();
+		foreach ( $input as $key=>$val ) {
+			if ($key !== ++$last){
+				$key = $last;
+			}
+			$output[$key] = $val;
+		}
+		return $output;
 	}
 
 	public function rearrangeframes() {

@@ -17,19 +17,20 @@ class Map extends CI_Controller {
 
 	public function mapX($hash = "") {
 		$data              = $this->session->userdata('map');
+		$actualMapData     = $this->mapmodel->getMapData($hash);
+		//print $data["mapID"]."<br>";
+		//print $actualMapData["hash_a"]." --- ".$actualMapData["hash_e"];
 		$data['state']     = "session";
-		if ($data['uid'] !== $hash && $data['eid'] !== $hash && $hash !== 'index') {
+		$data['mode']      = "view";
+		if ( $data['mapID'] !== $actualMapData['hash_a'] && $data['mapID'] !== $actualMapData['hash_e'] ) {
 			$data['state'] = "database";
-			$data['mode'] = "view";
-			if ($data['eid'] === $hash && $data['uid'] !== $data['eid']) {
-				$data['mode'] = "edit";
-			}
 		}
-		if ($hash === 'index') {
-			$data['mode'] = "edit";
+		if ($hash === 'index' || $hash === $actualMapData['hash_e']) {
+			$data['mode']  = "edit";
 		}
-		$data["mapID"]     = $hash;
+		$data['mapID']     = $hash;
 		$this->session->set_userdata('map', $data);
+
 		//$this->output->enable_profiler(TRUE);
 		$act = array(
 			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',

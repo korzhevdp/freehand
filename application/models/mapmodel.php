@@ -200,6 +200,152 @@ class Mapmodel extends CI_Model {
 		));
 	}
 
+	public function loadmap($hash = ""){
+		$hash   =  (strlen($hash)) ? $hash : $this->input->post('name');
+		if (strlen($hash)){
+			$result = $this->db->query("SELECT 
+			`freehand_maps`.center_lon,
+			`freehand_maps`.center_lat,
+			`freehand_maps`.name,
+			`freehand_maps`.hash_a,
+			`freehand_maps`.hash_e,
+			`freehand_maps`.zoom,
+			`freehand_maps`.maptype,
+			`freehand_maps`.name,
+			`freehand_maps`.author
+			FROM
+			`freehand_maps`
+			WHERE
+			`freehand_maps`.`hash_a` = ? 
+			OR `freehand_maps`.`hash_e` = ?", array( $hash, $hash ));
+			if ($result->num_rows()) {
+				$row       = $result->row();
+				$hashe     = $row->hash_e;
+				$hasha     = $row->hash_a;
+				$mapdata   = $this->session->userdata('map');
+				if ($hash === $row->hash_a){
+					$hashe = $hasha;
+					$mapdata['mode'] = 'view';
+				}
+				if ($hash === $row->hash_e){
+					$mapdata['mode'] = 'edit';
+				}
+				$nav       = (gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
+				$data = array(
+					"mapID"		=> $hash,
+					"uid"		=> $hasha,
+					"eid"		=> $hashe,
+					"name"		=> $row->name,
+					"maptype"	=> $row->maptype,
+					"center"	=> array($row->center_lon, $row->center_lat),
+					"zoom"		=> $row->zoom,
+					"state"		=> "session",
+					"nav"		=> $nav,
+					"author"	=> $row->author,
+					"mode"		=> $mapdata['mode']
+				);
+				$this->session->set_userdata('map', $data);
+				$mapparam = $this->makeMapParametersObject($data);
+				print $mapparam."usermap = { ".$this->getUserMap($data['uid'])."\n}";
+				return true;
+			}
+		}
+		$mapparam = $this->makeMapParametersObject($this->session->userdata('map'));
+		print $mapparam."usermap = {}";
+	}
+
+	private function getUserMapImages($hash) {
+		$images = array();
+		$result = $this->db->query("SELECT
+		`freehand_images`.filename,
+		`freehand_images`.superhash
+		FROM
+		`freehand_images`
+		WHERE `freehand_images`.`mapID` = ?
+		AND LENGTH(`freehand_images`.filename)
+		ORDER BY `freehand_images`.`order` ASC", array($hash));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				if (!isset($images[$row->superhash])) {
+					$images[$row->superhash] = array();
+				}
+				array_push($images[$row->superhash], $row->filename);
+			}
+		}
+		return $images;
+	}
+
+	public function getUserMap($hash = "NmIzZjczYWRlOTg5") {
+		$images    = $this->getUserMapImages($hash);
+		$framedata = $this->getMapFrames($hash);
+		$result    = $this->db->query("SELECT 
+		freehand_objects.name,
+		freehand_objects.description,
+		freehand_objects.coord,
+		freehand_objects.attributes,
+		freehand_objects.address,
+		freehand_objects.`type`,
+		freehand_objects.hash,
+		freehand_objects.link,
+		freehand_objects.frame,
+		freehand_maps.hash_a,
+		freehand_maps.hash_e
+		FROM
+		freehand_objects
+		INNER JOIN `freehand_maps` ON (freehand_objects.map_id = `freehand_maps`.hash_a)
+		WHERE
+		`freehand_maps`.active
+		AND ( `freehand_maps`.hash_a = ? OR `freehand_maps`.hash_e = ? )", array($hash, $hash));
+		$input  = array();
+		$output = array();
+		$newobjects = array();
+		foreach ($framedata as $key=>$val) {
+			$input[$val['order']] = array();		// симметризация с количеством фреймов
+		}
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$frame = ($row->frame < 1) ? 1 : $row->frame;
+				if (!isset($input[$frame])) {
+					$input[$frame] = array(); // на случай нецелостной симметризации
+				}
+				$locImages = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
+				$newobjects[$row->hash."_".$frame] = array(
+					"superhash" => $row->hash,
+					"coords"    => $row->coord,
+					"type"      => $row->type,
+					"attr"      => $row->attributes,
+					"link"      => $row->link,
+					"desc"      => $row->description,
+					"addr"      => $row->address,
+					"name"      => $row->name,
+					"frame"     => $frame,
+					"img"       => $locImages
+				);
+				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
+				array_push($input[$frame], str_replace("\n", " ", $string));
+			}
+			$this->session->set_userdata('objects', $newobjects);
+			return $this->outputFramesToJS($input, $framedata);
+		}
+		$this->session->set_userdata('objects', $newobjects);
+		return "error: 'Содержимого для карты с таким идентификатором не найдено.'";
+	}
+
+	public function outputFramesToJS ($input, $framedata) {
+		$output = array();
+		if (!sizeof($framedata)) {
+			array_push($output, "\n\t1 : { \n\t\tname: 'Фрейм 1',\n\t\tframe: 1,\n\t\tobjects: {\n\t\t\t".(isset($input[1]) ? implode($input[1], ",\n\t\t\t") : ""). "\n\t\t}\n\t}");
+		}
+		if (sizeof($framedata)) {
+			foreach ($input as $key=>$val) {
+				if (isset($framedata[$key])) {
+					array_push($output, "\n\t".$framedata[$key]['order'].": { \n\t\tname: '".$framedata[$key]['name']."',\n\t\tframe: ".$key.",\n\t\tobjects: {\n\t\t\t".implode($val, ",\n\t\t\t"). "\n\t\t}\n\t}");
+				}
+			}
+		}
+		return implode($output, ",\n");
+	}
+
 }
 /* End of file mapmodel.php */
 /* Location: ./application/models/mapmodel.php */

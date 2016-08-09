@@ -163,7 +163,7 @@ function init() {
 			},
 		test = ymaps.option.presetStorage.get(style);
 		if (test === undefined) {
-			style = ["twirl", style.split("#")[1]].join("#");
+			style = ["twirl", style.split("#")[1]].join("#"); // требуется разбор на версии 2 и 2.1 
 			if (ymaps.option.presetStorage.get(style) === undefined) {
 				console.log("Стиль оформления отсутствует в хранилище. Применены умолчания.");
 				style = defaults[type];
@@ -366,17 +366,26 @@ function init() {
 		});
 	}
 
+	function makeFrameSelectorList() {
+		var a;
+		for ( a in usermap ) {
+			if ( usermap.hasOwnProperty(a) ) {
+				$("#frameSelectorList").append('<option value="' + usermap[a].frame + '">' + usermap[a].name + '</option>"');
+			}
+		}
+	}
+
 	function doDelete(src) {
 		var ttl = $(src).attr('ttl');
 		deleteItemByTtl(eObjects, ttl);
 		deleteItemByTtl(aObjects, ttl);
 		$.ajax({
-			url: "/" + mainController + "/deleteobject",
-			data: {
-				ttl: ttl
+			url       : "/" + mainController + "/deleteobject",
+			data      : {
+				ttl   : [ $(src).attr('ttl'), frame ].join("_"),
 			},
 			type: "POST",
-			success: function () {
+			success   : function () {
 				aObjects.options.set({ hasBalloon: 1 });
 				console.log("The object is to be believed deleted");
 			},
@@ -937,7 +946,17 @@ function init() {
 		$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]).removeClass("hide");
 	}
 
-	function loadmap(name) {
+	function setupMapFromProperties() {
+		var mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
+		$("#headTitle").html(mp.name);
+		setMapControls(mp.mode);
+		map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
+		if(mp.nav[0] !== undefined ){
+			$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]);
+		}
+	}
+
+	function loadmap(name) { // загрузка строго из базы данных
 		if (!name.length) {
 			$("#mapName").val("Введите идентификатор карты").css('color', 'red');
 			setTimeout(function(){ $("#mapName").val("").css('color', 'black') }, 2000);
@@ -952,12 +971,8 @@ function init() {
 			},
 			dataType : "script",
 			success  : function () {
-				var mapType;
 				if (mp !== undefined) {
-					$("#headTitle").html(mp.name);
-					setMapControls(mp.mode);
-					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
-					map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
+					setupMapFromProperties();
 				}
 				if (usermap.error !== undefined) {
 					console.log(usermap.error);
@@ -967,6 +982,7 @@ function init() {
 				eObjects.removeAll();
 				if (usermap.error === undefined) {
 					placeFreehandObjects(usermap);
+					makeFrameSelectorList();
 				}
 				countObjects();
 			},
@@ -992,15 +1008,10 @@ function init() {
 					return true;
 				}
 				if (mp !== undefined) {
-					$("#headTitle").html(mp.name);
-					setMapControls(mp.mode);
-					mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
-					map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
-					if(mp.nav[0] !== undefined ){
-						$("#SContainer").css('top', mp.nav[0]).css('left', mp.nav[1]);
-					}
+					setupMapFromProperties();
 				}
 				placeFreehandObjects(usermap);
+				makeFrameSelectorList();
 				/*
 				адский костыль на отключение первичных отправок карты на сервер. :)
 				включение отправки после задержки в 5 секунд с момента загрузки сессии.
@@ -1047,9 +1058,9 @@ function init() {
 				eObjects.removeAll();
 				placeFreehandObjects(usermap);
 				countObjects();
-				history.pushState("", "", "/map/" + mp.ehash);
+				history.pushState( "", "", "/map/" + mp.ehash );
 			},
-			error: function (data, stat, err) {
+			error    : function (data, stat, err) {
 				console.log([ data, stat, err ]);
 			}
 		});
@@ -1383,13 +1394,14 @@ function init() {
 				}
 				eObjects.each(function (item) {
 					var auxGeometry,
+						id,
 						type = geoType2IntId[item.geometry.getType()];
 					if (type === 2) {
-						item.geometry.insert(item.geometry.getLength() + 1, object.geometry.getCoordinates());
+						item.geometry.insert(0 , object.geometry.getCoordinates());
 					}
 					if (type === 3) {
 						auxGeometry = item.geometry.getCoordinates();
-						auxGeometry[0][auxGeometry[0].length - 1] = object.geometry.getCoordinates();
+						auxGeometry[0][0] = object.geometry.getCoordinates();
 						item.geometry.setCoordinates(auxGeometry);
 					}
 				});
@@ -1471,79 +1483,41 @@ function init() {
 	}
 
 	$("#submitFrameAction").click(function(){
-		var mode = $("#frameActionSelector input[type=radio]:checked").val();
-		usermap[frame] = {
-			name    : $("#newFrameName").val(),
-			frame   : frame,
-			objects : {}
-		};
+		var mode   = parseInt($(".frameAction:checked").val(), 10), // 0 при создании пустого фрейма, 1 при клонировании.
+			name   = $("#newFrameName").val(),
+			frameL = $("#frameSelectorList").val();
 		$.ajax({
-			url      : '/mapmanager/writenewframe',
-			data     : {
-				name : $("#newFrameName").val(),
-				frame: frame
+			url       : '/' + mainController + '/writenewframe',
+			data      : {
+				name  : name,
+				frame : frameL,
+				clone : mode
 			},
-			dataType : "script",
-			type     : "POST",
-			success  : function () {
-				if (mode === "newFrameEmpty") {
-					createFrameEmpty();
-					return true;
-				}
-				if (mode === "newFrameClone") {
-					createFrameClone(frame);
-					return true;
-				}
+			dataType  : "script",
+			type      : "POST",
+			success   : function () {
+				placeFreehandObjects(usermap);
 			},
-			error    : function (data, stat, err) {
+			error     : function (data, stat, err) {
 				console.log([ data, stat, err ]);
 			}
 		});
 	});
 
-	function createFrameEmpty() {
-		mframes[frame] = new ymaps.GeoObjectArray();
-		showFrame(frame);
-	}
-
-	function createFrameClone(){
-		var source = (frame - 1);
-		mframes[frame] = mframes[source];
-		//syncToSession(usermap);
-		//showFrame(frame);
-		//return true;
-		// server-side cloning
-		//или другой вариант - отослать команду на сервер и перезагрузить уже клонированный фрейм...
-		$.ajax({
-			url      : '/' + mainController + "/cloneframe",
-			data     : {
-				source : source
-			},
-			dataType : "script",
-			type     : "POST",
-			success  : function () {
-				placeFreehandObjects(usermap);
-				//showFrame(frame);
-			},
-			error    : function (data, stat, err) {
-				console.log([ data, stat, err ]);
-			}
-		});
-	}
-
 	function switchFrame(referer) {
+		var newFrame;
 		hideFrame(frame);
-		frame += parseInt(referer, 10);
-		frame = (frame > 1) ? frame : 1;
-		if (mframes[frame] === undefined) {
+		newFrame = frame + parseInt(referer, 10);
+		newFrame = (newFrame > 1) ? newFrame : 1;
+		if (mframes[newFrame] === undefined) {
 			if (mp.mode === "view") {
-				frame -= 1;
 				showFrame(frame);
 				return false;
 			}
 			showFrameActionSelector();
 			return false;
 		}
+		frame = newFrame;
 		showFrame(frame);
 	}
 
@@ -1833,6 +1807,28 @@ function init() {
 				$("#frameName").val('');
 				$( ".sortable" ).sortable();
 				$( ".sortable" ).disableSelection();
+				$(".frameRemover").unbind().click(function() {
+					if (mp.mode !== 'edit') {
+						return false;
+					}
+					var frame = $(this).attr("ref");
+					$.ajax({
+						url          : '/mapmanager/removeframe',
+						type         : "POST",
+						data         : {
+							frame : frame
+						},
+						success      : function () {
+							//$("#frameList li[framenum=" + frame + "]").remove();
+							window.location.reload();
+							console.log("That frame was deleted");
+						},
+						error        : function (data, stat, err) {
+							console.log([ data, stat, err ]);
+						}
+					});
+				});
+
 				$(".frameHeader").unbind().click(function() {
 					var frameV = $(this).parent().attr("framenum");
 					$("#frameName").val($(this).html());
