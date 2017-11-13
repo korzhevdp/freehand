@@ -20,6 +20,9 @@ scripts/*
 application/views/cache/*
 application/trashbin/*
 uploads/*
+jscript/*
+jqueryui/*
+bootstrap/*
 images/*
 freehandcache/*
 captcha/*

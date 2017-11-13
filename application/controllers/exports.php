@@ -51,6 +51,12 @@ class Exports extends CI_Controller {
 		print $this->load->view('freehand/transfer', $objects, true);
 	}
 
+	public function getgeojson() {
+		$objects = $this->mapmodel->getMapObjectsList($this->input->post('hash'));
+		$images  = $this->mapmodel->getImagesForTransfer($this->input->post('hash'));
+		print $this->mapmodel->makeGeoJSON($objects, $images);
+	}
+
 	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$this->mapmodel->createframe($hash);
 	}

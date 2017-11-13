@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<!-- навигацыя -->
+	<!-- навигацыя -->
 	<!-- <meta name='loginza-verification' content='26e443d51603b20876a5332acd31f007' /> -->
 	<div class="navbar">
 		<div class="navbar-inner">
@@ -23,9 +23,16 @@
 			</ul>
 
 			<ul class="nav pull-right">
-				
-				<li id="propertiesShow">
-					<a href="#" title="Свойства карты"><i class="icon-list-alt"></i></a>
+				<li>
+					<ul class="nav">
+						<li class="dropdown">
+							<a href="" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-list-alt" title="Свойства проекта"></i></a>
+							<ul class="dropdown-menu">
+								<li id="propertiesShow" title="Название, состав фреймов и т.д."><a href="#">Свойства карты</a></li>
+								<li id="objectManagerShow" title="Управление объектами карты"><a href="#">Менеджер объектов</a></li>
+							</ul>
+						</li>
+					</ul>
 				</li>
 
 				<li id="prevFrame" class="frameSwitcher" ref="-1">
@@ -41,7 +48,9 @@
 				<li id="searchFormToggle">
 					<a href="#"><i class="icon-search"></i></a>
 				</li>
-
+				<li id="calcRawLess">
+					<a href="#">rawless</a>
+				</li>
 				<li>
 					<ul class="nav">
 						<li class="dropdown" style="min-width:240px;">
@@ -50,7 +59,6 @@
 								<li><a href="#" class="myMaps">Мои карты</a></li>
 								<li class="divider"></li>
 								<li class="logIn" id="logIn"><a href="#">Войти как пользователь</a></li>
-								<!-- <li class="logIn"><a href="https://loginza.ru/api/widget?token_url=<?=$this->config->item('base_url');?>login/logindata&lang=ru&providers_set=yandex,facebook,vkontakte" >Войти</a></li> -->
 								<li class="logOut" id="logOut"><a href="<?=$this->config->item('base_url');?>locallogin/logout">Выйти</a></li>
 							</ul>
 						</li>
@@ -81,13 +89,16 @@
 					<li><a href="#" pr=3 title="Загружает файл с нарисованной интерактивной картой">Сохранить в HTML</a></li>
 					<li><a href="#" pr=4 title="Выводит содержимое атрибута SRC тега IFRAME">SRC тега IFRAME</a></li>
 					<li class="divider"></li>
+					<!--
 					<li><a href="#" pr=5 title="Экспортирует объекты карты во внутреннем формате обмена">Экспорт</a></li>
 					<li><a href="#" pr=6 title="Импортирует объекты из внутреннего формата обмена">Импорт</a></li>
+					-->
+					<li><a href="#" pr=7 title="Экспортирует объекты карты в GeoJSON">GeoJSON</a></li>
 				</ul>
 			</div>
 		</div>
 	</div>
-<!-- навигацыя -->
+	<!-- навигацыя -->
 
 	<div id="YMapsID"><!-- сам текст -->
 		<?=$navigator?>
@@ -242,6 +253,27 @@
 	</div>
 </div>
 
+<div class="modal hide" id="objectManagerM">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4>Менеджер объектов</h4>
+	</div>
+	<div class="modal-body" style="height:280px;overflow:auto;">
+		<table class="table table-condensed table-bordered">
+		<tr>
+			<th style="width:50px;">Фрейм</td>
+			<th>Название</td>
+			<th style="width:90px;">Действия</td>
+		</tr>
+		<tbody id="objectManagerTbody"></tbody>
+		</table>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Отмена</button>
+		<button type="button" class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Готово</button>
+	</div>
+</div>
+
 <div class="well hide container-fluid" id="mapLinkContainer" style="height:28px;padding:5px;position:absolute;top:45%; left:30%; width:580px;">
 	<input type="text" name="mapLink" id="mapLink" value="" style="width:480px;" class="pull-left">
 	<button type="button" class="btn btn-small btn-primary pull-right" id="linkClose" style="margin-top:2px;">Закрыть</button>
@@ -261,6 +293,5 @@
 <!-- EOT API 2.0 -->
 <!-- <script src="//loginza.ru/js/widget.js" type="text/javascript"></script> -->
 <!-- latest version available at WWW.KORZHEVDP.COM -->
-<?=$footer;?>
 </body>
 </html>

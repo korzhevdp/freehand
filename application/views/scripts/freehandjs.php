@@ -163,7 +163,7 @@ function init() {
 			},
 		test = ymaps.option.presetStorage.get(style);
 		if (test === undefined) {
-			style = ["twirl", style.split("#")[1]].join("#"); // требуется разбор на версии 2 и 2.1 
+			style = ["twirl", style.split("#")[1]].join("#"); // требуется разбор на версии 2 и 2.1
 			if (ymaps.option.presetStorage.get(style) === undefined) {
 				console.log("Стиль оформления отсутствует в хранилище. Применены умолчания.");
 				style = defaults[type];
@@ -209,11 +209,13 @@ function init() {
 			'<button class="btn dropdown-toggle" data-toggle="dropdown" style="height:55px;">' +
 			'<span class="caret"></span>' +
 			'</button>' +
-			'<ul class="dropdown-menu">' +
-			'<li><a href="#" class="copyProp" ttl=' + ttl + '><i class="icon-upload"></i> Скопировать свойства</a></li>' +
-			'<li><a href="#" class="pasteProp" ttl=' + ttl + ' title="Вставить свойства"><i class="icon-download"></i> Вставить свойства</a></li>' +
-			'<li><a href="#" class="pastePropOpt" ttl=' + ttl + ' title="Вставить свойства и оформление"><i class="icon-download-alt"></i> Вставить всё</a></li>' +
-			'<li><a href="#" class="sw-del" ttl=' + ttl + '><i class="icon-trash"></i> Удалить объект</a></li>' +
+			'<ul class="dropdown-menu pull-right" style="width:124px !important;">' +
+			'<li style="padding:6px;width:114px !important;">' +
+				'<span class="btn btn-mini copyProp"     ttl=' + ttl + ' title="Скопировать свойства"><i class="icon-upload"></i> </span>' +
+				'<span class="btn btn-mini pasteProp"    ttl=' + ttl + ' title="Вставить свойства"><i class="icon-download"></i></span>' +
+				'<span class="btn btn-mini pastePropOpt" ttl=' + ttl + ' title="Вставить свойства и оформление"><i class="icon-download-alt"></i></span>' +
+				'<span class="btn btn-mini sw-del"       ttl=' + ttl + ' title="Удалить"><i class="icon-trash"></i></span>' +
+			'</li>' +
 			'</ul>' +
 		'</div>';
 	}
@@ -284,7 +286,7 @@ function init() {
 		помещение данных в локальный буфер обмена
 		*/
 		var ttl = $(src).attr('ttl');
-		function setClipboard() {
+		function setClipboard(item) {
 			if (ttl === item.properties.get('ttl')) {
 				clipboard = {
 					name        : item.properties.get('name'),
@@ -406,14 +408,28 @@ function init() {
 		};
 		return fx[type]();
 	}
-
+/*
+	function geometryArrayToStringNotation(geometryArray, type) {
+		var a,
+			rawGeometry = [];
+		console.log(geometryArray);
+		for (a in geometryArray) {
+			if (geometryArray.hasOwnProperty(a)) {
+				rawGeometry.push(geometryArray[a].join(","));
+			}
+		}
+	}
+*/
 	function sendObject(item) {
 		/* отправка объекта на сервер */
-		var type     = geoType2IntId[item.geometry.getType()],
-			geometry = returnPreparedGeometry(item);
+		var type        = geoType2IntId[item.geometry.getType()],
+			geometry    = returnPreparedGeometry(item),
+			rawGeometry = [];
 		if (mp.mode !== undefined && mp.mode === 'view') {
 			return false;
 		}
+		rawGeometry = []
+
 		$.ajax({
 			url          : '/' + mainController + "/save",
 			type         : "POST",
@@ -421,6 +437,7 @@ function init() {
 				id       : item.properties.get('ttl'),
 				type     : type,
 				geometry : geometry,
+				rawGeometry : (type === 4) ? geometry : item.geometry.getCoordinates(),
 				attr     : item.properties.get('attr'),
 				desc     : item.properties.get('desc'),
 				addr     : item.properties.get('addr'),
@@ -492,7 +509,7 @@ function init() {
 					$("#locImg").attr("src", "/storage/600/" + filename);
 				}
 				if (!filename.length) {
-					$("#locImg").attr("src", "http://api.arhcity.ru/images/nophoto.jpg");
+					$("#locImg").attr("src", apiURL + "/images/nophoto.jpg");
 				}
 			}
 			coalesceLocImages(imageSet[i]);
@@ -983,6 +1000,7 @@ function init() {
 				if (usermap.error === undefined) {
 					placeFreehandObjects(usermap);
 					makeFrameSelectorList();
+					listObjectsForManager();
 				}
 				countObjects();
 			},
@@ -1010,6 +1028,7 @@ function init() {
 				if (mp !== undefined) {
 					setupMapFromProperties();
 				}
+				listObjectsForManager();
 				placeFreehandObjects(usermap);
 				makeFrameSelectorList();
 				/*
@@ -1514,7 +1533,9 @@ function init() {
 				showFrame(frame);
 				return false;
 			}
+			//console.log(1)
 			showFrameActionSelector();
+			//showFrame(frame);
 			return false;
 		}
 		frame = newFrame;
@@ -1598,6 +1619,29 @@ function init() {
 				console.log([ data, stat, err ]);
 			}
 		});
+	}
+
+	function listObjectsForManager() {
+		var a,
+			b,
+			object;
+		for (a in usermap) {
+			if (usermap.hasOwnProperty(a)) {
+				for ( b in usermap[a].objects ) {
+					if (usermap[a].objects.hasOwnProperty(b)) {
+						object = usermap[a].objects[b];
+						if ( object.attr.split("#")[0] !== "system" ) {
+
+							$("#objectManagerTbody").append('<tr><td>' + a + '</td><td class="mg-btn-list" ttl="' + b + '">' + ((object.name.length) ? object.name : "Без названия" ) + '</td><td>' +
+							'<span class="btn btn-mini" ttl="' + b + '" title="Копировать"><i class="icon-upload"></i> </span>' +
+							'<span class="btn btn-mini" ttl="' + b + '" title="Перенести"><i class="icon-download"></i></span>' +
+							'<span class="btn btn-mini" ttl="' + b + '" title="Удалить"><i class="icon-trash"></i></span>' +
+							'</td></tr>');
+						}
+					}
+				}
+			}
+		}
 	}
 
 	function mapDelete() {
@@ -1745,7 +1789,24 @@ function init() {
 						syncToSession(usermap);
 						$("#importM").modal("hide");
 					});
-				}
+				},
+				7: function () {
+					$.ajax({
+						url      : "/" + expController + "/getgeojson",
+						data     : {
+							hash : mp.uhash
+						},
+						dataType : "html",
+						type     : "POST",
+						success  : function (data) {
+							$("#transferCode").html(data);
+							$("#transferM").modal("show");
+						},
+						error    : function (data, stat, err) {
+							console.log([ data, stat, err ]);
+						}
+					});
+				},
 			};
 			event.preventDefault();
 		if (mp === undefined) {
@@ -1845,6 +1906,10 @@ function init() {
 		});
 	});
 
+	$("#objectManagerShow").click(function (){
+		$("#objectManagerM").modal('show');
+	});
+
 	$("#mapReset").click(function () {
 		resetSession();
 		$("#newMapM").modal('hide');
@@ -1877,6 +1942,67 @@ function init() {
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");
 	});
+
+	$("#calcRawLess").unbind().click(function(){
+		calcRawGeometries();
+	});
+
+	function makeRawGeometry(type, coord) {
+		var fx = {
+			1 : function(coord) {
+				return [ parseFloat(coord.split(",")[0]), parseFloat(coord.split(",")[1]) ];
+			},
+			2 : function (coord) {
+				var object = new ymaps.Polyline(new ymaps.geometry.LineString.fromEncodedCoordinates(coord), {}, {});
+				return object.geometry.getCoordinates();
+			},
+			3 : function (coord) {
+				var object = new ymaps.Polygon(new ymaps.geometry.Polygon.fromEncodedCoordinates(coord), {}, {});
+				return object.geometry.getCoordinates();
+			},
+			4 : function(coord) {
+				return [ parseFloat(coord.split(",")[0]), parseFloat(coord.split(",")[1]), parseInt(coord.split(",")[2], 10) ];
+			}
+		}
+		return fx[type](coord);
+	}
+
+	function calcRawGeometries() {
+		$.ajax({
+			url      : "/freehand/getrawless",
+			type     : "GET",
+			dataType : 'script',
+			success  : function () {
+				var a,
+					i = 0,
+					rawGeometry;
+				for ( a in rawless ) {
+					if ( rawless.hasOwnProperty(a) ) {
+						rawGeometry = makeRawGeometry(rawless[a].type, rawless[a].coord).toSource();
+						$.ajax({
+							url      : "/freehand/updaterawless",
+							data     : {
+								type  : rawless[a].type,
+								frame : rawless[a].frame,
+								hash  : a,
+								coord : rawGeometry
+							},
+							type     : "POST",
+							dataType : 'text',
+							success  : function () {},
+							error    : function (data, stat, err) {
+								console.log([data, stat, err].join("\n"));
+							}
+						});
+						console.log(i++);
+					}
+				}
+			},
+			error    : function (data, stat, err) {
+				console.log([data, stat, err].join("\n"));
+			}
+		});
+	}
 
 	setupEnvironment();
 }

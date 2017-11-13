@@ -203,7 +203,6 @@ class Mapmanager extends CI_Controller {
 				`freehand_frames`.mapID
 			) VALUES ".implode($insertQuery, ",\n"));
 		}
-
 	}
 
 	private function restoreCountings($input){

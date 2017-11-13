@@ -16,34 +16,31 @@ class Map extends CI_Controller {
 	}
 
 	public function mapX($hash = "") {
-		$data              = $this->session->userdata('map');
-		$actualMapData     = $this->mapmodel->getMapData($hash);
-		//print $data["mapID"]."<br>";
-		//print $actualMapData["hash_a"]." --- ".$actualMapData["hash_e"];
-		$data['state']     = "session";
-		$data['mode']      = "view";
-		if ( $data['mapID'] !== $actualMapData['hash_a'] && $data['mapID'] !== $actualMapData['hash_e'] ) {
-			$data['state'] = "database";
+		//print $hash;
+		if ( strlen($hash) && $hash !== "index" ) {
+			$this->session->set_userdata('map', $hash);
 		}
-		if ($hash === 'index' || $hash === $actualMapData['hash_e']) {
+		$data              = $this->mapmodel->getDataFile();
+		//print_r($data);
+		//$data['state'] = "database";
+		$data['mode']      = "view";
+
+		if ( $hash === $data['eid'] && $data['eid'] !== $data['uid'] ) {
 			$data['mode']  = "edit";
 		}
 		$data['mapID']     = $hash;
-		$this->session->set_userdata('map', $data);
+
+		//$this->mapmodel->writeDataFile($hash, $data);
 
 		//$this->output->enable_profiler(TRUE);
 		$act = array(
-			'maps_center'	=> (is_array($data['center'])) ? implode($data['center'], ",") : '',
+			'maps_center'	=> (isset($data['center']) && is_array($data['center'])) ? implode($data['center'], ",") : '',
 			'maptype'		=> $data['maptype'],
 			'zoom'			=> $data['zoom'],
 			'keywords'		=> $this->config->item('maps_keywords'),
 			'title'			=> $this->config->item('site_title_start')." Интерактивная карта 0.3b",
 			'gcounter'		=> $this->session->userdata('gcounter'),
-			'userid'		=> $this->session->userdata('common_user'),
-			'menu'			=> '',//$this->load->view('cache/menus/menu_'.$this->session->userdata('lang'), array(), true),
 			'navigator'		=> $this->load->view('freehand/navigator', array(), true),
-			'header'		=> '',//$this->load->view('frontend/page_header', array(), true),
-			'footer'		=> '',//$this->load->view('frontend/page_footer', array(), true),
 			'map_header'	=> 'Свободная карта',
 			'maphash'		=> str_replace(' ','',substr($hash, 0, 16)),
 			'notepad'		=> '',

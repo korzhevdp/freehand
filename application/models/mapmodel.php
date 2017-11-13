@@ -43,6 +43,60 @@ class Mapmodel extends CI_Model {
 		return false;
 	}
 
+	public function makeGeoJSON($result, $images) {
+		if ($result->num_rows()) {
+			$input           = array();
+			$output          = array();
+			$counts          = 0;
+			$geometryTypes = array(
+				1 => "Point",
+				2 => "Polyline",
+				3 => "Polygon",
+				4 => "Circle"
+			);
+			
+			foreach ($result->result_array() as $row) {
+				$row['id'] = ++$counts;
+				$row['images']  = (isset($images[$row['hash']]) && is_array($images[$row['hash']])) 
+					? implode($images[$row['hash']], "','") 
+					: "";
+				$row['type'] = $geometryTypes[$row['type']];
+				$row['images'] .= (isset($images[$row['hash']]) && is_array($images[$row['hash']]) && isset($images[$row['hash']][0]))
+					? ', img128: "'.$this->config->item("base_url")."storage/128/".$images[$row['hash']][0].'"' 
+					: "";
+				$row['link']    = (trim($row['link']) === "#") ? "" : trim($row['link']);
+				//$row['link'] = preg_replace("/[\,\]\[\]]/", '', $row['link']);
+				//$row['link'] = str_replace('"', "'", $row['link']);
+				
+				//$constant    = $counts.": { type: ".$row['type'].", coords: '".$row['coord']."', addr: '".trim($row['addr'])."', desc: '".trim(str_replace("\n", $newLine, $row['desc']))."', name: '".trim($row['name'])."',".$link." attr: '".$row['attr']."', img: ['".$locImages."']".$img128." }";
+				array_push($input, $this->load->view("freehand/chunks/geojsonitem", $row, true));
+			}
+			return $this->load->view("freehand/geojson", array('features' => implode($input, ",\n")), true);
+		}
+		return false;
+	}
+
+	private function returnDataFileName() {
+		return implode( array( $_SERVER['DOCUMENT_ROOT'], "application", "cache", $this->session->userdata('map').".cache" ), DIRECTORY_SEPARATOR);
+	}
+
+	public function getDataFile() {
+		if ( file_exists($this->returnDataFileName()) ) {
+			return unserialize(file_get_contents($this->returnDataFileName()));
+		}
+		$mapData = $this->loadmap($this->session->userdata('map'));
+		if ( $mapData ) {
+			return unserialize(file_get_contents($this->returnDataFileName()));
+		}
+		$this->mapInit();
+		return unserialize(file_get_contents($this->returnDataFileName()));
+	}
+
+	public function writeDataFile($hash, $data) {
+		$dataFile = implode( array( $_SERVER['DOCUMENT_ROOT'], "application", "cache", $hash.".cache" ), DIRECTORY_SEPARATOR);
+		return file_put_contents($dataFile, serialize($data));
+	}
+
 	public function createframe($hash = "YzkxNzVjYTI0MGZk") {
 		$objects = $this->getMapData($hash);
 		if (!$objects) {
@@ -67,7 +121,7 @@ class Mapmodel extends CI_Model {
 		`freehand_maps`.center_lat as `maplat`,
 		`freehand_maps`.hash_a,
 		`freehand_maps`.hash_e,
-		`freehand_maps`.zoom as `mapzoom`,
+		`freehand_maps`.zoom,
 		`freehand_maps`.maptype,
 		`freehand_maps`.name
 		FROM
@@ -76,9 +130,10 @@ class Mapmodel extends CI_Model {
 		`freehand_maps`.`hash_a` = ?
 		OR `freehand_maps`.`hash_e` = ?", array($hash, $hash));
 		if ($result->num_rows()) {
-			$objects = $result->row_array();
-			$objects['maptype'] = (!in_array($objects['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $objects['maptype'];
-			return $objects;
+			$mapData = $result->row_array();
+			$mapData['maptype'] = (!in_array($mapData['maptype'], array("yandex#satellite", "yandex#map"))) ? "yandex#satellite" : $mapData['maptype'];
+			$this->writeDataFile($hash, $mapData);
+			return $mapData;
 		}
 		return false;
 	}
@@ -108,6 +163,7 @@ class Mapmodel extends CI_Model {
 		freehand_objects.name,
 		freehand_objects.description AS `desc`,
 		freehand_objects.coord,
+		freehand_objects.rawcoord,
 		freehand_objects.attributes AS `attr`,
 		freehand_objects.address AS `addr`,
 		freehand_objects.`type`,
@@ -142,16 +198,34 @@ class Mapmodel extends CI_Model {
 	}
 
 	public function mapInit() {
-		$this->makeDefaultMapConfig();
-		$this->session->set_userdata('objects', array());
+		$data = $this->makeDefaultMapConfig();
+		$this->insert_audit("Инициализирована карта #".$data['uid'], "MAP_INIT");
+		/* инициализация карты производится без объектов. Сразу запись */
+		//$this->writeDataFile($this->session->userdata('map'), $data);
+		//$this->session->set_userdata('objects', array());
+	}
+
+	private function generateRandString($length = 8){
+		$chars = 'abcdefghijklmnoprstqrstuvwyzABCDEFGHIJKLMNOPRSTQRSTUVWYZ123456789';
+		$numChars = strlen($chars);
+		$string = '';
+		for ($i = 0; $i < $length; $i++) {
+			$string .= substr($chars, rand(1, $numChars) - 1, 1);
+		}
+		return $string;
 	}
 
 	public function makeDefaultMapConfig() {
-		$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
-		$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
-		while($this->db->query("SELECT freehand_maps.id FROM freehand_maps WHERE freehand_maps.hash_a = ? OR freehand_maps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
-			$hasha = substr(base64_encode(md5("ehЫАgварыgd".date("U").rand(0,99))), 0, 16);
-			$hashe = substr(base64_encode(md5("ЯПzОz7dTS<.g".date("U").rand(0,99))), 0, 16);
+		$hasha = substr(base64_encode($this->generateRandString(32)), 0, 16);
+		$hashe = substr(base64_encode($this->generateRandString(32)), 0, 16);
+		while($this->db->query("SELECT
+		freehand_maps.id
+		FROM
+		freehand_maps
+		WHERE freehand_maps.hash_a = ?
+		OR freehand_maps.hash_e = ?", array($hasha, $hashe))->num_rows()) {
+			$hasha = substr(base64_encode($this->generateRandString(32)), 0, 16);
+			$hashe = substr(base64_encode($this->generateRandString(32)), 0, 16);
 		}
 		$data = array(
 			'mapID'		=> $hasha,
@@ -166,8 +240,8 @@ class Mapmodel extends CI_Model {
 			'mode'		=> 'edit',
 			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0
 		);
-		$this->session->set_userdata('map', $data);
-		$this->insert_audit("Инициализирована карта #".$data['uid'], "MAP_INIT");
+		$this->session->set_userdata('map', $hasha);
+		$this->writeDataFile($hasha, $data);
 	}
 
 	public function makeMapParametersObject($data) {
@@ -203,7 +277,8 @@ class Mapmodel extends CI_Model {
 	public function loadmap($hash = ""){
 		$hash   =  (strlen($hash)) ? $hash : $this->input->post('name');
 		if (strlen($hash)){
-			$result = $this->db->query("SELECT 
+
+			$result = $this->db->query("SELECT
 			`freehand_maps`.center_lon,
 			`freehand_maps`.center_lat,
 			`freehand_maps`.name,
@@ -222,7 +297,8 @@ class Mapmodel extends CI_Model {
 				$row       = $result->row();
 				$hashe     = $row->hash_e;
 				$hasha     = $row->hash_a;
-				$mapdata   = $this->session->userdata('map');
+				//$mapdata   = $this->getDataFile( $this->session->userdata('map') );
+
 				if ($hash === $row->hash_a){
 					$hashe = $hasha;
 					$mapdata['mode'] = 'view';
@@ -230,7 +306,7 @@ class Mapmodel extends CI_Model {
 				if ($hash === $row->hash_e){
 					$mapdata['mode'] = 'edit';
 				}
-				$nav       = (gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
+				$nav       = (isset($mapdata['nav']) && gettype($mapdata['nav']) == "array") ? $mapdata['nav'] : $this->config->item("nav_position");
 				$data = array(
 					"mapID"		=> $hash,
 					"uid"		=> $hasha,
@@ -244,14 +320,18 @@ class Mapmodel extends CI_Model {
 					"author"	=> $row->author,
 					"mode"		=> $mapdata['mode']
 				);
-				$this->session->set_userdata('map', $data);
-				$mapparam = $this->makeMapParametersObject($data);
-				print $mapparam."usermap = { ".$this->getUserMap($data['uid'])."\n}";
+				$this->writeDataFile( $this->session->userdata('map'), $data);
+				$this->getUserMap( $this->session->userdata('map') );
+				//print 111;
+				//$mapparam = $this->makeMapParametersObject($data);
+				//print $mapparam."usermap = { ".$this->getUserMap($data['uid'])."\n}";
 				return true;
 			}
+			return false;
 		}
-		$mapparam = $this->makeMapParametersObject($this->session->userdata('map'));
-		print $mapparam."usermap = {}";
+		//$mapparam = $this->makeMapParametersObject($this->session->userdata('map'));
+		//print $mapparam."usermap = {}";
+		return false;
 	}
 
 	private function getUserMapImages($hash) {
@@ -282,6 +362,7 @@ class Mapmodel extends CI_Model {
 		freehand_objects.name,
 		freehand_objects.description,
 		freehand_objects.coord,
+		freehand_objects.rawcoord,
 		freehand_objects.attributes,
 		freehand_objects.address,
 		freehand_objects.`type`,
@@ -296,22 +377,32 @@ class Mapmodel extends CI_Model {
 		WHERE
 		`freehand_maps`.active
 		AND ( `freehand_maps`.hash_a = ? OR `freehand_maps`.hash_e = ? )", array($hash, $hash));
+
 		$input  = array();
 		$output = array();
 		$newobjects = array();
 		foreach ($framedata as $key=>$val) {
 			$input[$val['order']] = array();		// симметризация с количеством фреймов
 		}
+		$data = $this->getDataFile($hash);
+
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
-				$frame = ($row->frame < 1) ? 1 : $row->frame;
+				$styledType = explode("#", $row->attributes);
+				$frame      = ($row->frame < 1) ? 1 : $row->frame;
 				if (!isset($input[$frame])) {
 					$input[$frame] = array(); // на случай нецелостной симметризации
 				}
+
+				if ( $styledType[0] === "system" && $data['mode'] === "view" ) {
+					continue;
+				}
+
 				$locImages = (isset($images[$row->hash])) ? $images[$row->hash] : array() ;
 				$newobjects[$row->hash."_".$frame] = array(
 					"superhash" => $row->hash,
 					"coords"    => $row->coord,
+					"rawcoords" => $row->rawcoord,
 					"type"      => $row->type,
 					"attr"      => $row->attributes,
 					"link"      => $row->link,
@@ -321,13 +412,15 @@ class Mapmodel extends CI_Model {
 					"frame"     => $frame,
 					"img"       => $locImages
 				);
-				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: '".trim($row->coord)."', addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
+				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: ".trim($row->coord).", rawcoords: ".trim($row->rawcoord).", addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
 				array_push($input[$frame], str_replace("\n", " ", $string));
 			}
-			$this->session->set_userdata('objects', $newobjects);
+			$data['objects'] = $newobjects;
+			$this->writeDataFile($hash, $data);
 			return $this->outputFramesToJS($input, $framedata);
 		}
-		$this->session->set_userdata('objects', $newobjects);
+		//$data['objects'] = $newobjects;
+		//$this->writeDataFile($hash, $data);
 		return "error: 'Содержимого для карты с таким идентификатором не найдено.'";
 	}
 
