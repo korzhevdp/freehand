@@ -428,7 +428,6 @@ function init() {
 		if (mp.mode !== undefined && mp.mode === 'view') {
 			return false;
 		}
-		rawGeometry = []
 
 		$.ajax({
 			url          : '/' + mainController + "/save",
@@ -758,7 +757,12 @@ function init() {
 				eObjects.add(item);										// переводим объект в группу редактируемых
 				item.balloon.open(item.geometry.getCoordinates());
 
-				imageList = ( usermap[frame].objects.ttl === undefined || usermap[frame].objects.ttl.img === undefined ) ? [] : usermap[frame].objects.ttl.img;
+				imageList = (
+					usermap[frame] === undefined
+					|| usermap[frame].objects === undefined
+					|| usermap[frame].objects.ttl === undefined
+					|| usermap[frame].objects.ttl.img === undefined
+				) ? [] : usermap[frame].objects.ttl.img;
 				// нет особого смысла задавать вручную координаты точек, если их для редактирования выбрано больше чем одна. Отключаем поля
 				disableMultiplePointCoordsInput();
 				if (type === 2 || type === 3) {
@@ -876,29 +880,33 @@ function init() {
 			entity,
 			frm,
 			fx = {
-				0: function () {},
+				0: function () {
+					return null;
+				},
 				1: function () {
-					geometry = [ parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1] ) ];
-					object   = new ymaps.Placemark(geometry, properties, options);
+					geometry = [parseFloat(src.coords[0]), parseFloat(src.coords[1])];
+					return new ymaps.Placemark(geometry, properties, options);
 				},
 				2: function () {
 					geometry = new ymaps.geometry.LineString.fromEncodedCoordinates(src.coords);
-					object   = new ymaps.Polyline(geometry, properties, options);
+					return new ymaps.Polyline(geometry, properties, options);
 				},
 				3: function () {
 					geometry = new ymaps.geometry.Polygon.fromEncodedCoordinates(src.coords);
-					object   = new ymaps.Polygon(geometry, properties, options);
+					return new ymaps.Polygon(geometry, properties, options);
 				},
 				4: function () {
-					geometry = new ymaps.geometry.Circle([parseFloat(src.coords.split(",")[0]), parseFloat(src.coords.split(",")[1])], parseFloat(src.coords.split(",")[2]));
-					object   = new ymaps.Circle(geometry, properties, options);
+					geometry = new ymaps.geometry.Circle([parseFloat(src.coords[0]), parseFloat(src.coords[1])], parseFloat(src.coords[2]));
+					return new ymaps.Circle(geometry, properties, options);
 				},
-				5: function () {}
+				5: function () {
+					return null;
+				}
 			};
 		for (entity in source) {
 			if (source.hasOwnProperty(entity)) {
 				src     = source[entity];
-				if (src.attr !== undefined) { //костыль. Причём непонятный
+				if (src.attr !== undefined && src.attr.split("#")[0] !== "system") { //костыль. Причём непонятный
 					options = ymaps.option.presetStorage.get(normalizeStyle(src.attr, src.type));
 				}
 				properties = {
@@ -915,7 +923,7 @@ function init() {
 					ttl         : entity.toString(),
 					images      : getImageBySize(src.img, 'small').join(" ")
 				};
-				fx[src.type]();
+				object = fx[src.type]();
 				//console.log(mframes.toSource());
 				if (mframes[frameID] === undefined) {
 					mframes[frameID] = new ymaps.GeoObjectArray();
@@ -966,6 +974,7 @@ function init() {
 	function setupMapFromProperties() {
 		var mapType = ( availableLayers[mp.maptype] !== undefined ) ? mp.maptype : "yandex#map";
 		$("#headTitle").html(mp.name);
+		$("#mapName").val(mp.ehash);
 		setMapControls(mp.mode);
 		map.setType(mapType).setZoom(mp.zoom).panTo(mp.center);
 		if(mp.nav[0] !== undefined ){
@@ -1078,6 +1087,7 @@ function init() {
 				placeFreehandObjects(usermap);
 				countObjects();
 				history.pushState( "", "", "/map/" + mp.ehash );
+				calcRawGeometries();
 			},
 			error    : function (data, stat, err) {
 				console.log([ data, stat, err ]);
@@ -1833,6 +1843,7 @@ function init() {
 		for ( a in arr ) {
 			if (arr.hasOwnProperty(a)) {
 				x = parseInt(arr[a], 10);
+				console.log(typeof x, x);
 				out[x] = { name: usermap[x].name, order: (parseInt(a, 10) + 1) };
 			}
 		}
@@ -1942,11 +1953,11 @@ function init() {
 		/* здесь должно быть заполнение поля объекта данными */
 		$("#imageM").modal("hide");
 	});
-
+	/*
 	$("#calcRawLess").unbind().click(function(){
 		calcRawGeometries();
 	});
-
+	*/
 	function makeRawGeometry(type, coord) {
 		var fx = {
 			1 : function(coord) {

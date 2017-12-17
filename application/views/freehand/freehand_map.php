@@ -38,7 +38,7 @@
 				<li id="prevFrame" class="frameSwitcher" ref="-1">
 					<a href="#"><i class="icon-chevron-left"></i></a>
 				</li>
-				<li class="">
+				<li class="input-append input-prepend">
 					<input type="text" id="frameNum" value="1" readonly="readonly" maxlength=3 style="width:25px;margin-top:6px;margin-bottom:0px;">
 				</li>
 				<li id="nextFrame" class="frameSwitcher" ref="1">
@@ -48,9 +48,7 @@
 				<li id="searchFormToggle">
 					<a href="#"><i class="icon-search"></i></a>
 				</li>
-				<li id="calcRawLess">
-					<a href="#">rawless</a>
-				</li>
+
 				<li>
 					<ul class="nav">
 						<li class="dropdown" style="min-width:240px;">
@@ -93,7 +91,8 @@
 					<li><a href="#" pr=5 title="Экспортирует объекты карты во внутреннем формате обмена">Экспорт</a></li>
 					<li><a href="#" pr=6 title="Импортирует объекты из внутреннего формата обмена">Импорт</a></li>
 					-->
-					<li><a href="#" pr=7 title="Экспортирует объекты карты в GeoJSON">GeoJSON</a></li>
+					<li><a href="#" pr=7 title="Экспортирует объекты карты в GeoJSON">Экспорт в GeoJSON</a></li>
+					<li><a href="#" pr=7 title="Импортирует объекты на карту из GeoJSON">Импорт из GeoJSON</a></li>
 				</ul>
 			</div>
 		</div>
@@ -104,7 +103,7 @@
 		<?=$navigator?>
 	</div>
 
-<div class="modal hide" id="myMapsM" style="width:640px;">
+<div class="modal hide" id="myMapsM" style="width:740px;">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Мои карты</h3>
@@ -291,7 +290,6 @@
 <!-- API 2.0 -->
 <?=$this->config->item("api_set");?>
 <!-- EOT API 2.0 -->
-<!-- <script src="//loginza.ru/js/widget.js" type="text/javascript"></script> -->
 <!-- latest version available at WWW.KORZHEVDP.COM -->
 </body>
 </html>

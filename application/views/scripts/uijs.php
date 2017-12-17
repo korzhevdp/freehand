@@ -21,6 +21,7 @@
 		});
 	});
 
+	/*
 	$(function() {
 		$('.mapName, #SContainer').delay(20000).animate({ opacity: minOpacity }, 2000, 'swing', function(){});
 	});
@@ -40,6 +41,7 @@
 	$('.map_name').mouseenter(function() {
 		$(this).dequeue().stop().animate({opacity: maxOpacity}, 100);
 	});
+	*/
 
 	$('#YMHead').dblclick(function() {
 		if($('#navigator').hasClass("hide")){
@@ -124,6 +126,6 @@
 		carousel_init();
 	});
 
-	$("#YMapsID").height($(window).height() - 52 + 'px');
+	$("#YMapsID").height($(window).height() - 54 + 'px');
 	//$("#YMapsID").width($(window).width() - 4 + 'px');
 

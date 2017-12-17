@@ -81,7 +81,7 @@ class Locallogin extends CI_Controller {
 			$login,
 			$this->input->post("password"),
 			$uidx,
-			$this->config->item("map_center"),
+			implode($this->config->item("map_center"), ","),
 			$this->config->item("map_zoom"),
 			$this->config->item("map_type")
 		));
@@ -99,7 +99,7 @@ class Locallogin extends CI_Controller {
 				mkdir($baseDir . DIRECTORY_SEPARATOR . "600" . DIRECTORY_SEPARATOR, 0775, true);
 			}
 			*/
-			print "regresult = { status: 1, error: '', login: '".$login."', center: [".$this->config->item("map_center")."], zoom: ".$this->config->item("map_zoom").", mapType: ".$this->config->item("map_type")." }";
+			print "regresult = { status: 1, error: '', login: '".$login."', center: [".implode($this->config->item("map_center"), ",")."], zoom: ".$this->config->item("map_zoom").", mapType: ".$this->config->item("map_type")." }";
 			$this->mapmodel->insert_audit("Создан пользователь #".$login, "USER_CREATED");
 			return true;
 		}

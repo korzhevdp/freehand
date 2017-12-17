@@ -77,17 +77,22 @@ class Mapmodel extends CI_Model {
 	}
 
 	private function returnDataFileName() {
+		//print $this->session->userdata('map');
 		return implode( array( $_SERVER['DOCUMENT_ROOT'], "application", "cache", $this->session->userdata('map').".cache" ), DIRECTORY_SEPARATOR);
 	}
 
 	public function getDataFile() {
+		//print $this->session->userdata('map');
 		if ( file_exists($this->returnDataFileName()) ) {
+			//print 1;
 			return unserialize(file_get_contents($this->returnDataFileName()));
 		}
 		$mapData = $this->loadmap($this->session->userdata('map'));
 		if ( $mapData ) {
+			//print 2;
 			return unserialize(file_get_contents($this->returnDataFileName()));
 		}
+		//print 3;
 		$this->mapInit();
 		return unserialize(file_get_contents($this->returnDataFileName()));
 	}
@@ -205,7 +210,7 @@ class Mapmodel extends CI_Model {
 		//$this->session->set_userdata('objects', array());
 	}
 
-	private function generateRandString($length = 8){
+	public function generateRandString($length = 32){
 		$chars = 'abcdefghijklmnoprstqrstuvwyzABCDEFGHIJKLMNOPRSTQRSTUVWYZ123456789';
 		$numChars = strlen($chars);
 		$string = '';
@@ -238,7 +243,8 @@ class Mapmodel extends CI_Model {
 			'zoom'		=> $this->config->item('map_zoom'),
 			'state'		=> 'initial',
 			'mode'		=> 'edit',
-			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0
+			'author'	=> ($this->session->userdata("uidx")) ? $this->session->userdata("uidx") : 0,
+			'objects'	=> array()
 		);
 		$this->session->set_userdata('map', $hasha);
 		$this->writeDataFile($hasha, $data);
@@ -412,7 +418,9 @@ class Mapmodel extends CI_Model {
 					"frame"     => $frame,
 					"img"       => $locImages
 				);
-				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: ".trim($row->coord).", rawcoords: ".trim($row->rawcoord).", addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
+				$coord = (($row->type == 1 || $row->type == 4) && trim($row->coord[0]) !== "[") ? "[".trim($row->coord)."]" : $row->coord;
+				$coord = ($row->type == 2 || $row->type == 3) ? "'".$coord."'" : $coord;
+				$string = $row->hash.": { desc: '".trim($row->description)."', name: '".trim($row->name)."', attr: '".trim($row->attributes)."', type: ".trim($row->type).", coords: ".$coord.", rawcoords: ".trim($row->rawcoord).", addr: '".trim($row->address)."', link: '".trim($row->link)."', img: ['".implode($locImages, "','")."'] }";
 				array_push($input[$frame], str_replace("\n", " ", $string));
 			}
 			$data['objects'] = $newobjects;

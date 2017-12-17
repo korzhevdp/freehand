@@ -3,9 +3,6 @@ class Freehand extends CI_Controller {
 	function __construct() {
 		parent::__construct();
 		$this->load->model('mapmodel');
-		if (!$this->session->userdata('map')) {
-			$this->mapmodel->mapInit();
-		}
 	}
 
 	private function updateMapDataWOverride($map) {
@@ -216,13 +213,13 @@ class Freehand extends CI_Controller {
 		print $mapparam."usermap = { ".$output."\n}";
 		$this->mapmodel->insert_audit("Сохранён набор объектов #".$data['uid'].".", "MAP_LOC_SAVE");
 	}
-	
+
 	public function save() {
-		$counter      = $this->session->userdata('gcounter');
-		$data         = $this->session->userdata('objects');
-		$map          = $this->session->userdata('map');
+		$counter      = $this->session->userdata('gcounter'); // на всякий случай
+		//print $counter;
+		$data         = $this->mapmodel->getDataFile();
+		//$data         = $this->session->userdata('objects');
 		$map['state'] = "session";
-		$this->session->set_userdata("map", $map);
 		$this->session->set_userdata('gcounter', ++$counter);
 		$geometry = $this->input->post('geometry');
 		if ($this->input->post('type') == 1) {
@@ -234,7 +231,7 @@ class Freehand extends CI_Controller {
 		if ($this->input->post('type') == 4) {
 			$rawgeometry = $geometry = "[".implode($geometry[0], ",").",".$geometry[1]."]";
 		}
-		$data[$this->input->post('id')."_".$this->input->post('frame')] = array(
+		$data['objects'][$this->input->post('id')."_".$this->input->post('frame')] = array(
 			"superhash" => $this->input->post('id'),
 			"coords"	=> $geometry,
 			"rawcoords"	=> $rawgeometry,
@@ -247,7 +244,7 @@ class Freehand extends CI_Controller {
 			"name"		=> $this->input->post('name'),
 			"img"		=> ($this->input->post('img')) ? $this->input->post('img') : array()
 		);
-		$this->session->set_userdata("objects", $data);
+		$this->mapmodel->writeDataFile($this->session->userdata('map'), $data);
 		$this->mapmodel->insert_audit("Изменено описание объекта #".$this->input->post('id')."_".$this->input->post('frame')." в сессии", "LOC_MOD");
 		//print_r($data[$this->input->post('id')."_".$this->input->post('frame')]);
 	}
@@ -286,36 +283,37 @@ class Freehand extends CI_Controller {
 
 	public function getsession() {
 		$data = $this->mapmodel->getDataFile($this->session->userdata('map'));
-		/*
-		if ( $data['state'] === 'database' ) {
-			$this->mapmodel->loadmap($data['mapID']);
-			return false;
-		}
-		*/
-		$output      = array();
+		//print_r($data);
+		$data['state'] = 'session';
+		$output      = "";
 		$input       = array();
 		$data['nav'] = (is_array($data['nav'])) ? $data['nav'] : $this->config->item("nav_position");
 		$framedata   = $this->mapmodel->getMapFrames($data['uid']);
 		foreach ($framedata as $key=>$val) {
 			$input[$val['order']] = array();		// симметризация с количеством фреймов
 		}
-		if ($data['state'] === "session") {
-			if (isset($data['objects']) && sizeof($data['objects'])) {
-				$objects = $data['objects'];
-				foreach ($objects as $hash => $val) {
-					if ( !isset( $input[$val['frame']] ) ) {
-						$input[$val['frame']] = array();
-					}
-					$images = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
-					$string = $hash." : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: '".$val['coords']."', addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($images, "','")."']}";
-					array_push($input[$val['frame']], $string);
+
+		if ( isset($data['objects']) && sizeof($data['objects']) ) {
+			$objects    = $data['objects'];
+			foreach ($objects as $hash => $val) {
+				if ( !isset( $input[$val['frame']] ) ) {
+					$input[$val['frame']] = array();
 				}
-				$output = $this->mapmodel->outputFramesToJS($input, $framedata);
+				if (($val['type'] == 1 || $val['type'] == 4 )&& ( $val['coords'][0] ) !== "]"){
+					$val['coords'] = "[".$val['coords']."]";
+				}
+				if ($val['type'] == 2 || $val['type'] ==3 ){
+					$val['coords'] = "'".$val['coords']."'";
+				}
+				$images = (isset($val['img']) && is_array($val['img'])) ? $val['img'] : array() ;
+				$string = "'".$hash."' : { desc: '".str_replace("\n", " ", $val['desc'])."', name: '".$val['name']."', attr: '".$val['attr']."', type: ".$val['type'].", coords: ".$val['coords'].", addr: '".$val['addr']."', link: '".$val['link']."', img: ['".implode($images, "','")."'] }";
+				array_push($input[$val['frame']], $string);
 			}
+			$output = $this->mapmodel->outputFramesToJS($input, $framedata)."\n";
 		}
+
 		$mapparam = $this->mapmodel->makeMapParametersObject($data);
-		//print_r($output);
-		print $mapparam."usermap = { ".$output."\n}";
+		print $mapparam."usermap = { ".$output." }";
 	}
 
 	public function writenewframe() {
